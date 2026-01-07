@@ -1,26 +1,60 @@
-# DISCUSS → DESIGN Wave Handoff Package
+# DISCUSS -> DESIGN Wave Handoff Package
 
 **From**: product-owner (Riley - Requirements Analyst)
 **To**: solution-architect (Architecture & Design Agent)
-**Date**: 2026-01-06
-**Wave Transition**: DISCUSS → DESIGN
+**Date**: 2026-01-07
+**Wave Transition**: DISCUSS -> DESIGN
 
 ---
 
 ## Handoff Summary
 
-### Requirements Gathering Status: ✅ COMPLETE
+### Requirements Gathering Status: COMPLETE
 
 All requirements gathering activities are complete and validated. The combat simulator demo project is ready for architectural design phase.
 
 **Quality Gate Status**: PASSED
-- ✅ Business context documented
-- ✅ Stakeholder analysis complete
-- ✅ User stories with acceptance criteria defined
-- ✅ Domain language established
-- ✅ Risk assessment performed
-- ✅ Non-functional requirements specified
-- ✅ ATDD compliance verified
+- Business context documented
+- Stakeholder analysis complete
+- User stories with acceptance criteria defined (7 stories, 27 ACs)
+- Domain language established (including new combat rules)
+- Risk assessment performed
+- Non-functional requirements specified
+- ATDD compliance verified
+
+---
+
+## Combat Rules Summary (CRITICAL)
+
+These clarified rules govern all combat mechanics and must be reflected in architecture:
+
+### Death Rule: Attacker Advantage
+- First attacker resolves their attack fully
+- Defender counter-attacks **only if they survive** (HP > 0)
+- If attacker kills defender, round ends immediately - no counter-attack
+- Ties are **impossible** due to sequential resolution
+
+### Attack Order: Initiative Roll
+- Initiative is rolled **once at fight start** (not every round)
+- Each character rolls D6 + Agility (Attack Power + HP)
+- Higher total wins initiative, attacks first **every round** for entire combat
+- Winner = "attacker", Loser = "defender"
+
+### Derived Stat: Agility
+- **Agility = Attack Power + Current HP**
+- Derived stat (computed property), not stored
+- Represents fatigue: as you take damage, HP drops, so Agility drops
+- Used for initiative calculation at fight start
+
+### Dice Boundaries
+- All dice return values in **[1, 6] inclusive**
+- Never returns 0, never returns 7
+- Same DiceRoller port for combat AND character stat generation
+
+### Damage Calculation
+- **Total Damage = Attack Power + Die Roll**
+- No caps, no floors, no armor, no critical hits
+- HP cannot go below 0 (floor at 0)
 
 ---
 
@@ -30,17 +64,17 @@ All requirements gathering activities are complete and validated. The combat sim
 
 1. **Requirements Specification**
    - **Location**: `docs/requirements/requirements.md`
-   - **Content**: Comprehensive requirements document with business context, domain analysis, feature breakdown, NFRs, risk assessment
+   - **Content**: Comprehensive requirements document with business context, combat rules, domain analysis, feature breakdown, NFRs, risk assessment
    - **Status**: Complete and validated
 
 2. **User Stories Catalog**
    - **Location**: `docs/requirements/user-stories.md`
-   - **Content**: 5 user stories (US-01 to US-05) with detailed acceptance criteria in Given-When-Then format
+   - **Content**: 7 user stories (US-01 to US-07) with detailed acceptance criteria in Given-When-Then format
    - **Status**: Complete and demo-optimized
 
 3. **Acceptance Criteria Reference**
    - **Location**: `docs/requirements/acceptance-criteria.md`
-   - **Content**: 22 testable acceptance criteria with implementation guidance
+   - **Content**: 27 testable acceptance criteria with implementation guidance
    - **Status**: Complete and ready for test automation
 
 ---
@@ -53,7 +87,7 @@ This is a **live coding demonstration** project, not a traditional product devel
 
 1. **60-minute timeline** (tight time constraints)
 2. **Educational value** (demonstrate methodology to Software Crafters audience)
-3. **Multiple "wow moments"** (architecture emergence, immutability, TDD success)
+3. **Multiple "wow moments"** (architecture emergence, immutability, attacker advantage)
 4. **Production-ready quality** (100% test coverage, Clean Architecture)
 
 **Critical**: Architecture must support rapid development while maintaining quality standards.
@@ -78,14 +112,21 @@ This is a **live coding demonstration** project, not a traditional product devel
 - State changes return new instances
 - Constructor or factory methods only
 
-#### AC-3: Dependency Injection Ready
+#### AC-3: Derived Stats (Agility)
+**Requirement**: Agility must be computed, not stored.
+**Rationale**: Demonstrates derived properties pattern, keeps HP change logic simple.
+**Implementation**:
+- `get agility() { return this.hp + this.attackPower }`
+- Never a field in Character
+
+#### AC-4: Dependency Injection Ready
 **Requirement**: All dependencies must be injectable.
 **Rationale**: Enable test doubles (FixedDiceRoller) without framework magic.
 **Implementation**:
 - Constructor injection preferred
 - Explicit dependency passing (no service locators or global state)
 
-#### AC-4: Testability First
+#### AC-5: Testability First
 **Requirement**: Architecture must enable 100% test coverage without mocking internal implementation.
 **Rationale**: TDD Outside-In requires testable design.
 **Implementation**:
@@ -93,7 +134,7 @@ This is a **live coding demonstration** project, not a traditional product devel
 - Randomness abstracted behind port (DiceRoller)
 - Clear separation of concerns
 
-#### AC-5: Demo-Friendly Structure
+#### AC-6: Demo-Friendly Structure
 **Requirement**: Code must be projector-readable during live demo.
 **Rationale**: Audience must understand architecture visually.
 **Implementation**:
@@ -108,22 +149,32 @@ This is a **live coding demonstration** project, not a traditional product devel
 #### Core Entities and Value Objects
 
 **Character** (Value Object - Immutable)
-- Properties: name (string), hp (number ≥ 0), attackPower (number > 0)
+- Properties: name (string), hp (number >= 0), attackPower (number > 0)
+- Derived: `agility` (computed: hp + attackPower)
 - Methods:
   - `isAlive(): boolean`
   - `receiveDamage(amount: number): Character` (returns new instance)
-  - `performAttack(target: Character, diceRoll: number): AttackResult` (or delegate to service)
+  - Factory method using DiceRoller for creation
+
+**InitiativeResult** (Value Object)
+- Properties: attacker (Character), defender (Character), attackerRoll (number), defenderRoll (number)
+- Purpose: Stores combat order for entire fight
 
 **AttackResult** (Value Object)
 - Properties: attacker (string), defender (string), diceRoll (number), attackPower (number), totalDamage (number), defenderOldHP (number), defenderNewHP (number)
 
 **RoundResult** (Value Object)
-- Properties: roundNumber (number), attackerActions (AttackResult[]), updatedCharacters (Character[]), combatStatus (enum: ONGOING | FINISHED)
+- Properties: roundNumber (number), attacker (Character), defender (Character), attackerRoll (number), defenderRoll (number), attackerDamage (number), defenderDamage (number), attackerHPAfter (number), defenderHPAfter (number), combatEnded (boolean), winner (Character | null)
 
-**CombatResult** (Value Object - Optional Feature 5)
-- Properties: winner (string), winnerHP (number), loser (string), totalRounds (number)
+**CombatResult** (Value Object)
+- Properties: winner (Character), loser (Character), totalRounds (number), rounds (RoundResult[])
 
 #### Domain Services
+
+**InitiativeResolver**
+- Responsibility: Roll initiative and determine attacker/defender
+- Dependencies: DiceRoller (port)
+- Methods: `rollInitiative(char1: Character, char2: Character): InitiativeResult`
 
 **AttackResolver** or **CombatService**
 - Responsibility: Orchestrate attack resolution (damage calculation + application)
@@ -131,19 +182,20 @@ This is a **live coding demonstration** project, not a traditional product devel
 - Methods: `resolveAttack(attacker: Character, defender: Character): AttackResult`
 
 **CombatRound**
-- Responsibility: Orchestrate one round of combat (both characters attack if alive)
-- Dependencies: AttackResolver or CombatService
-- Methods: `executeRound(char1: Character, char2: Character, roundNumber: number): RoundResult`
+- Responsibility: Orchestrate one round of combat (attacker advantage enforcement)
+- Dependencies: AttackResolver
+- Methods: `executeRound(attacker: Character, defender: Character, roundNumber: number): RoundResult`
+- Key Logic: Defender only counter-attacks if HP > 0 after attacker's attack
 
-**CombatSimulator** (Use Case - Optional Feature 5)
+**CombatSimulator** (Use Case)
 - Responsibility: Full game loop until victory
-- Dependencies: CombatRound
+- Dependencies: InitiativeResolver, CombatRound
 - Methods: `runCombat(char1: Character, char2: Character): CombatResult`
 
 #### Ports (Interfaces)
 
 **DiceRoller** (Port)
-- Method: `roll(): number` (returns 1-6)
+- Method: `roll(): number` (returns [1, 6])
 
 #### Adapters (Implementations)
 
@@ -164,10 +216,13 @@ This is a **live coding demonstration** project, not a traditional product devel
 | DR-01 | Characters are immutable value objects | Type system + no setters |
 | DR-02 | Damage = Attack Power + Dice Roll (1d6) | Domain logic |
 | DR-03 | HP cannot go below 0 | Character.receiveDamage() logic |
-| DR-04 | Dead characters (HP ≤ 0) cannot attack | AttackResolver validation |
-| DR-05 | Combat rounds: A attacks B, then B attacks A | CombatRound orchestration |
-| DR-06 | Combat ends when one character reaches 0 HP | CombatSimulator (Feature 5) |
-| DR-07 | All randomness must be injectable | DiceRoller port abstraction |
+| DR-04 | Initiative rolled once at fight start | CombatSimulator calls InitiativeResolver once |
+| DR-05 | Initiative = Agility + D6 | InitiativeResolver calculation |
+| DR-06 | Attacker advantage: defender only counter-attacks if alive | CombatRound orchestration |
+| DR-07 | Combat ends immediately when character reaches 0 HP | CombatRound / CombatSimulator |
+| DR-08 | Agility = Attack Power + HP (derived) | Character computed property |
+| DR-09 | Dice boundaries: [1, 6] inclusive | DiceRoller contract |
+| DR-10 | All randomness must be injectable | DiceRoller port abstraction |
 
 ---
 
@@ -188,12 +243,13 @@ This is a **live coding demonstration** project, not a traditional product devel
 
 | Feature | Timeline | Duration | Criticality |
 |---------|----------|----------|-------------|
-| Feature 1: Character Creation | 0:08-0:23 | 15 min | CRITICAL |
-| Feature 2: Dice Rolling | 0:23-0:33 | 10 min | CRITICAL |
-| Feature 3: Attack Resolution | 0:33-0:48 | 15 min | CRITICAL |
-| Feature 4: Combat Round | 0:48-0:58 | 10 min | CRITICAL |
-| Feature 5: Victory Condition | 0:58-1:00 | 2 min | OPTIONAL |
-| **Total Development Time** | | **52 min** | **5 min buffer** |
+| Feature 1: Character Creation | 0:08-0:20 | 15 min | CRITICAL |
+| Feature 2: Dice Rolling | 0:20-0:28 | 10 min | CRITICAL |
+| Feature 3: Initiative Roll | 0:28-0:33 | 5 min | CRITICAL |
+| Feature 4: Attack Resolution | 0:33-0:43 | 15 min | CRITICAL |
+| Feature 5: Combat Round | 0:43-0:53 | 15 min | CRITICAL |
+| Feature 6+7: Game Loop + Victory | 0:53-0:58 | 10 min | CRITICAL |
+| **Total Development Time** | | **70 min** | **5 min buffer built into features** |
 
 **Architecture Implication**: Design must support incremental development. Each feature builds on previous without requiring refactoring of earlier code.
 
@@ -207,6 +263,8 @@ This is a **live coding demonstration** project, not a traditional product devel
 | R-02 | Domain logic leaks into CLI layer | Strict layering: domain returns data, CLI presents |
 | R-03 | Test doubles not used correctly | Port/Adapter pattern enforced in Feature 2 |
 | R-04 | Over-engineering (time waste) | YAGNI - minimal implementation, no speculative features |
+| R-05 | Attacker advantage not enforced | CombatRound must check defender.isAlive() before counter-attack |
+| R-06 | Initiative re-rolled each round | InitiativeResult stored at combat start, reused each round |
 | T-01 | Coupling between domain and infrastructure | Hexagonal Architecture with explicit ports |
 
 ---
@@ -240,25 +298,34 @@ This is a **live coding demonstration** project, not a traditional product devel
 - **Suggestion**:
   ```
   src/
-  ├── domain/          # Business logic (pure, no dependencies)
-  │   ├── Character.ts
-  │   ├── AttackResult.ts
-  │   ├── RoundResult.ts
-  │   ├── CombatRound.ts
-  │   └── ports/
-  │       └── DiceRoller.ts
-  ├── infrastructure/  # Adapters (external dependencies)
-  │   └── RandomDiceRoller.ts
-  ├── application/     # Use cases
-  │   └── CombatSimulator.ts
-  └── cli/             # Presentation layer
-      └── main.ts
+  +-- domain/          # Business logic (pure, no dependencies)
+  |   +-- Character.ts
+  |   +-- AttackResult.ts
+  |   +-- RoundResult.ts
+  |   +-- CombatResult.ts
+  |   +-- InitiativeResult.ts
+  |   +-- CombatRound.ts
+  |   +-- ports/
+  |       +-- DiceRoller.ts
+  +-- infrastructure/  # Adapters (external dependencies)
+  |   +-- RandomDiceRoller.ts
+  +-- application/     # Use cases
+  |   +-- CombatSimulator.ts
+  +-- cli/             # Presentation layer
+      +-- main.ts
 
   test/
-  ├── domain/
-  ├── doubles/
-  │   └── FixedDiceRoller.ts
-  └── e2e/
+  +-- domain/
+  |   +-- Character.test.ts
+  |   +-- AttackResult.test.ts
+  |   +-- InitiativeResult.test.ts
+  |   +-- CombatRound.test.ts
+  +-- application/
+  |   +-- CombatSimulator.test.ts
+  +-- doubles/
+  |   +-- FixedDiceRoller.ts
+  +-- e2e/
+      +-- CombatSimulator.e2e.test.ts
   ```
 - **Decision Authority**: solution-architect
 
@@ -283,22 +350,25 @@ This is a **live coding demonstration** project, not a traditional product devel
 
 ### Architecture Design is Complete When:
 
-✅ **Technical stack decided** (language, framework, test runner)
-✅ **Folder structure defined** (Hexagonal Architecture visible)
-✅ **Class diagram created** (showing domain entities, services, ports, adapters)
-✅ **Sequence diagrams for key flows** (attack resolution, combat round)
-✅ **Dependency injection strategy defined** (how ports are injected)
-✅ **Test strategy documented** (unit test structure, E2E approach, test double usage)
-✅ **Architecture Decision Records (ADRs)** for key choices (if time allows, optional)
+- **Technical stack decided** (language, framework, test runner)
+- **Folder structure defined** (Hexagonal Architecture visible)
+- **Class diagram created** (showing domain entities, services, ports, adapters)
+- **Sequence diagrams for key flows** (initiative roll, attack resolution, combat round with attacker advantage)
+- **Dependency injection strategy defined** (how ports are injected)
+- **Test strategy documented** (unit test structure, E2E approach, test double usage)
+- **Architecture Decision Records (ADRs)** for key choices (if time allows, optional)
 
 ### Quality Gates
 
-- ✅ Architecture supports all 22 acceptance criteria
-- ✅ Hexagonal Architecture pattern clearly visible
-- ✅ Immutability enforced by design (no setters in class diagrams)
-- ✅ All external dependencies behind ports
-- ✅ Clear separation of concerns (domain/infrastructure/application/CLI)
-- ✅ Architecture can be implemented in 50-minute timeline
+- Architecture supports all 27 acceptance criteria
+- Hexagonal Architecture pattern clearly visible
+- Immutability enforced by design (no setters in class diagrams)
+- Derived Agility in Character (computed property, not field)
+- Attacker advantage rule supported by CombatRound design
+- Initiative rolled once, stored in InitiativeResult
+- All external dependencies behind ports
+- Clear separation of concerns (domain/infrastructure/application/CLI)
+- Architecture can be implemented in 50-minute timeline
 
 ---
 
@@ -312,14 +382,15 @@ This is a **live coding demonstration** project, not a traditional product devel
 ### Phase 2: High-Level Architecture (10 minutes)
 1. Create Hexagonal Architecture diagram (hexagon with ports/adapters)
 2. Define folder structure matching architecture
-3. Document dependency flow (CLI → Application → Domain, Infrastructure → Domain Ports)
+3. Document dependency flow (CLI -> Application -> Domain, Infrastructure -> Domain Ports)
 
 ### Phase 3: Detailed Design (15 minutes)
-1. Create class diagram for domain layer (Character, AttackResult, RoundResult, services)
+1. Create class diagram for domain layer (Character with derived agility, InitiativeResult, AttackResult, RoundResult, CombatResult, services)
 2. Define port interfaces (DiceRoller)
 3. Define adapter implementations (RandomDiceRoller, FixedDiceRoller)
-4. Create sequence diagram for attack resolution flow
-5. Create sequence diagram for combat round flow
+4. Create sequence diagram for initiative roll
+5. Create sequence diagram for combat round (showing attacker advantage logic)
+6. Create sequence diagram for full combat loop
 
 ### Phase 4: Test Strategy (5 minutes)
 1. Document unit test structure (one test file per class)
@@ -328,7 +399,7 @@ This is a **live coding demonstration** project, not a traditional product devel
 
 ### Phase 5: Handoff Package for DISTILL Wave (5 minutes)
 1. Compile all diagrams and design documents
-2. Create DESIGN → DISTILL handoff document
+2. Create DESIGN -> DISTILL handoff document
 3. Validate architecture against all acceptance criteria
 
 **Total Estimated Time**: 40 minutes
@@ -340,7 +411,7 @@ This is a **live coding demonstration** project, not a traditional product devel
 ### Demo Presenter (Alex)
 **Needs from Architecture**:
 - Clear visual diagrams for projection
-- Architecture that supports "wow moments" (Hexagonal emergence, immutability)
+- Architecture that supports "wow moments" (Hexagonal emergence, immutability, attacker advantage)
 - Confidence that design can be completed in timeline
 
 **Engagement**: Review architecture diagrams before proceeding to DISTILL wave
@@ -350,6 +421,7 @@ This is a **live coding demonstration** project, not a traditional product devel
 - Visible demonstration of Clean Architecture principles
 - Clear separation between domain and infrastructure
 - Understandable diagrams (not overly complex)
+- Attacker advantage rule visible in design
 
 **Engagement**: Diagrams should be presentation-ready
 
@@ -358,6 +430,7 @@ This is a **live coding demonstration** project, not a traditional product devel
 - Clear class interfaces to implement
 - Unambiguous dependency injection patterns
 - Test structure guidance
+- Combat rules clear in design
 
 **Engagement**: Architecture artifacts become implementation blueprint
 
@@ -371,6 +444,9 @@ All requirements from DISCUSS wave are traceable forward to DESIGN wave:
 |-------------|-----------------|
 | Domain Language | Class diagram with domain terms |
 | Immutability Constraint | Class design (no setters, return new instances) |
+| Derived Agility | Character class with computed property |
+| Initiative System | InitiativeResult value object, InitiativeResolver service |
+| Attacker Advantage | CombatRound orchestration logic |
 | Hexagonal Architecture | Architecture diagram, folder structure |
 | Test Doubles | DiceRoller port + FixedDiceRoller adapter |
 | Acceptance Criteria | Validated against class responsibilities |
@@ -386,14 +462,14 @@ All requirements from DISCUSS wave are traceable forward to DESIGN wave:
 
 ---
 
-**Handoff Status**: ✅ APPROVED - Ready for DESIGN Wave
+**Handoff Status**: APPROVED - Ready for DESIGN Wave
 
 **Next Agent**: solution-architect
 **Expected DESIGN Completion**: 30-40 minutes
-**Next Handoff**: DESIGN → DISTILL Wave (Acceptance Test Creation)
+**Next Handoff**: DESIGN -> DISTILL Wave (Acceptance Test Creation)
 
 ---
 
-**Document Version**: 1.0
-**Last Updated**: 2026-01-06
+**Document Version**: 2.0
+**Last Updated**: 2026-01-07
 **Approved By**: product-owner (Riley - Requirements Analyst)
