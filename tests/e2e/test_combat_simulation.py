@@ -14,18 +14,29 @@ from pytest_bdd import given, parsers, scenarios, then, when
 # Import production services (these will be implemented in DEVELOP wave)
 # Following Outside-In TDD: These imports will fail initially, driving implementation
 try:
-    from src.application.combat_simulator import CombatSimulator
-    from src.domain.model.character import Character
-    from src.domain.services.attack_resolver import AttackResolver
-    from src.domain.services.combat_round import CombatRound
-    from src.domain.services.initiative_resolver import InitiativeResolver
+    from modules.domain.model.character import Character
 except ImportError:
-    # Expected to fail initially - Outside-In TDD starts with failing E2E test
     Character = None
-    InitiativeResolver = None
-    AttackResolver = None
-    CombatRound = None
+
+try:
+    from modules.application.combat_simulator import CombatSimulator
+except ImportError:
     CombatSimulator = None
+
+try:
+    from modules.domain.services.initiative_resolver import InitiativeResolver
+except ImportError:
+    InitiativeResolver = None
+
+try:
+    from modules.domain.services.attack_resolver import AttackResolver
+except ImportError:
+    AttackResolver = None
+
+try:
+    from modules.domain.services.combat_round import CombatRound
+except ImportError:
+    CombatRound = None
 
 # Import test double for deterministic testing
 from tests.doubles.fixed_dice_roller import FixedDiceRoller
@@ -232,9 +243,6 @@ def damage_character(name: str, damage: int, combat_context):
     - Floors HP at 0 (cannot go negative)
     - Original instance remains unchanged
     """
-    if Character is None:
-        pytest.skip("Character not yet implemented (Outside-In TDD)")
-
     # Find character by name
     original = next(c for c in combat_context["characters"] if c.name == name)
     combat_context["original_character"] = original
@@ -254,22 +262,16 @@ def check_agility(combat_context):
     - Is NOT stored as a field
     - Automatically decreases as HP drops
     """
-    if Character is None:
-        pytest.skip("Character not yet implemented (Outside-In TDD)")
-
     character = combat_context["characters"][0]
     combat_context["original_agility"] = character.agility
 
 
-@when("the character receives {damage:d} damage")
+@when(parsers.parse("the character receives {damage:d} damage"))
 def character_receives_damage(damage: int, combat_context):
     """Apply damage using production Character.receive_damage.
 
     PRODUCTION SERVICE CALL: Character.receive_damage(damage)
     """
-    if Character is None:
-        pytest.skip("Character not yet implemented (Outside-In TDD)")
-
     original = combat_context["characters"][0]
     combat_context["original_character"] = original
     combat_context["damaged_character"] = original.receive_damage(damage)
@@ -281,9 +283,6 @@ def check_damaged_agility(combat_context):
 
     PRODUCTION SERVICE CALL: Character.agility (property)
     """
-    if Character is None:
-        pytest.skip("Character not yet implemented (Outside-In TDD)")
-
     damaged = combat_context["damaged_character"]
     combat_context["damaged_agility"] = damaged.agility
 
@@ -509,7 +508,7 @@ def verify_new_character_created(hp: int, combat_context):
     assert damaged.hp == hp, f"Expected {hp} HP, got {damaged.hp}"
 
 
-@then("the original character has agility {agility:d}")
+@then(parsers.parse("the original character has agility {agility:d}"))
 def verify_original_agility(agility: int, combat_context):
     """Validate original character agility.
 
@@ -519,7 +518,7 @@ def verify_original_agility(agility: int, combat_context):
     assert original.agility == agility, f"Expected original agility {agility}, got {original.agility}"
 
 
-@then("the damaged character has agility {agility:d}")
+@then(parsers.parse("the damaged character has agility {agility:d}"))
 def verify_damaged_agility(agility: int, combat_context):
     """Validate damaged character agility.
 
@@ -555,9 +554,6 @@ def attempt_create_empty_name(combat_context):
 
     This should raise ValueError due to business rule validation.
     """
-    if Character is None:
-        pytest.skip("Character class not yet implemented (Outside-In TDD)")
-
     try:
         # CRITICAL: This calls production Character constructor with invalid input
         combat_context["invalid_character"] = Character(name="", hp=20, attack_power=5)
