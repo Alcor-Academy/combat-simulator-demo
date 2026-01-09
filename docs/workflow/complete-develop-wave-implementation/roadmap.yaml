@@ -1,0 +1,1560 @@
+# Combat Simulator DEVELOP Wave Roadmap
+# Methodology: Outside-In ATDD (Acceptance Test-Driven Development)
+# Architecture: Hexagonal (Ports & Adapters)
+# Created: 2026-01-09
+# Agent: software-crafter (Crafty)
+
+project:
+  id: "complete-develop-wave-implementation"
+  name: "Combat Simulator DEVELOP Wave Implementation"
+  goal: "Implement combat simulator domain model and services using Outside-In ATDD to make all 9 E2E acceptance tests pass"
+  methodology: "outside-in-tdd"
+  architecture_pattern: "hexagonal"
+  created: "2026-01-09T00:00:00Z"
+  estimated_duration_hours: "4-6"
+  estimated_duration_minutes: "220-305"
+  baseline_reference: "docs/workflow/complete-develop-wave-implementation/baseline.yaml"
+
+# ============================================================================
+# PYTHON TDD SEMANTICS
+# ============================================================================
+
+python_tdd_semantics:
+  title: "Understanding Python TDD RED-GREEN-REFACTOR Progression"
+
+  compilation_vs_interpretation: |
+    Python has no separate compilation phase. Import errors and attribute errors
+    ARE failing tests - this is the expected starting point in RED phase.
+
+    Do not be alarmed when tests fail with ImportError or AttributeError.
+    These failures are CORRECT and EXPECTED in Outside-In TDD.
+
+  expected_red_green_progression:
+    phase_1_red_import_error: |
+      1. Write test file: tests/unit/domain/model/test_character.py
+      2. Add import: from modules.domain.model.character import Character
+      3. Write test: test_character_creation_with_valid_stats()
+      4. Run: pytest tests/unit/domain/model/test_character.py -v
+      5. EXPECT: ImportError: cannot import name 'Character' from 'modules.domain.model.character'
+      6. This is RED phase (expected failure - guides you to create Character class)
+
+    phase_2_red_assertion_error: |
+      7. Create empty file: modules/domain/model/character.py
+      8. Create empty Character class
+      9. Run: pytest tests/unit/domain/model/test_character.py -v
+      10. EXPECT: AssertionError or AttributeError (class exists but behavior incomplete)
+      11. This is still RED phase (progressing toward full implementation)
+
+    phase_3_green: |
+      12. Implement Character behavior (@dataclass(frozen=True), fields, validation)
+      13. Run: pytest tests/unit/domain/model/test_character.py -v
+      14. EXPECT: All tests PASSED (no failures, no errors)
+      15. This is GREEN phase (ready to refactor if needed)
+
+  key_insight: |
+    Import errors are NOT "broken tests" - they're the FIRST red signal telling you
+    what to implement next. Embrace them as part of TDD progression.
+
+    The test failures guide you through implementation:
+    - ImportError → Create the class
+    - AttributeError → Add missing method/property
+    - AssertionError → Implement correct behavior
+
+  anti_pattern_to_avoid: |
+    ❌ Creating all classes upfront to "avoid import errors"
+       This violates TDD - you skip RED phase and lose guidance
+
+    ✅ Let failing imports guide you to implement one class at a time
+       Write test → Import fails (RED) → Create class → Import succeeds → Test fails (RED) → Implement → Test passes (GREEN)
+
+# ============================================================================
+# EXECUTION CONTEXT
+# ============================================================================
+
+execution_context:
+  demo_timeline_constraint:
+    total_demo_duration_minutes: 90
+    live_coding_available_minutes: 50
+    implementation_required_minutes: "220-305"
+    gap_percentage: "79-86%"
+    recommended_strategy: "Option 1: Pre-Implementation with Live Demonstration"
+    strategy_rationale: |
+      Full implementation (4-6 hours) cannot be completed in 50 minutes.
+      Pre-implement all components offline using this roadmap.
+      Use demo time for walkthrough, Q&A, and architectural explanation.
+
+  current_state:
+    type: "greenfield"
+    production_code_exists: false
+    test_infrastructure_complete: true
+    acceptance_tests_status: "9 scenarios SKIPPED (awaiting implementation)"
+    directory_structure: "modules/ directory empty"
+
+  success_criteria:
+    mandatory:
+      - "All 9 E2E acceptance tests PASS"
+      - "All unit tests PASS (20-25 tests expected)"
+      - "No skipped tests in execution"
+      - "100% domain logic test coverage"
+      - "Hexagonal architecture validated (folder structure, dependencies)"
+      - "Immutability enforced (frozen dataclasses, no setters)"
+      - "Production services called in acceptance tests (no mocks)"
+
+# ============================================================================
+# PHASE 1: DOMAIN MODEL FOUNDATION
+# ============================================================================
+
+phases:
+  - number: 1
+    name: "Domain Model Foundation"
+    purpose: "Implement core domain objects with immutability and validation"
+    estimated_hours: "1.2-1.6"
+    estimated_minutes: "70-95"
+    confidence: "HIGH"
+    architecture_focus: "Value objects, ports, adapters"
+
+    steps:
+      # ======================================================================
+      # STEP 1.1: PRE-REFACTORING - DIRECTORY STRUCTURE
+      # ======================================================================
+
+      - number: 1
+        name: "Setup Hexagonal Architecture Directory Structure"
+        description: "Create folder hierarchy for hexagonal architecture before implementation"
+        motivation: "Pre-refactoring to avoid RISK-04 (import path failures) and establish architectural boundaries upfront"
+        estimated_hours: 0.08
+        estimated_minutes: 5
+        confidence: "HIGH"
+        dependencies: []
+        refactoring_level: 0
+        refactoring_type: "pre-refactoring"
+
+        acceptance_criteria:
+          - "modules/domain/model/ exists with __init__.py"
+          - "modules/domain/services/ exists with __init__.py"
+          - "modules/domain/ports/ exists with __init__.py"
+          - "modules/infrastructure/ exists with __init__.py"
+          - "modules/application/ exists with __init__.py"
+          - "tests/unit/domain/model/ exists with __init__.py"
+          - "tests/unit/domain/services/ exists with __init__.py"
+          - "tests/unit/application/ exists with __init__.py"
+          - "All __init__.py files created for Python module recognition"
+
+        implementation_instructions:
+          - "Create modules/domain/model/ with empty __init__.py"
+          - "Create modules/domain/services/ with empty __init__.py"
+          - "Create modules/domain/ports/ with empty __init__.py"
+          - "Create modules/infrastructure/ with empty __init__.py"
+          - "Create modules/application/ with empty __init__.py"
+          - "Create tests/unit/domain/model/ with empty __init__.py"
+          - "Create tests/unit/domain/services/ with empty __init__.py"
+          - "Create tests/unit/application/ with empty __init__.py"
+          - "Verify directory structure matches architecture design"
+
+        validation:
+          - "Directory structure exists"
+          - "All __init__.py files present"
+          - "Import paths functional (test with import modules.domain)"
+
+        e2e_scenarios_affected: []
+        scenarios_passing_after: []
+
+        commit_message: |
+          refactor(level-0): Setup hexagonal architecture directory structure
+
+          Pre-refactoring before implementation:
+          - Created modules/domain/{model,services,ports}/ hierarchy
+          - Created modules/{infrastructure,application}/ folders
+          - Created tests/unit/domain/{model,services}/ hierarchy
+          - All __init__.py files added for Python module recognition
+
+          Motivation: Prevent RISK-04 (import failures) by establishing
+          architectural boundaries before implementation begins
+
+          Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+
+      # ======================================================================
+      # STEP 1.2: CHARACTER VALUE OBJECT (FOUNDATIONAL)
+      # ======================================================================
+
+      - number: 2
+        name: "Implement Character Value Object with TDD"
+        description: "Create immutable Character dataclass with validation, derived properties, and damage handling"
+        motivation: "Foundation for all combat mechanics - Character is the central domain entity"
+        estimated_hours: 0.75
+        estimated_minutes: 45
+        confidence: "HIGH"
+        dependencies: ["1.1"]
+
+        tdd_workflow:
+          outer_loop_e2e:
+            - "Run pytest tests/e2e/ -v → Scenarios 5, 6, 7 SKIP (Character import fails)"
+            - "Identify Character class needed"
+            - "Note expected behavior: frozen dataclass, agility property, receive_damage method"
+
+          inner_loop_unit:
+            - "Create tests/unit/domain/model/test_character.py"
+            - "Write test_character_creation_with_valid_attributes()"
+            - "Run: pytest tests/unit/domain/model/test_character.py -v"
+            - "EXPECT: ImportError - cannot import Character (RED phase - expected!)"
+            - "Create modules/domain/model/character.py with empty Character class"
+            - "Run: pytest tests/unit/domain/model/test_character.py -v"
+            - "EXPECT: Test FAILED - Character has no fields (still RED - progressing!)"
+            - "Implement Character as @dataclass(frozen=True) with name, hp, attack_power"
+            - "Run: pytest tests/unit/domain/model/test_character.py -v"
+            - "EXPECT: Test PASSED (GREEN phase)"
+            - ""
+            - "Write test_agility_computed_from_hp_plus_attack_power()"
+            - "Run: pytest tests/unit/domain/model/test_character.py -v"
+            - "EXPECT: AttributeError - no agility property (RED phase)"
+            - "Add @property agility() returning self.hp + self.attack_power"
+            - "Run: pytest tests/unit/domain/model/test_character.py -v"
+            - "EXPECT: Test PASSED (GREEN phase)"
+            - ""
+            - "Write test_is_alive_when_hp_greater_than_zero()"
+            - "Run: pytest tests/unit/domain/model/test_character.py -v"
+            - "EXPECT: AttributeError - no is_alive property (RED phase)"
+            - "Add @property is_alive() returning self.hp > 0"
+            - "Run: pytest tests/unit/domain/model/test_character.py -v"
+            - "EXPECT: Test PASSED (GREEN phase)"
+            - ""
+            - "Write test_receive_damage_returns_new_instance()"
+            - "Run: pytest tests/unit/domain/model/test_character.py -v"
+            - "EXPECT: AttributeError - no receive_damage method (RED phase)"
+            - "Implement receive_damage(amount) returning new Character with reduced HP"
+            - "Run: pytest tests/unit/domain/model/test_character.py -v"
+            - "EXPECT: Test PASSED (GREEN phase)"
+            - ""
+            - "Write test_receive_damage_floors_hp_at_zero()"
+            - "Run: pytest tests/unit/domain/model/test_character.py -v"
+            - "EXPECT: AssertionError - negative HP allowed (RED phase)"
+            - "Add max(0, self.hp - amount) in receive_damage"
+            - "Run: pytest tests/unit/domain/model/test_character.py -v"
+            - "EXPECT: Test PASSED (GREEN phase)"
+            - ""
+            - "Write test_validation_rejects_empty_name()"
+            - "Run: pytest tests/unit/domain/model/test_character.py -v"
+            - "EXPECT: Test FAILED - no validation (RED phase)"
+            - "Add __post_init__ with name validation"
+            - "Run: pytest tests/unit/domain/model/test_character.py -v"
+            - "EXPECT: Test PASSED (GREEN phase)"
+            - ""
+            - "Write test_validation_rejects_negative_hp()"
+            - "Run: pytest tests/unit/domain/model/test_character.py -v"
+            - "EXPECT: Test FAILED - no validation (RED phase)"
+            - "Add hp >= 0 validation in __post_init__"
+            - "Run: pytest tests/unit/domain/model/test_character.py -v"
+            - "EXPECT: Test PASSED (GREEN phase)"
+            - ""
+            - "Write test_validation_rejects_non_positive_attack_power()"
+            - "Run: pytest tests/unit/domain/model/test_character.py -v"
+            - "EXPECT: Test FAILED - no validation (RED phase)"
+            - "Add attack_power > 0 validation in __post_init__"
+            - "Run: pytest tests/unit/domain/model/test_character.py -v"
+            - "EXPECT: Test PASSED (GREEN phase)"
+            - ""
+            - "REFACTOR: Extract validation messages to constants if needed (Level 1)"
+            - "Run: pytest tests/unit/domain/model/test_character.py -v"
+            - "EXPECT: All tests still PASSED (GREEN maintained during refactoring)"
+            - ""
+            - "Final validation: pytest tests/unit/domain/model/test_character.py -v → 8-10 tests PASS"
+
+          return_to_e2e:
+            - "Run pytest tests/e2e/ -v → Scenarios 5, 6, 7 now PASS"
+            - "Scenarios 1, 2, 3, 4, 8, 9 still SKIP (need services)"
+
+        refactoring_after_green:
+          - level: 1
+            actions:
+              - "Extract validation error messages as constants if duplication exists"
+              - "Rename variables for clarity if ambiguous"
+          - level: 2
+            actions:
+              - "Extract validation logic to separate method if __post_init__ exceeds 10 lines"
+
+        validation:
+          - "pytest tests/unit/domain/model/test_character.py -v → 8-10 tests PASS"
+          - "pytest tests/e2e/ -v → Scenarios 5, 6, 7 PASS"
+          - "Character is frozen (immutable)"
+          - "agility is @property (derived, not stored)"
+          - "receive_damage returns new instance"
+
+        e2e_scenarios_affected: ["5", "6", "7"]
+        scenarios_passing_after: ["5", "6", "7"]
+
+        acceptance_criteria:
+          - "Character is @dataclass(frozen=True)"
+          - "agility is @property returning hp + attack_power"
+          - "is_alive is @property returning hp > 0"
+          - "receive_damage(amount) returns new Character with reduced HP"
+          - "receive_damage floors HP at 0 (never negative)"
+          - "__post_init__ validates: name non-empty, hp >= 0, attack_power > 0"
+          - "Scenarios 5 (immutability), 6 (derived agility), 7 (validation) PASS"
+
+        implementation_notes:
+          - "Use @dataclass(frozen=True) from dataclasses module"
+          - "agility MUST be @property, NOT a field"
+          - "receive_damage MUST return NEW instance (immutability)"
+          - "Validation in __post_init__ prevents illegal states"
+
+        commit_message: |
+          feat(domain): Implement Character value object with immutability
+
+          Outside-In TDD (Unit → E2E validation):
+          - Character as @dataclass(frozen=True) for immutability
+          - agility @property (derived: hp + attack_power)
+          - is_alive @property (hp > 0)
+          - receive_damage returns new instance (never mutates)
+          - Validation in __post_init__ (name, hp, attack_power)
+
+          Tests: 8-10 unit tests PASS
+          E2E: Scenarios 5, 6, 7 now PASS (was SKIP)
+
+          Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+
+      # ======================================================================
+      # STEP 1.3: DICEROLLER PORT (INTERFACE DEFINITION)
+      # ======================================================================
+
+      - number: 3
+        name: "Implement DiceRoller Port (Protocol)"
+        description: "Create DiceRoller Protocol interface for dependency injection"
+        motivation: "Port definition for Hexagonal Architecture - enables test doubles and production adapters"
+        estimated_hours: 0.17
+        estimated_minutes: 10
+        confidence: "HIGH"
+        dependencies: ["1.1"]
+
+        tdd_workflow:
+          outer_loop_e2e:
+            - "E2E tests don't directly test ports"
+            - "Port enables FixedDiceRoller (test double) already in tests/doubles/"
+
+          inner_loop_unit:
+            - "Create modules/domain/ports/dice_roller.py"
+            - "Define DiceRoller Protocol with roll() → int method"
+            - "Add docstring specifying contract: returns [1, 6]"
+            - "No unit tests needed for Protocol itself (it's an interface)"
+
+          return_to_e2e:
+            - "E2E tests can now import DiceRoller Protocol"
+
+        refactoring_after_green:
+          - level: 0
+            actions: ["Ports are interfaces - no refactoring needed"]
+
+        validation:
+          - "modules/domain/ports/dice_roller.py exists"
+          - "DiceRoller is Protocol class with roll() → int signature"
+          - "Docstring specifies [1, 6] range"
+          - "FixedDiceRoller (in tests/doubles/) satisfies Protocol"
+
+        e2e_scenarios_affected: []
+        scenarios_passing_after: []
+
+        acceptance_criteria:
+          - "DiceRoller is typing.Protocol with roll() → int"
+          - "Docstring documents contract: returns [1, 6]"
+          - "No inheritance required for implementations (structural typing)"
+
+        implementation_notes:
+          - "Use typing.Protocol (PEP 544) for structural typing"
+          - "No ABC (Abstract Base Class) - Protocol is more Pythonic"
+          - "FixedDiceRoller already implements this interface in tests/doubles/"
+
+        commit_message: |
+          feat(domain): Define DiceRoller port interface
+
+          Hexagonal Architecture - Port definition:
+          - DiceRoller Protocol with roll() → int signature
+          - Structural typing (no inheritance required)
+          - Contract: returns [1, 6] for D6 die roll
+
+          Enables:
+          - FixedDiceRoller test double (deterministic testing)
+          - RandomDiceRoller production adapter (next step)
+
+          Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+
+      # ======================================================================
+      # STEP 1.4: RANDOMDICEROLLER ADAPTER (PRODUCTION IMPLEMENTATION)
+      # ======================================================================
+
+      - number: 4
+        name: "Implement RandomDiceRoller Infrastructure Adapter"
+        description: "Create production dice roller using random.randint(1, 6)"
+        motivation: "Production adapter for DiceRoller port - enables real gameplay"
+        estimated_hours: 0.17
+        estimated_minutes: 10
+        confidence: "HIGH"
+        dependencies: ["1.3"]
+
+        tdd_workflow:
+          outer_loop_e2e:
+            - "E2E tests use FixedDiceRoller, not RandomDiceRoller"
+            - "This adapter is for production CLI (DELIVER wave)"
+
+          inner_loop_unit:
+            - "Create tests/unit/infrastructure/test_random_dice_roller.py"
+            - "Write test_roll_returns_value_between_1_and_6() with 100-roll statistical validation"
+            - "Run: pytest tests/unit/infrastructure/test_random_dice_roller.py -v"
+            - "EXPECT: ImportError - cannot import RandomDiceRoller (RED phase)"
+            - "Create modules/infrastructure/random_dice_roller.py with RandomDiceRoller class"
+            - "Implement roll() returning random.randint(1, 6)"
+            - "Run: pytest tests/unit/infrastructure/test_random_dice_roller.py -v"
+            - "EXPECT: Test PASSED (GREEN phase) - all 100 rolls in [1, 6] range"
+
+          return_to_e2e:
+            - "E2E tests unaffected (they use FixedDiceRoller)"
+
+        refactoring_after_green:
+          - level: 0
+            actions: ["Adapter is trivial - no refactoring needed"]
+
+        validation:
+          - "pytest tests/unit/infrastructure/test_random_dice_roller.py -v → 1-2 tests PASS"
+          - "RandomDiceRoller implements DiceRoller Protocol"
+          - "roll() returns int in range [1, 6]"
+
+        e2e_scenarios_affected: []
+        scenarios_passing_after: []
+
+        acceptance_criteria:
+          - "RandomDiceRoller class in modules/infrastructure/"
+          - "roll() method returns random.randint(1, 6)"
+          - "Satisfies DiceRoller Protocol (structural typing)"
+          - "Unit test validates range [1, 6]"
+
+        implementation_notes:
+          - "Import random module from stdlib"
+          - "No explicit Protocol inheritance needed (structural typing)"
+          - "Keep implementation simple - just random.randint(1, 6)"
+
+        commit_message: |
+          feat(infrastructure): Implement RandomDiceRoller adapter
+
+          Hexagonal Architecture - Infrastructure adapter:
+          - RandomDiceRoller implements DiceRoller port
+          - Uses random.randint(1, 6) for D6 die roll
+          - Structural typing (no explicit Protocol inheritance)
+
+          Tests: 1-2 unit tests PASS (range validation)
+          Purpose: Production adapter for CLI (DELIVER wave)
+
+          Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+
+# ============================================================================
+# PHASE 2: COMBAT SERVICES (DOMAIN LOGIC)
+# ============================================================================
+
+  - number: 2
+    name: "Combat Services Implementation"
+    purpose: "Implement domain services for initiative, attack resolution, and combat rounds"
+    estimated_hours: "2.0-2.75"
+    estimated_minutes: "120-165"
+    confidence: "MEDIUM-LOW"
+    architecture_focus: "Domain services, business rules, orchestration"
+
+    steps:
+      # ======================================================================
+      # STEP 2.1: INITIATIVERESOLVER SERVICE
+      # ======================================================================
+
+      - number: 1
+        name: "Implement InitiativeResolver Domain Service"
+        description: "Calculate initiative (agility + D6) and determine combat order with tie-breaker"
+        motivation: "Determines who attacks first for entire combat - critical business rule"
+        estimated_hours: 0.5
+        estimated_minutes: 30
+        confidence: "MEDIUM"
+        dependencies: ["1.2", "1.3"]
+
+        result_dataclass_required:
+          name: "InitiativeResult"
+          location: "modules/domain/model/initiative_result.py"
+          purpose: "Immutable value object containing initiative roll results and combat order"
+          fields:
+            - "attacker: Character (character who attacks first)"
+            - "defender: Character (character who attacks second)"
+            - "attacker_roll: int (D6 roll for attacker)"
+            - "defender_roll: int (D6 roll for defender)"
+            - "attacker_total: int (agility + roll for attacker)"
+            - "defender_total: int (agility + roll for defender)"
+          immutability: "@dataclass(frozen=True)"
+          create_first: "Create this value object BEFORE InitiativeResolver service implementation"
+
+          creation_workflow:
+            - "Create modules/domain/model/initiative_result.py"
+            - "Define InitiativeResult as @dataclass(frozen=True) with all 6 fields"
+            - "No tests needed for simple data containers (will be tested via InitiativeResolver)"
+
+        tdd_workflow:
+          outer_loop_e2e:
+            - "Run pytest tests/e2e/ -v → Scenarios 2, 9 SKIP (InitiativeResolver import fails)"
+            - "Scenario 2: Higher agility wins initiative"
+            - "Scenario 9: Tie-breaker (first character wins)"
+
+          inner_loop_unit:
+            - "Create modules/domain/model/initiative_result.py (value object first)"
+            - "Define InitiativeResult as @dataclass(frozen=True) with 6 fields"
+            - ""
+            - "Create tests/unit/domain/services/test_initiative_resolver.py"
+            - "Write test_higher_initiative_total_wins() using FixedDiceRoller"
+            - "Run: pytest tests/unit/domain/services/test_initiative_resolver.py -v"
+            - "EXPECT: ImportError - cannot import InitiativeResolver (RED phase)"
+            - "Create modules/domain/services/initiative_resolver.py"
+            - "Implement InitiativeResolver with roll_initiative(char1, char2) method"
+            - "Implement: char1_total = char1.agility + dice_roller.roll()"
+            - "Implement: char2_total = char2.agility + dice_roller.roll()"
+            - "Return InitiativeResult with higher total as attacker"
+            - "Run: pytest tests/unit/domain/services/test_initiative_resolver.py -v"
+            - "EXPECT: Test PASSED (GREEN phase)"
+            - ""
+            - "Write test_tie_breaker_higher_agility_wins()"
+            - "Run: pytest tests/unit/domain/services/test_initiative_resolver.py -v"
+            - "EXPECT: Test FAILED - no tie-breaker for equal totals (RED phase)"
+            - "Add tie-breaker: if totals equal, compare base agility"
+            - "Run: pytest tests/unit/domain/services/test_initiative_resolver.py -v"
+            - "EXPECT: Test PASSED (GREEN phase)"
+            - ""
+            - "Write test_tie_breaker_first_character_wins_if_agility_equal()"
+            - "Run: pytest tests/unit/domain/services/test_initiative_resolver.py -v"
+            - "EXPECT: Test FAILED - no final tie-breaker (RED phase)"
+            - "Add final tie-breaker: if agility equal, char1 wins"
+            - "Run: pytest tests/unit/domain/services/test_initiative_resolver.py -v"
+            - "EXPECT: Test PASSED (GREEN phase)"
+            - ""
+            - "REFACTOR: Extract tie-breaker logic to helper method if exceeds 5 lines (Level 2)"
+            - "Run: pytest tests/unit/domain/services/test_initiative_resolver.py -v"
+            - "EXPECT: All tests still PASSED (GREEN maintained during refactoring)"
+            - ""
+            - "Final validation: pytest tests/unit/domain/services/test_initiative_resolver.py -v → 3-5 tests PASS"
+
+          return_to_e2e:
+            - "Run pytest tests/e2e/ -v → Scenarios 2, 9 now PASS"
+
+        refactoring_after_green:
+          - level: 1
+            actions:
+              - "Extract constants for tie-breaker rules if magic numbers exist"
+          - level: 2
+            actions:
+              - "Extract _determine_winner helper method if tie-breaker logic exceeds 5 lines"
+
+        validation:
+          - "pytest tests/unit/domain/services/test_initiative_resolver.py -v → 3-5 tests PASS"
+          - "pytest tests/e2e/ -v → Scenarios 2, 9 PASS"
+          - "InitiativeResult has attacker, defender, rolls, totals"
+
+        e2e_scenarios_affected: ["2", "9"]
+        scenarios_passing_after: ["2", "9"]
+
+        acceptance_criteria:
+          - "InitiativeResolver service in modules/domain/services/"
+          - "roll_initiative(char1, char2) returns InitiativeResult"
+          - "Initiative = character.agility + dice_roller.roll()"
+          - "Higher total wins (becomes attacker)"
+          - "Tie-breaker 1: Higher base agility wins"
+          - "Tie-breaker 2: First character wins if agility equal"
+          - "Scenarios 2 (initiative calculation), 9 (tie-breaker) PASS"
+
+        implementation_notes:
+          - "Use constructor injection: InitiativeResolver(dice_roller: DiceRoller)"
+          - "Create InitiativeResult dataclass for return value"
+          - "Call dice_roller.roll() exactly once per character"
+
+        commit_message: |
+          feat(domain): Implement InitiativeResolver service
+
+          Outside-In TDD (Unit → E2E validation):
+          - InitiativeResolver service with roll_initiative method
+          - Initiative calculation: agility + D6
+          - Tie-breaker rules: higher agility → first character
+          - Returns InitiativeResult (attacker, defender, rolls, totals)
+
+          Tests: 3-5 unit tests PASS
+          E2E: Scenarios 2, 9 now PASS (was SKIP)
+
+          Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+
+      # ======================================================================
+      # STEP 2.2: ATTACKRESOLVER SERVICE
+      # ======================================================================
+
+      - number: 2
+        name: "Implement AttackResolver Domain Service"
+        description: "Resolve single attack with damage calculation and validation"
+        motivation: "Core combat mechanic - calculates damage and applies to defender"
+        estimated_hours: 0.75
+        estimated_minutes: 45
+        confidence: "MEDIUM"
+        dependencies: ["1.2", "1.3"]
+
+        result_dataclass_required:
+          name: "AttackResult"
+          location: "modules/domain/model/attack_result.py"
+          purpose: "Immutable value object containing complete attack resolution details"
+          fields:
+            - "attacker_name: str"
+            - "defender_name: str"
+            - "dice_roll: int (D6 result)"
+            - "attack_power: int (base attack from attacker)"
+            - "total_damage: int (attack_power + dice_roll)"
+            - "defender_old_hp: int (HP before attack)"
+            - "defender_new_hp: int (HP after attack, floored at 0)"
+            - "defender_after: Character (updated defender with new HP)"
+          immutability: "@dataclass(frozen=True)"
+          create_first: "Create this value object BEFORE AttackResolver service implementation"
+
+          creation_workflow:
+            - "Create modules/domain/model/attack_result.py"
+            - "Define AttackResult as @dataclass(frozen=True) with all 8 fields"
+            - "No tests needed for simple data containers (will be tested via AttackResolver)"
+
+        tdd_workflow:
+          outer_loop_e2e:
+            - "Run pytest tests/e2e/ -v → Scenario 8 SKIP (AttackResolver import fails)"
+            - "Scenario 8: Dead character cannot initiate attack"
+
+          inner_loop_unit:
+            - "Create modules/domain/model/attack_result.py (value object first)"
+            - "Define AttackResult as @dataclass(frozen=True) with 8 fields"
+            - ""
+            - "Create tests/unit/domain/services/test_attack_resolver.py"
+            - "Write test_resolve_attack_calculates_damage() using FixedDiceRoller"
+            - "Run: pytest tests/unit/domain/services/test_attack_resolver.py -v"
+            - "EXPECT: ImportError - cannot import AttackResolver (RED phase)"
+            - "Create modules/domain/services/attack_resolver.py"
+            - "Implement AttackResolver with resolve_attack(attacker, defender) method"
+            - "Implement: dice_roll = dice_roller.roll()"
+            - "Implement: total_damage = attacker.attack_power + dice_roll"
+            - "Implement: defender_after = defender.receive_damage(total_damage)"
+            - "Return AttackResult with all 8 fields populated"
+            - "Run: pytest tests/unit/domain/services/test_attack_resolver.py -v"
+            - "EXPECT: Test PASSED (GREEN phase)"
+            - ""
+            - "Write test_dead_attacker_raises_valueerror()"
+            - "Run: pytest tests/unit/domain/services/test_attack_resolver.py -v"
+            - "EXPECT: Test FAILED - no validation for dead attacker (RED phase)"
+            - "Add validation: if not attacker.is_alive: raise ValueError('Dead character cannot attack')"
+            - "Run: pytest tests/unit/domain/services/test_attack_resolver.py -v"
+            - "EXPECT: Test PASSED (GREEN phase)"
+            - ""
+            - "Write test_attack_result_includes_all_fields()"
+            - "Run: pytest tests/unit/domain/services/test_attack_resolver.py -v"
+            - "EXPECT: Test PASSED (field validation via assertions)"
+            - ""
+            - "REFACTOR: Extract damage calculation to helper if exceeds 3 lines (Level 2)"
+            - "Run: pytest tests/unit/domain/services/test_attack_resolver.py -v"
+            - "EXPECT: All tests still PASSED (GREEN maintained during refactoring)"
+            - ""
+            - "Final validation: pytest tests/unit/domain/services/test_attack_resolver.py -v → 3-5 tests PASS"
+
+          return_to_e2e:
+            - "Run pytest tests/e2e/ -v → Scenario 8 now PASS"
+
+        refactoring_after_green:
+          - level: 1
+            actions:
+              - "Extract error message constants if validation messages duplicated"
+          - level: 2
+            actions:
+              - "Extract _calculate_damage helper if logic exceeds 3 lines"
+
+        validation:
+          - "pytest tests/unit/domain/services/test_attack_resolver.py -v → 3-5 tests PASS"
+          - "pytest tests/e2e/ -v → Scenario 8 PASS"
+          - "ValueError raised if attacker is dead"
+
+        e2e_scenarios_affected: ["8"]
+        scenarios_passing_after: ["8"]
+
+        acceptance_criteria:
+          - "AttackResolver service in modules/domain/services/"
+          - "resolve_attack(attacker, defender) returns AttackResult"
+          - "Damage = attacker.attack_power + dice_roller.roll()"
+          - "defender_after = defender.receive_damage(total_damage)"
+          - "Raises ValueError if attacker.is_alive == False"
+          - "AttackResult includes: attacker_name, defender_name, dice_roll, attack_power, total_damage, defender_old_hp, defender_new_hp, defender_after"
+          - "Scenario 8 (dead character rejection) PASS"
+
+        implementation_notes:
+          - "Use constructor injection: AttackResolver(dice_roller: DiceRoller)"
+          - "Create AttackResult dataclass with all combat details"
+          - "Validation MUST precede attack resolution"
+
+        commit_message: |
+          feat(domain): Implement AttackResolver service
+
+          Outside-In TDD (Unit → E2E validation):
+          - AttackResolver service with resolve_attack method
+          - Damage calculation: attack_power + D6
+          - Validation: dead character cannot attack (ValueError)
+          - Returns AttackResult with complete combat details
+
+          Tests: 3-5 unit tests PASS
+          E2E: Scenario 8 now PASS (was SKIP)
+
+          Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+
+      # ======================================================================
+      # STEP 2.3: COMBATROUND SERVICE (ORCHESTRATION)
+      # ======================================================================
+
+      - number: 3
+        name: "Implement CombatRound Domain Service"
+        description: "Orchestrate one combat round with attacker advantage rule"
+        motivation: "Implements attacker advantage - dead defender cannot counter-attack"
+        estimated_hours: 0.75
+        estimated_minutes: 45
+        confidence: "LOW"
+        dependencies: ["2.2"]
+
+        result_dataclass_required:
+          name: "RoundResult"
+          location: "modules/domain/model/round_result.py"
+          purpose: "Immutable value object containing complete combat round results"
+          fields:
+            - "round_number: int"
+            - "attacker_action: AttackResult (attacker's strike details)"
+            - "defender_action: AttackResult | None (counter-attack details, None if defender died)"
+            - "attacker_hp_before: int"
+            - "attacker_hp_after: int"
+            - "defender_hp_before: int"
+            - "defender_hp_after: int"
+            - "combat_ended: bool (True if one character died this round)"
+            - "winner: Character | None (victor if combat ended, None otherwise)"
+          immutability: "@dataclass(frozen=True)"
+          create_first: "Create this value object BEFORE CombatRound service implementation"
+
+          creation_workflow:
+            - "Create modules/domain/model/round_result.py"
+            - "Define RoundResult as @dataclass(frozen=True) with all 9 fields"
+            - "No tests needed for simple data containers (will be tested via CombatRound)"
+
+        tdd_workflow:
+          outer_loop_e2e:
+            - "Run pytest tests/e2e/ -v → Scenarios 3, 4 SKIP (CombatRound import fails)"
+            - "Scenario 3: Attacker kills defender - no counter-attack"
+            - "Scenario 4: Defender survives and counter-attacks"
+
+          inner_loop_unit:
+            - "Create modules/domain/model/round_result.py (value object first)"
+            - "Define RoundResult as @dataclass(frozen=True) with 9 fields"
+            - ""
+            - "Create tests/unit/domain/services/test_combat_round.py"
+            - "Write test_attacker_attacks_first() using mocked AttackResolver"
+            - "Run: pytest tests/unit/domain/services/test_combat_round.py -v"
+            - "EXPECT: ImportError - cannot import CombatRound (RED phase)"
+            - "Create modules/domain/services/combat_round.py"
+            - "Implement CombatRound with execute_round(attacker, defender, round_number) method"
+            - "Implement: attacker_attack = attack_resolver.resolve_attack(attacker, defender)"
+            - "Return partial RoundResult (counter-attack logic missing)"
+            - "Run: pytest tests/unit/domain/services/test_combat_round.py -v"
+            - "EXPECT: Test PASSED (GREEN phase)"
+            - ""
+            - "Write test_defender_counter_attacks_if_alive()"
+            - "Run: pytest tests/unit/domain/services/test_combat_round.py -v"
+            - "EXPECT: Test FAILED - no counter-attack when defender survives (RED phase)"
+            - "Add conditional: if attacker_attack.defender_after.is_alive:"
+            - "Implement: defender_attack = attack_resolver.resolve_attack(defender_after, attacker_after)"
+            - "Run: pytest tests/unit/domain/services/test_combat_round.py -v"
+            - "EXPECT: Test PASSED (GREEN phase)"
+            - ""
+            - "Write test_defender_no_counter_attack_if_dead()"
+            - "Run: pytest tests/unit/domain/services/test_combat_round.py -v"
+            - "EXPECT: Test FAILED - counter-attack attempted when defender dead (RED phase)"
+            - "Add else branch: defender_action = None, no counter-attack executed"
+            - "Run: pytest tests/unit/domain/services/test_combat_round.py -v"
+            - "EXPECT: Test PASSED (GREEN phase)"
+            - ""
+            - "Write test_round_result_includes_all_details()"
+            - "Run: pytest tests/unit/domain/services/test_combat_round.py -v"
+            - "EXPECT: Test PASSED (field validation via assertions)"
+            - ""
+            - "REFACTOR: Extract counter-attack logic to helper if conditional exceeds 10 lines (Level 2)"
+            - "Run: pytest tests/unit/domain/services/test_combat_round.py -v"
+            - "EXPECT: All tests still PASSED (GREEN maintained during refactoring)"
+            - ""
+            - "Final validation: pytest tests/unit/domain/services/test_combat_round.py -v → 4-6 tests PASS"
+
+          return_to_e2e:
+            - "Run pytest tests/e2e/ -v → Scenarios 3, 4 now PASS"
+
+        refactoring_after_green:
+          - level: 2
+            actions:
+              - "Extract _execute_attacker_strike helper if logic exceeds 5 lines"
+              - "Extract _execute_counter_attack helper if conditional logic exceeds 10 lines"
+          - level: 3
+            actions:
+              - "Consider Extract Class if CombatRound exceeds 50 lines"
+
+        validation:
+          - "pytest tests/unit/domain/services/test_combat_round.py -v → 4-6 tests PASS"
+          - "pytest tests/e2e/ -v → Scenarios 3, 4 PASS"
+          - "Attacker advantage enforced (no counter-attack if defender dies)"
+
+        e2e_scenarios_affected: ["3", "4"]
+        scenarios_passing_after: ["3", "4"]
+
+        acceptance_criteria:
+          - "CombatRound service in modules/domain/services/"
+          - "execute_round(attacker, defender, round_number) returns RoundResult"
+          - "Attacker attacks first using AttackResolver"
+          - "Defender counter-attacks ONLY if is_alive after attacker's strike"
+          - "If defender dies, defender_damage = 0 (no counter-attack)"
+          - "RoundResult includes: round_number, attacker, defender, rolls, damages, HPs, combat_ended, winner"
+          - "Scenarios 3 (attacker kills), 4 (defender survives) PASS"
+
+        implementation_notes:
+          - "Use constructor injection: CombatRound(attack_resolver: AttackResolver)"
+          - "Create RoundResult dataclass for return value"
+          - "CRITICAL: Check defender.is_alive BEFORE counter-attack"
+
+        commit_message: |
+          feat(domain): Implement CombatRound service with attacker advantage
+
+          Outside-In TDD (Unit → E2E validation):
+          - CombatRound orchestrates one combat round
+          - Attacker attacks first (AttackResolver)
+          - Defender counter-attacks ONLY if alive after attacker's strike
+          - Attacker advantage: dead defender cannot counter-attack
+          - Returns RoundResult with complete round details
+
+          Tests: 4-6 unit tests PASS
+          E2E: Scenarios 3, 4 now PASS (was SKIP)
+
+          Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+
+# ============================================================================
+# PHASE 3: APPLICATION LAYER (USE CASE ORCHESTRATION)
+# ============================================================================
+
+  - number: 3
+    name: "Application Layer Implementation"
+    purpose: "Orchestrate domain services to fulfill complete combat simulation use case"
+    estimated_hours: "0.5-0.75"
+    estimated_minutes: "30-45"
+    confidence: "MEDIUM"
+    architecture_focus: "Application service, game loop, victory condition"
+
+    steps:
+      # ======================================================================
+      # STEP 3.1: COMBATSIMULATOR APPLICATION SERVICE
+      # ======================================================================
+
+      - number: 1
+        name: "Implement CombatSimulator Application Service"
+        description: "Orchestrate full combat from initiative roll to victory"
+        motivation: "Top-level use case - completes Outside-In TDD cycle"
+        estimated_hours: 0.58
+        estimated_minutes: 35
+        confidence: "MEDIUM"
+        dependencies: ["2.1", "2.3"]
+
+        result_dataclass_required:
+          name: "CombatResult"
+          location: "modules/domain/model/combat_result.py"
+          purpose: "Immutable value object containing complete combat simulation results"
+          fields:
+            - "winner: Character (victorious character)"
+            - "loser: Character (defeated character with 0 HP)"
+            - "total_rounds: int (number of rounds fought)"
+            - "rounds: tuple[RoundResult, ...] (all round results, immutable)"
+            - "initiative_result: InitiativeResult (who attacked first)"
+          immutability: "@dataclass(frozen=True)"
+          create_first: "Create this value object BEFORE CombatSimulator service implementation"
+
+          creation_workflow:
+            - "Create modules/domain/model/combat_result.py"
+            - "Define CombatResult as @dataclass(frozen=True) with all 5 fields"
+            - "Use tuple for rounds (immutable), not list"
+            - "No tests needed for simple data containers (will be tested via CombatSimulator)"
+
+        tdd_workflow:
+          outer_loop_e2e:
+            - "Run pytest tests/e2e/ -v → Scenario 1 SKIP (CombatSimulator import fails)"
+            - "Scenario 1: Full combat with complete integration"
+
+          inner_loop_unit:
+            - "Create modules/domain/model/combat_result.py (value object first)"
+            - "Define CombatResult as @dataclass(frozen=True) with 5 fields"
+            - "CRITICAL: Use tuple[RoundResult, ...] for rounds (immutable), not list"
+            - ""
+            - "Create tests/unit/application/test_combat_simulator.py"
+            - "Write test_run_combat_rolls_initiative_once() using mocked services"
+            - "Run: pytest tests/unit/application/test_combat_simulator.py -v"
+            - "EXPECT: ImportError - cannot import CombatSimulator (RED phase)"
+            - "Create modules/application/combat_simulator.py"
+            - "Implement CombatSimulator with run_combat(char1, char2) method"
+            - "Implement: initiative = initiative_resolver.roll_initiative(char1, char2)"
+            - "Return partial CombatResult (loop logic missing)"
+            - "Run: pytest tests/unit/application/test_combat_simulator.py -v"
+            - "EXPECT: Test PASSED (GREEN phase)"
+            - ""
+            - "Write test_run_combat_executes_rounds_until_victory()"
+            - "Run: pytest tests/unit/application/test_combat_simulator.py -v"
+            - "EXPECT: Test FAILED - no combat loop (RED phase)"
+            - "Add while loop: while attacker.is_alive and defender.is_alive:"
+            - "Implement: round_result = combat_round.execute_round(attacker, defender, round_num)"
+            - "Update attacker/defender from round_result"
+            - "Run: pytest tests/unit/application/test_combat_simulator.py -v"
+            - "EXPECT: Test PASSED (GREEN phase)"
+            - ""
+            - "Write test_run_combat_returns_combat_result()"
+            - "Run: pytest tests/unit/application/test_combat_simulator.py -v"
+            - "EXPECT: Test PASSED (return structure validated)"
+            - ""
+            - "Write test_combat_result_has_all_rounds()"
+            - "Run: pytest tests/unit/application/test_combat_simulator.py -v"
+            - "EXPECT: Test FAILED - rounds not accumulated in result (RED phase)"
+            - "Accumulate rounds in list during loop"
+            - "Convert list to tuple before returning: tuple(rounds_list)"
+            - "Run: pytest tests/unit/application/test_combat_simulator.py -v"
+            - "EXPECT: Test PASSED (GREEN phase)"
+            - ""
+            - "REFACTOR: Extract victory detection logic if exceeds 5 lines (Level 2)"
+            - "REFACTOR: Extract combat loop to helper if exceeds 15 lines (Level 2)"
+            - "Run: pytest tests/unit/application/test_combat_simulator.py -v"
+            - "EXPECT: All tests still PASSED (GREEN maintained during refactoring)"
+            - ""
+            - "Final validation: pytest tests/unit/application/test_combat_simulator.py -v → 4-5 tests PASS"
+
+          return_to_e2e:
+            - "Run pytest tests/e2e/ -v → Scenario 1 now PASS"
+            - "ALL 9 E2E SCENARIOS NOW PASS ✅"
+
+        refactoring_after_green:
+          - level: 1
+            actions:
+              - "Extract constants for initial round number if magic number"
+          - level: 2
+            actions:
+              - "Extract _determine_winner helper if victory logic exceeds 5 lines"
+              - "Extract _execute_combat_loop helper if while loop exceeds 15 lines"
+
+        validation:
+          - "pytest tests/unit/application/test_combat_simulator.py -v → 4-5 tests PASS"
+          - "pytest tests/e2e/ -v → ALL 9 SCENARIOS PASS ✅"
+          - "No skipped tests"
+
+        e2e_scenarios_affected: ["1"]
+        scenarios_passing_after: ["1"]
+
+        acceptance_criteria:
+          - "CombatSimulator service in modules/application/"
+          - "run_combat(char1, char2) returns CombatResult"
+          - "Rolls initiative ONCE at start (not per round)"
+          - "Executes rounds in loop until one character dies"
+          - "Returns CombatResult with: winner, loser, total_rounds, rounds (tuple)"
+          - "Scenario 1 (full combat integration) PASS"
+          - "ALL 9 E2E SCENARIOS PASS ✅"
+
+        implementation_notes:
+          - "Use constructor injection: CombatSimulator(initiative_resolver, combat_round)"
+          - "Create CombatResult dataclass for return value"
+          - "Rounds stored as tuple (immutable) not list"
+          - "CRITICAL: Initiative rolled ONCE, not per round"
+
+        commit_message: |
+          feat(application): Implement CombatSimulator use case
+
+          Outside-In TDD (Unit → E2E validation):
+          - CombatSimulator orchestrates complete combat
+          - Rolls initiative once at start
+          - Executes combat rounds until victory
+          - Returns CombatResult with winner, loser, all rounds
+
+          Tests: 4-5 unit tests PASS
+          E2E: Scenario 1 now PASS (was SKIP)
+
+          🎉 ALL 9 E2E SCENARIOS NOW PASS ✅
+
+          Outside-In TDD cycle complete:
+          - 9 E2E scenarios driving implementation
+          - 20-25 unit tests validating components
+          - Hexagonal architecture validated
+          - 100% domain logic coverage achieved
+
+          Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+
+# ============================================================================
+# REFACTORING STRATEGY
+# ============================================================================
+
+refactoring_strategy:
+  principle: "Refactor only when tests are GREEN - never during RED or between RED/GREEN"
+
+  workflow:
+    after_each_green_test:
+      - "Run tests to confirm GREEN"
+      - "Identify code smells (duplication, long methods, complex conditionals)"
+      - "Apply refactoring up to level 1-4 based on complexity"
+      - "Re-run tests to confirm still GREEN"
+      - "Commit if refactoring is significant or complete component"
+
+  levels:
+    level_0:
+      name: "No Refactoring (Pre-refactoring or Interface)"
+      description: "Directory structure or interface definitions"
+      examples: ["Create folders", "Define Protocol interfaces"]
+
+    level_1:
+      name: "Foundation Refactoring (Readability)"
+      description: "Extract variables/constants, rename for clarity"
+      examples:
+        - "Extract validation error messages as constants"
+        - "Rename ambiguous variable names"
+        - "Extract magic numbers to named constants"
+      when: "After any test passes if readability suffers"
+
+    level_2:
+      name: "Complexity Reduction (Simplification)"
+      description: "Extract methods, inline trivial methods"
+      examples:
+        - "Extract validation logic to separate method"
+        - "Extract tie-breaker logic to helper method"
+        - "Extract damage calculation to helper method"
+      when: "Methods exceed 10 lines or have multiple responsibilities"
+
+    level_3:
+      name: "Responsibility Organization"
+      description: "Extract classes, move methods to appropriate classes"
+      examples:
+        - "Extract counter-attack logic to separate class if CombatRound exceeds 50 lines"
+        - "Move related methods to cohesive classes"
+      when: "Classes exceed 100 lines or have multiple responsibilities"
+
+    level_4:
+      name: "Abstraction Refinement"
+      description: "Extract interfaces, apply design patterns"
+      examples:
+        - "Extract common behavior to shared interface"
+        - "Apply Strategy pattern if many conditionals"
+      when: "Multiple implementations of similar behavior emerge"
+
+  when_to_refactor:
+    - "After unit tests pass (before moving to next component)"
+    - "After E2E validation (when scenarios pass)"
+    - "When duplication emerges (DRY principle)"
+    - "NEVER when tests are RED"
+
+  when_not_to_refactor:
+    - "During RED phase (test failing)"
+    - "Between RED and GREEN (implementing minimal code)"
+    - "When tests are not comprehensive"
+    - "Under time pressure without test safety net"
+
+  strict_discipline_enforcement:
+    golden_rule: "NEVER refactor when tests are RED - this is non-negotiable"
+
+    what_if_you_accidentally_refactor_during_red:
+      step_1: "STOP immediately when you realize tests are RED"
+      step_2: "Run: git status (see what files changed during RED phase)"
+      step_3: "Run: git diff (review all refactoring changes made)"
+      step_4: "Run: git checkout -- <files> (revert ALL refactoring changes)"
+      step_5: "Alternative if uncommitted: git reset --hard HEAD (nuclear option - reverts everything)"
+      step_6: "Return to making tests GREEN first (implement minimal code)"
+      step_7: "ONLY AFTER GREEN, redo refactoring properly with passing tests"
+
+    why_this_matters: |
+      Refactoring during RED phase creates diagnostic confusion:
+
+      If tests FAIL after making changes while RED, you cannot determine:
+      - Is the implementation incorrect? (logic bug)
+      - Did refactoring break something? (structural bug)
+      - Are both implementation AND refactoring broken? (multiple bugs)
+
+      This violates the fundamental principle of scientific method:
+      Change ONE variable at a time to isolate cause-effect relationships.
+
+      Separate concerns for clarity:
+      - RED → GREEN: Make it work (focus: correctness of behavior)
+      - GREEN → REFACTOR: Make it better (focus: quality of design)
+      - REFACTOR → GREEN: Verify still works (focus: preservation of behavior)
+
+      This separation ensures you ALWAYS know what broke tests.
+      If tests fail after refactoring from GREEN, you know refactoring broke it.
+      If tests fail during RED → GREEN, you know implementation is wrong.
+
+    exception_that_proves_the_rule:
+      case: "Renaming test file or reorganizing test structure during RED"
+      allowed: true
+      rationale: "Test organization changes don't affect test outcomes - test code is not production code"
+      example: "Renaming test_character.py → test_character_creation.py is safe during RED"
+      boundary: "Only test file names/locations - NEVER production code during RED"
+
+    recovery_checklist:
+      - "[ ] Tests are RED (failing)"
+      - "[ ] I realize I refactored production code"
+      - "[ ] Run: git status (see changed files)"
+      - "[ ] Run: git diff (confirm refactoring changes)"
+      - "[ ] Run: git checkout -- <production-files> (revert refactoring)"
+      - "[ ] Run: pytest (verify tests still RED for right reason)"
+      - "[ ] Implement minimal code to make tests GREEN"
+      - "[ ] Run: pytest (verify tests GREEN)"
+      - "[ ] NOW refactor with confidence (tests GREEN)"
+      - "[ ] Run: pytest (verify tests still GREEN after refactoring)"
+
+# ============================================================================
+# MIKADO METHOD INTEGRATION
+# ============================================================================
+
+mikado_integration:
+  applicable: false
+  reason: |
+    This is greenfield implementation, not refactoring existing code.
+
+    Mikado Method is used for complex refactoring with dependency graphs.
+    This roadmap uses Outside-In TDD for new implementation.
+
+    If refactoring emerges during implementation (e.g., restructuring after tests pass),
+    use progressive refactoring levels 1-4 instead of Mikado Method.
+
+# ============================================================================
+# QUALITY GATES
+# ============================================================================
+
+quality_gates:
+  mandatory:
+    test_execution:
+      - gate: "All 9 E2E acceptance tests PASS"
+        validation: "pytest tests/e2e/ -v → 9 passed"
+      - gate: "All unit tests PASS (20-25 tests expected)"
+        validation: "pytest tests/unit/ -v → 20-25 passed"
+      - gate: "No skipped tests in execution"
+        validation: "pytest tests/ -v → 0 skipped"
+
+    test_coverage:
+      - gate: "100% domain logic test coverage"
+        validation: "pytest tests/ --cov=modules/domain --cov-report=term-missing → 100%"
+
+    architecture_validation:
+      - gate: "Hexagonal architecture folder structure validated"
+        validation: "Directory structure matches design: domain/, infrastructure/, application/"
+      - gate: "Domain layer has ZERO external dependencies"
+        validation: "No imports of pytest, random, or I/O in modules/domain/"
+      - gate: "Dependency direction correct: CLI → Application → Domain"
+        validation: "Check imports flow inward, no circular dependencies"
+
+    immutability_validation:
+      - gate: "All value objects use @dataclass(frozen=True)"
+        validation: "grep '@dataclass' modules/domain/model/ | grep -v 'frozen=True' → EMPTY"
+      - gate: "Character has NO setters"
+        validation: "grep 'def set' modules/domain/model/character.py → EMPTY"
+      - gate: "receive_damage returns new instance"
+        validation: "Test validates original unchanged, new instance returned"
+
+    production_service_integration:
+      - gate: "Acceptance tests call REAL production services"
+        validation: "No Mock() calls in tests/e2e/test_combat_simulation.py"
+      - gate: "Only FixedDiceRoller is test double"
+        validation: "All other components are production code, not mocks"
+
+# ============================================================================
+# COMMIT MESSAGE CONVENTIONS
+# ============================================================================
+
+commit_message_formats:
+  pre_refactoring:
+    format: "refactor(level-0): <description>"
+    example: "refactor(level-0): Setup hexagonal architecture directory structure"
+
+  tdd_implementation:
+    format: "feat(<component>): <description>"
+    example: "feat(domain): Implement Character value object with immutability"
+
+  refactoring_transformation:
+    format: "refactor(level-N): <description>"
+    example: "refactor(level-2): Extract validation logic to helper method"
+
+  all_include:
+    - "Tests: <count> unit tests PASS"
+    - "E2E: <scenarios> now PASS (was SKIP)"
+    - "Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+
+# ============================================================================
+# EXECUTION INSTRUCTIONS
+# ============================================================================
+
+execution_instructions:
+  workflow_per_step:
+    - "Read step acceptance_criteria and implementation_notes"
+    - "Follow tdd_workflow: outer_loop_e2e → inner_loop_unit → return_to_e2e"
+    - "Run E2E tests to see current state (scenarios SKIP)"
+    - "Create unit test file for component"
+    - "Write failing unit tests (RED phase)"
+    - "Implement minimal code to pass unit tests (GREEN phase)"
+    - "Apply refactoring if needed (refactoring_after_green)"
+    - "Run E2E tests to validate progress (scenarios PASS)"
+    - "Commit with appropriate commit message format"
+    - "Move to next step"
+
+  test_execution_commands:
+    run_all_e2e: "pytest tests/e2e/ -v"
+    run_all_unit: "pytest tests/unit/ -v"
+    run_all_tests: "pytest tests/ -v"
+    run_with_coverage: "pytest tests/ --cov=modules --cov-report=html"
+    run_specific_scenario: "pytest tests/e2e/test_combat_simulation.py::test_<scenario_name> -v"
+
+  build_and_validate:
+    before_commit:
+      - "pytest tests/ -v → All tests PASS"
+      - "pytest tests/ --cov=modules/domain --cov-report=term-missing → 100% coverage"
+      - "Verify no skipped tests"
+
+    after_implementation:
+      - "pytest tests/e2e/ -v → 9 passed"
+      - "pytest tests/unit/ -v → 20-25 passed"
+      - "pytest tests/ --cov=modules --cov-report=html → 100% domain coverage"
+
+# ============================================================================
+# SCENARIO MAPPING MATRIX
+# ============================================================================
+
+scenario_mapping:
+  scenario_1:
+    name: "Full combat with attacker advantage enforcement"
+    type: "SUCCESS PATH (Integration)"
+    components_required: ["Character", "InitiativeResolver", "AttackResolver", "CombatRound", "CombatSimulator"]
+    passing_after_step: "3.1"
+
+  scenario_2:
+    name: "Character with higher agility wins initiative"
+    type: "SUCCESS PATH"
+    components_required: ["Character", "InitiativeResolver"]
+    passing_after_step: "2.1"
+
+  scenario_3:
+    name: "Attacker kills defender - no counter-attack occurs"
+    type: "SUCCESS PATH (Edge Case)"
+    components_required: ["Character", "AttackResolver", "CombatRound"]
+    passing_after_step: "2.3"
+
+  scenario_4:
+    name: "Defender survives and counter-attacks"
+    type: "SUCCESS PATH"
+    components_required: ["Character", "AttackResolver", "CombatRound"]
+    passing_after_step: "2.3"
+
+  scenario_5:
+    name: "Character immutability during combat"
+    type: "SUCCESS PATH"
+    components_required: ["Character"]
+    passing_after_step: "1.2"
+
+  scenario_6:
+    name: "Derived agility reflects current health"
+    type: "SUCCESS PATH"
+    components_required: ["Character"]
+    passing_after_step: "1.2"
+
+  scenario_7:
+    name: "Character creation fails with empty name"
+    type: "ERROR PATH"
+    components_required: ["Character"]
+    passing_after_step: "1.2"
+
+  scenario_8:
+    name: "Dead character cannot initiate attack"
+    type: "ERROR PATH"
+    components_required: ["Character", "AttackResolver"]
+    passing_after_step: "2.2"
+
+  scenario_9:
+    name: "Initiative tie resolved by first character rule"
+    type: "ERROR PATH"
+    components_required: ["Character", "InitiativeResolver"]
+    passing_after_step: "2.1"
+
+# ============================================================================
+# METADATA
+# ============================================================================
+
+metadata:
+  total_steps: 8
+  total_unit_tests_expected: "20-25"
+  total_e2e_scenarios: 9
+  total_components: 11
+
+  components_breakdown:
+    value_objects: ["Character", "AttackResult", "InitiativeResult", "RoundResult", "CombatResult"]
+    domain_services: ["InitiativeResolver", "AttackResolver", "CombatRound"]
+    application_services: ["CombatSimulator"]
+    ports: ["DiceRoller"]
+    infrastructure_adapters: ["RandomDiceRoller"]
+    test_doubles: ["FixedDiceRoller"]
+
+  handoff_documents:
+    input:
+      - "docs/workflow/complete-develop-wave-implementation/baseline.yaml"
+      - "docs/distill/handoff-to-develop.md"
+      - "docs/architecture/architecture-design.md"
+      - "tests/e2e/features/combat_simulation.feature"
+
+    output:
+      - "modules/domain/model/*.py (5 value objects)"
+      - "modules/domain/services/*.py (3 services)"
+      - "modules/domain/ports/*.py (1 port)"
+      - "modules/infrastructure/*.py (1 adapter)"
+      - "modules/application/*.py (1 service)"
+      - "tests/unit/domain/model/*.py (unit tests)"
+      - "tests/unit/domain/services/*.py (unit tests)"
+      - "tests/unit/application/*.py (unit tests)"
+
+  next_wave: "DELIVER (CLI presentation layer)"
+  next_agent: "feature-completion-coordinator"
+
+  roadmap_status: "READY FOR EXECUTION"
+  created_by: "software-crafter (Crafty)"
+  created_date: "2026-01-09"
+
+# ============================================================================
+# PEER REVIEW
+# ============================================================================
+
+reviews:
+  - reviewer: "software-crafter-reviewer"
+    date: "2026-01-09T14:30:00Z"
+    overall_assessment: "APPROVED"
+    review_focus:
+      - "Outside-In ATDD discipline and explicit double-loop structure"
+      - "Test-First development with RED-GREEN-REFACTOR clarity"
+      - "Domain-Driven Design with type safety and immutability"
+      - "SOLID principles application"
+      - "Hexagonal Architecture compliance"
+      - "Progressive Refactoring strategy appropriateness"
+
+    strengths:
+      - strength: "Exemplary Outside-In ATDD structure with explicit outer loop (E2E) → inner loop (unit) transitions"
+        location: "Step 1.2 (Character Value Object)"
+        impact: "Developers understand complete TDD workflow: run E2E tests → see scenarios SKIP → implement unit tests → validate E2E scenarios PASS. This is textbook Outside-In TDD."
+
+      - strength: "Comprehensive test-first discipline with clear RED-GREEN-REFACTOR phases documented"
+        location: "All steps (tdd_workflow sections)"
+        impact: "Each step explicitly states RED phase (failing tests), GREEN phase (minimal implementation), and REFACTOR phase (improvement). No ambiguity about when to write tests vs implementation."
+
+      - strength: "Domain language preservation with business-focused test naming conventions"
+        location: "Step 1.2 (test examples: test_character_creation_with_valid_attributes, test_agility_computed_from_hp_plus_attack_power)"
+        impact: "Test names express business rules ('agility computed from hp plus attack power') rather than implementation details ('test_agility_property'). Exceptional clarity for stakeholder understanding."
+
+      - strength: "Type safety enforced through frozen dataclasses and immutability requirements"
+        location: "Steps 1.2, 1.4, all value objects"
+        impact: "Architecture prevents invalid states at type level: Character is frozen, receive_damage returns new instance, no setters allowed. This is sophisticated domain modeling."
+
+      - strength: "Pre-refactoring directory structure as Level 0 established before implementation"
+        location: "Step 1.1"
+        impact: "Avoids RISK-04 (import failures) by creating hexagonal structure upfront. Smart architectural discipline - prevents rework after implementations begun."
+
+      - strength: "Proper port/adapter distinction with DiceRoller Protocol in domain, RandomDiceRoller in infrastructure"
+        location: "Steps 1.3, 1.4"
+        impact: "Clean dependency direction: infrastructure implements domain abstractions, not vice versa. Structural typing (Protocol) is correctly preferred over inheritance."
+
+      - strength: "Realistic refactoring levels (0-4) with appropriate complexity-matched guidance"
+        location: "Refactoring strategy section and per-step guidance"
+        impact: "Level 0 for structure, Level 1-2 for most components, Level 3 only for orchestration. Developers won't over-engineer trivial refactorings."
+
+      - strength: "E2E scenario mapping creates clear accountability for which scenarios pass after each step"
+        location: "Scenario mapping matrix (end of roadmap)"
+        impact: "No ambiguity about progress. Developers know exactly which 9 scenarios must PASS at end of implementation."
+
+      - strength: "Production service integration explicitly enforced in acceptance tests"
+        location: "Quality gates section (production_service_integration)"
+        impact: "Acceptance tests call REAL services, not mocks. This validates actual system behavior, not test doubles."
+
+    issues_identified:
+      - issue: "Missing explicit guidance on when to run tests during RED phase"
+        severity: "MEDIUM"
+        location: "Step 1.2 (tdd_workflow inner_loop_unit section)"
+        description: |
+          The workflow shows test names but doesn't explicitly state when to RUN the tests.
+          Developers may miss the critical discipline: write failing test → run to confirm FAIL → implement.
+        recommendation: |
+          Add explicit test execution steps:
+          - "RED: Write test_character_creation... → Run pytest tests/unit/domain/model/test_character.py → CONFIRM FAIL"
+          - "GREEN: Implement Character class → Run pytest → CONFIRM GREEN"
+        required_action: "Consider adding test execution commands to each RED/GREEN transition"
+        impact_if_ignored: "Developers might implement without confirming tests actually fail first (violates TDD)"
+
+      - issue: "Compilation errors during RED phase not explicitly acknowledged"
+        severity: "MEDIUM"
+        location: "All steps (E2E workflow section: 'Scenarios 5, 6, 7 SKIP (Character import fails)')"
+        description: |
+          The roadmap states 'import fails' but doesn't explicitly acknowledge that compilation errors ARE failing tests in Python.
+          A developer might think 'wait, this won't even run' and skip writing the test.
+        recommendation: |
+          Add explicit statement in execution instructions or per-step guidance:
+          "In Python, import failures and attribute errors count as test failures.
+          This is part of the RED phase - it's expected and desired.
+          When test file has 'from modules.domain.model import Character'
+          and Character doesn't exist yet, that's a RED state.
+          Write minimal code to import Character and the test will progress to next failure."
+        required_action: "Add Python-specific TDD guidance about compilation as test failure"
+        impact_if_ignored: "Developers new to Python TDD might misunderstand RED phase behavior"
+
+      - issue: "AttackResult, InitiativeResult, RoundResult dataclasses not explicitly scoped in roadmap"
+        severity: "LOW"
+        location: "Steps 2.1, 2.2, 2.3 (service implementations)"
+        description: |
+          These result types are created implicitly during service implementation but not given dedicated sub-steps.
+          Makes it unclear where to create them (which file, which module).
+        recommendation: |
+          In each service step, add explicit sub-instruction:
+          "Step 2.1a: Create InitiativeResult dataclass
+           - File: modules/domain/model/initiative_result.py
+           - Fields: attacker, defender, attacker_roll, defender_roll, attacker_total, defender_total"
+          This prevents ambiguity about where these types live.
+        required_action: "Optional: Add explicit dataclass creation steps for clarity"
+        impact_if_ignored: "Developers might create result types in wrong module or inconsistently"
+
+      - issue: "Refactoring discipline emphasis needed for team with varying TDD maturity"
+        severity: "LOW"
+        location: "Refactoring strategy section"
+        description: |
+          The section states 'refactor only when GREEN' but this can be hard to enforce in practice.
+          Teams sometimes slip and refactor during RED phase when stuck.
+        recommendation: |
+          Add explicit enforcement guidance:
+          "CRITICAL: If you refactor during RED phase (while tests failing):
+           - Tests will likely fail for wrong reasons (mixed refactoring + implementation bugs)
+           - Revert immediately: git reset --hard HEAD
+           - Complete RED→GREEN first, then refactor with GREEN tests passing"
+        required_action: "Add anti-pattern guidance to execution instructions"
+        impact_if_ignored: "Teams might mix refactoring with implementation and lose test clarity"
+
+    critical_findings:
+      - finding: "No critical blockers identified"
+        impact: "Roadmap is architecturally sound and implementable as written"
+        mitigation: "Proceed with execution following step-by-step guidance"
+
+    test_first_discipline_assessment:
+      score: "EXCELLENT"
+      strengths:
+        - "RED-GREEN-REFACTOR cycle explicitly documented for every step"
+        - "Failing tests named and specified before implementation"
+        - "E2E outer loop properly drives unit test (inner loop) design"
+        - "Test validation sections verify tests actually run"
+      gaps:
+        - "Python-specific guidance on how import failures constitute RED phase (minor)"
+        - "No explicit 'run failing test' command between writing test and implementing (implicit but should be explicit)"
+      recommendations:
+        - "Add 'pytest tests/unit/... → FAIL (expected)' confirmation step after RED test written"
+        - "Document Python TDD terminology: 'import errors = failing tests in Python'"
+
+    domain_modeling_assessment:
+      type_safety: "EXCELLENT"
+      type_safety_notes: |
+        Character uses @dataclass(frozen=True) correctly.
+        agility and is_alive are @property (computed, immutable).
+        receive_damage returns new instance (enforces immutability).
+        Validation in __post_init__ prevents invalid Character creation.
+        This is sophisticated type-driven design.
+
+      immutability: "EXCELLENT"
+      immutability_notes: |
+        All value objects explicitly frozen.
+        No setters allowed.
+        Methods return new instances rather than mutating.
+        Quality gate validates this: 'grep def set → EMPTY'
+
+      ubiquitous_language: "EXCELLENT"
+      ubiquitous_language_notes: |
+        Domain terms used consistently: agility, attack_power, receive_damage, is_alive.
+        Test names use business language: 'character_loses_hp_when_receiving_damage'.
+        No technical jargon replaced business concepts.
+
+      recommendations:
+        - "Consider documenting expected range for attack_power (positive integer >= 1)"
+        - "Document HP semantics: 0 = dead, > 0 = alive (already clear from tests, just document)"
+
+    architecture_compliance:
+      hexagonal_pattern: "COMPLIANT"
+      hexagonal_pattern_notes: |
+        Domain layer (modules/domain/) - pure business logic
+        Ports in domain (DiceRoller Protocol)
+        Infrastructure layer (modules/infrastructure/) - adapters
+        Application layer (modules/application/) - orchestration
+        Dependency direction correct: CLI → Application → Domain
+
+      solid_principles: "WELL_APPLIED"
+      solid_principles_notes: |
+        Single Responsibility: Each service has one reason to change
+        - InitiativeResolver: only handles initiative calculation
+        - AttackResolver: only handles attack resolution
+        - CombatRound: only orchestrates one round
+        Open/Closed: Extensible without modification
+        - New attack types don't require modifying AttackResolver
+        Liskov Substitution: DiceRoller implementations interchangeable
+        - FixedDiceRoller and RandomDiceRoller satisfy Protocol
+        Interface Segregation: DiceRoller has single method (roll)
+        Dependency Inversion: Services depend on DiceRoller Protocol (abstraction)
+
+      dependency_direction: "CORRECT"
+      dependency_direction_notes: |
+        Infrastructure → Application → Domain (inward dependency)
+        Domain depends on nothing (pure business logic)
+        Application depends on domain services
+        Infrastructure depends on domain abstractions
+        Circular dependencies prevented by architecture
+
+      issues: []
+
+    refactoring_strategy_assessment:
+      levels_appropriate: true
+      levels_appropriate_notes: |
+        Level 0: Pre-refactoring (directory structure) - correct timing
+        Level 1: Foundation (constants, renames) - appropriate for Character validation
+        Level 2: Complexity reduction (method extraction) - appropriate for services
+        Level 3: Responsibility organization - only for CombatRound if needed
+        Level 4: Abstraction refinement - explicitly cautioned (use only if warranted)
+        No premature pattern application - disciplined approach.
+
+      discipline_enforced: true
+      discipline_enforced_notes: |
+        "Refactor only when GREEN" is stated clearly.
+        Anti-pattern guidance provided: no refactoring during RED.
+        Refactoring examples matched to component complexity.
+        CRITICAL sections emphasize test safety.
+
+      recommendations:
+        - "Add explicit enforcement: if tests RED during refactoring, immediately revert"
+        - "Document when Level 4 (abstraction refinement) is justified (not needed for this roadmap)"
+
+    ready_for_execution: true
+    conditions_for_approval:
+      - "Developers understand Outside-In ATDD (read Step 1.2 tdd_workflow completely)"
+      - "Development environment has pytest configured (verify with: pytest --version)"
+      - "Frozen dataclasses work with Python version (use @dataclass(frozen=True), not frozen attr syntax)"
+      - "Import paths verified (run: python -c 'import modules.domain' to confirm PYTHONPATH)"
+
+    final_verdict: |
+      APPROVED FOR EXECUTION
+
+      This is an exemplary roadmap demonstrating mastery of Outside-In ATDD, domain-driven design,
+      and hexagonal architecture. The structure ensures developers follow correct TDD discipline:
+      E2E tests drive unit tests, which drive implementation. Domain modeling with immutability
+      and type safety prevents invalid states. Architectural layering enforces clean dependencies.
+
+      Key strengths:
+      ✅ Outside-In ATDD explicitly structured with E2E → unit → E2E transitions
+      ✅ Test-first discipline clear: RED-GREEN-REFACTOR in every step
+      ✅ Domain language preserved: business-focused test names
+      ✅ Type safety enforced: frozen dataclasses, immutability, no setters
+      ✅ Hexagonal architecture: ports in domain, adapters in infrastructure
+      ✅ Progressive refactoring: Level 0-3 matched to component complexity
+      ✅ Quality gates: explicit validation of test pass rates, coverage, immutability
+      ✅ Scenario mapping: clear accountability for which scenarios pass after each step
+
+      Minor gaps (non-blocking):
+      ℹ️ Add explicit test execution commands ("pytest → FAIL" confirmation)
+      ℹ️ Document Python TDD semantics: import failures = RED phase
+      ℹ️ Clarify where result dataclasses are created (implicitly during service steps)
+
+      Risk assessment: LOW
+      - Roadmap complexity is appropriate for scope (8 steps, 20-25 tests, 9 E2E scenarios)
+      - Team familiarity with TDD should be validated before execution
+      - Python PYTHONPATH and pytest configuration should be verified upfront
+
+      Proceed with implementation. Developers following this roadmap will produce production-ready,
+      well-tested, domain-driven code with clean hexagonal architecture.
