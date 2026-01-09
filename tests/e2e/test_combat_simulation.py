@@ -339,15 +339,15 @@ def verify_rounds_recorded(combat_context):
 def verify_attacker_advantage(combat_context):
     """Validate attacker advantage rule enforcement.
 
-    Business rule validation: If defender dies, defender_damage must be 0
+    Business rule validation: If defender dies, defender_action must be None
     (dead character cannot counter-attack).
     """
     result = combat_context["combat_result"]
     for round_result in result.rounds:
         if round_result.defender_hp_after == 0:
-            # Defender died - should have no counter-attack damage
-            msg = f"Round {round_result.round_number}: Dead defender dealt damage (should be 0)"
-            assert round_result.defender_damage == 0, msg
+            # Defender died - should have no counter-attack
+            msg = f"Round {round_result.round_number}: Dead defender counter-attacked"
+            assert round_result.defender_action is None, msg
 
 
 @then(parsers.parse('"{name}" wins initiative with total {total:d}'))
@@ -409,7 +409,7 @@ def verify_no_counter_attack_damage(combat_context):
     """
     result = combat_context["combat_result"]
     final_round = result.rounds[-1]
-    assert final_round.defender_damage == 0, "Defender died, should not have dealt damage"
+    assert final_round.defender_action is None, "Dead defender should not counter-attack"
 
 
 @then("combat ended after attacker attack with no counter-attack")
@@ -422,7 +422,7 @@ def verify_immediate_combat_end(combat_context):
     final_round = result.rounds[-1]
     assert final_round.combat_ended, "Combat should have ended"
     assert final_round.defender_hp_after == 0, "Defender should be dead"
-    assert final_round.defender_damage == 0, "Dead defender cannot counter-attack"
+    assert final_round.defender_action is None, "Dead defender cannot counter-attack"
 
 
 @then(parsers.parse('"{name}" survives the attacker strike with {hp:d} HP'))
@@ -432,9 +432,11 @@ def verify_defender_survives(name: str, hp: int, combat_context):
     Business rule validation: HP reduced correctly, defender still alive.
     """
     round_result = combat_context["round_result"]
-    assert round_result.defender.name == name
+    # Defender is embedded in attacker_action.defender_after
+    defender_after = round_result.attacker_action.defender_after
+    assert defender_after.name == name
     assert round_result.defender_hp_after == hp
-    assert round_result.defender.is_alive
+    assert defender_after.is_alive
 
 
 @then(parsers.parse('"{name}" counter-attacks dealing {damage:d} damage'))
@@ -444,15 +446,19 @@ def verify_counter_attack_damage(name: str, damage: int, combat_context):
     Business rule validation: Damage = attack_power + dice_roll.
     """
     round_result = combat_context["round_result"]
-    assert round_result.defender.name == name
-    assert round_result.defender_damage == damage
+    # Defender counter-attack is in defender_action
+    assert round_result.defender_action is not None, "Defender should counter-attack"
+    assert round_result.defender_action.attacker_name == name
+    assert round_result.defender_action.total_damage == damage
 
 
 @then(parsers.parse('"{name}" has {hp:d} HP after the round'))
 def verify_hp_after_round(name: str, hp: int, combat_context):
     """Validate HP after complete round."""
     round_result = combat_context["round_result"]
-    if round_result.attacker.name == name:
+    # Check attacker name from attacker_action
+    attacker_name = round_result.attacker_action.attacker_name
+    if attacker_name == name:
         assert round_result.attacker_hp_after == hp
     else:
         assert round_result.defender_hp_after == hp

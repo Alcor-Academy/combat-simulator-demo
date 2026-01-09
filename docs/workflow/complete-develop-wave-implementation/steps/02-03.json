@@ -9,6 +9,8 @@
   "estimated_hours": 0.75,
   "estimated_minutes": 45,
   "dependencies": ["02-02"],
+  "state": "IN_PROGRESS",
+  "started_at": "2026-01-09T00:00:00Z",
   "result_dataclass_required": {
     "name": "RoundResult",
     "location": "modules/domain/model/round_result.py",
