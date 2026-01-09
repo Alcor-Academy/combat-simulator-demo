@@ -86,6 +86,8 @@
     "03-01: Uses AttackResult indirectly - RoundResult composition includes attack outcomes from this step",
     "02-03 prerequisite: AttackResult must be fully implemented and tested before CombatRound can be integrated with it"
   ],
+  "state": "IN_PROGRESS",
+  "execution_start": "2026-01-09T15:00:00Z",
   "reviews": [
     {
       "reviewer": "software-crafter-reviewer (Lyra)",
