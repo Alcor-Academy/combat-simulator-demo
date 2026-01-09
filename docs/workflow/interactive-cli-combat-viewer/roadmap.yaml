@@ -1,0 +1,1880 @@
+# DEVELOP Wave Roadmap: Interactive CLI Combat Viewer
+# Methodology: Outside-In TDD (E2E Test → Implementation → Validation)
+# Architecture: Hexagonal (CLI as Infrastructure Adapter)
+# Created: 2026-01-09
+# Version: 1.0
+
+project:
+  id: interactive-cli-combat-viewer
+  name: Interactive CLI Combat Viewer
+  goal: Implement user-facing CLI with Rich library using Outside-In TDD
+  methodology: outside-in-tdd
+  architecture: hexagonal
+  created: 2026-01-09
+  estimated_duration: 22-36 hours (3-5 days)
+
+baseline_context:
+  type: greenfield_feature
+  problem_statement: No user-facing interface exists for combat simulator. All interaction via automated tests only.
+  current_state:
+    domain_layer: COMPLETE
+    application_layer: COMPLETE
+    infrastructure_layer: PARTIAL (RandomDiceRoller only)
+    presentation_layer: MISSING (this feature)
+  baseline_measurement: N/A (greenfield - no existing workflow to measure)
+  success_criteria:
+    - All FR-01 to FR-08 functional requirements implemented
+    - All NFR-01 to NFR-06 non-functional requirements met
+    - All 31 E2E acceptance tests passing
+    - 80%+ unit test coverage for CLI components
+    - Manual cross-platform validation (Windows, macOS, Linux)
+
+phases:
+  - id: phase-1
+    name: "Phase 1: Baseline - Minimum Viable CLI"
+    description: "Prove hexagonal architecture wiring works end-to-end with hardcoded characters"
+    purpose: "Validate CLI → Application → Domain integration before investing in user input"
+    estimated_hours: 2-4
+    deliverable: "Working CLI that runs one combat and displays winner (plain text, no colors/emoji)"
+
+    steps:
+      - number: "1.1"
+        name: "Enable E2E Test 1.1 (Baseline Combat)"
+        description: |
+          Enable first acceptance test to drive development.
+
+          Test file: tests/e2e/test_cli_combat.py
+          Feature: tests/e2e/features/cli_combat.feature
+
+          Enable test scenario:
+          - Scenario: "User creates both characters with manual input" (first test, adapted for baseline)
+          - OR create temporary baseline scenario: "Baseline CLI runs hardcoded combat"
+
+          Test structure:
+          - Given: CLI launches with hardcoded characters (Hero 50/10, Villain 40/8)
+          - When: Combat executes
+          - Then: Winner displayed, program exits successfully
+
+          Implementation:
+          - Mark test with @pytest.mark.wip (work in progress)
+          - Write step definitions in test_cli_combat.py
+          - Step: launch_cli_with_hardcoded_characters()
+          - Step: verify_winner_displayed()
+          - Step: verify_exit_code_0()
+
+          Validation:
+          - pytest tests/e2e/test_cli_combat.py::test_baseline -v
+          - Test FAILS initially (red phase - CLI doesn't exist)
+        motivation: |
+          Outside-In TDD starts with failing E2E test. This test defines what "working CLI" means
+          before writing any implementation. Ensures we build exactly what's needed, no more.
+        estimated_hours: 0.5
+        dependencies: []
+        acceptance_criteria:
+          - "Test file exists: tests/e2e/test_cli_combat.py"
+          - "Baseline scenario defined in cli_combat.feature"
+          - "Step definitions created (launch, verify winner, verify exit)"
+          - "pytest runs test and FAILS (red phase) with clear error"
+          - "Error message indicates missing CLI entry point"
+        test_driven_by: "E2E Test 1.1 (Baseline Combat)"
+
+      - number: "1.2"
+        name: "Create CLI Package Structure"
+        description: |
+          Create directory structure and package initialization for CLI components.
+
+          Create directories:
+          - modules/infrastructure/cli/
+
+          Create files:
+          - modules/infrastructure/cli/__init__.py (empty for now)
+          - modules/infrastructure/cli/main.py (stub with run_cli function)
+          - modules/infrastructure/cli/config.py (CLIConfig dataclass)
+
+          CLIConfig implementation:
+          ```python
+          from dataclasses import dataclass, field
+
+          @dataclass(frozen=True)
+          class CLIConfig:
+              # Timing delays (seconds)
+              initiative_roll_delay: float = 1.0
+              initiative_winner_delay: float = 1.5
+              round_header_delay: float = 0.5
+              attack_delay: float = 1.5
+              death_delay: float = 2.0
+              round_separator_delay: float = 0.5
+              exit_delay: float = 2.0
+
+              # Display settings
+              emoji_enabled: bool = True
+              colors_enabled: bool = True
+
+              @staticmethod
+              def test_mode() -> "CLIConfig":
+                  """Zero delays for testing."""
+                  return CLIConfig(
+                      initiative_roll_delay=0.0,
+                      initiative_winner_delay=0.0,
+                      round_header_delay=0.0,
+                      attack_delay=0.0,
+                      death_delay=0.0,
+                      round_separator_delay=0.0,
+                      exit_delay=0.0,
+                  )
+          ```
+
+          CLI Main stub:
+          ```python
+          def run_cli() -> None:
+              """CLI entry point - stub implementation."""
+              print("CLI starting... (placeholder)")
+              # TODO: Implement character creation, combat, visualization
+          ```
+
+          Top-level convenience script:
+          - Create cli.py in project root
+          - Import and call run_cli()
+
+          Validation:
+          - python -m modules.infrastructure.cli.main (runs without error)
+          - python cli.py (runs without error)
+          - pytest tests/e2e/test_cli_combat.py::test_baseline -v
+          - Test still FAILS but error changes (CLI exists but doesn't create characters)
+        motivation: |
+          Infrastructure skeleton enables incremental development. CLIConfig with test_mode()
+          is critical for fast E2E tests (zero delays). Validates basic module structure works.
+        estimated_hours: 0.5
+        dependencies: ["1.1"]
+        acceptance_criteria:
+          - "Directory modules/infrastructure/cli/ exists"
+          - "CLIConfig dataclass defined with all timing constants"
+          - "CLIConfig.test_mode() returns zero delays"
+          - "run_cli() function exists in main.py"
+          - "Top-level cli.py script works"
+          - "python -m modules.infrastructure.cli.main runs without import errors"
+          - "E2E test error changes (CLI exists but incomplete)"
+        test_driven_by: "E2E Test 1.1 (Baseline Combat)"
+
+      - number: "1.3"
+        name: "Implement ConsoleOutput (Rich Wrapper)"
+        description: |
+          Create thin wrapper around Rich Console for output with timing control.
+
+          File: modules/infrastructure/cli/console_output.py
+
+          Implementation:
+          ```python
+          from rich.console import Console
+          from modules.infrastructure.cli.config import CLIConfig
+          import time
+
+          class ConsoleOutput:
+              """Wraps Rich Console with timing control."""
+
+              def __init__(self, console: Console, config: CLIConfig):
+                  self._console = console
+                  self._config = config
+
+              def print(self, text: str, style: str = "", end: str = "\n") -> None:
+                  """Print text with optional styling."""
+                  if style:
+                      self._console.print(text, style=style, end=end)
+                  else:
+                      self._console.print(text, end=end)
+
+              def display_with_delay(self, message: str, delay: float) -> None:
+                  """Display message and pause."""
+                  self._console.print(message)
+                  if delay > 0:
+                      time.sleep(delay)
+
+              def prompt_continue(self, message: str) -> None:
+                  """Block until user presses ENTER."""
+                  self._console.input(message)
+          ```
+
+          Unit tests:
+          - File: tests/unit/infrastructure/cli/test_console_output.py
+          - Test: test_print_without_style()
+          - Test: test_print_with_style()
+          - Test: test_display_with_delay_respects_duration()
+          - Test: test_display_with_delay_zero_in_test_mode()
+          - Test: test_prompt_continue_blocks()
+
+          Test implementation pattern:
+          ```python
+          def test_display_with_delay_zero_in_test_mode():
+              mock_console = Mock(spec=Console)
+              config = CLIConfig.test_mode()
+              output = ConsoleOutput(mock_console, config)
+
+              start = time.time()
+              output.display_with_delay("Test message", 0.0)
+              elapsed = time.time() - start
+
+              assert elapsed < 0.01  # No delay
+              mock_console.print.assert_called_once()
+          ```
+
+          Validation:
+          - pytest tests/unit/infrastructure/cli/test_console_output.py -v
+          - All unit tests PASS (5/5)
+          - Code coverage > 90% for console_output.py
+        motivation: |
+          ConsoleOutput abstracts Rich Console for testability. CLIConfig integration enables
+          zero-delay test mode (critical for fast CI/CD). This component used by all other CLI parts.
+        estimated_hours: 1.5
+        dependencies: ["1.2"]
+        acceptance_criteria:
+          - "ConsoleOutput class exists in console_output.py"
+          - "print() method wraps Rich Console.print()"
+          - "display_with_delay() respects config timing"
+          - "prompt_continue() blocks on Console.input()"
+          - "Unit tests pass (5 tests minimum)"
+          - "Test mode validation: zero delays confirmed"
+          - "Code coverage > 90%"
+        test_driven_by: "Unit tests for ConsoleOutput"
+
+      - number: "1.4"
+        name: "Implement Basic CombatRenderer (Plain Text)"
+        description: |
+          Create CombatRenderer for formatting combat output (no colors/emoji yet).
+
+          File: modules/infrastructure/cli/combat_renderer.py
+
+          Implementation:
+          ```python
+          from modules.domain.model.combat_result import CombatResult
+          from modules.infrastructure.cli.console_output import ConsoleOutput
+          from modules.infrastructure.cli.config import CLIConfig
+
+          class CombatRenderer:
+              """Formats combat events for display."""
+
+              def __init__(self, console: ConsoleOutput, config: CLIConfig):
+                  self._console = console
+                  self._config = config
+
+              def render_combat(self, result: CombatResult) -> None:
+                  """Render complete combat (plain text for baseline)."""
+                  self._render_initiative(result.initiative_result)
+
+                  for round_result in result.rounds:
+                      self._render_round(round_result)
+
+                  self._render_victory(result)
+
+              def _render_initiative(self, init_result) -> None:
+                  """Display initiative resolution."""
+                  self._console.print("Rolling Initiative...")
+                  self._console.print(f"{init_result.attacker.name}: {init_result.attacker_total}")
+                  self._console.print(f"{init_result.defender.name}: {init_result.defender_total}")
+                  self._console.print(f"{init_result.attacker.name} attacks first!")
+                  self._console.display_with_delay("", self._config.initiative_winner_delay)
+
+              def _render_round(self, round_result) -> None:
+                  """Display single combat round."""
+                  self._console.print(f"\n=== ROUND {round_result.round_number} ===")
+                  self._console.display_with_delay("", self._config.round_header_delay)
+
+                  # Attacker action
+                  action = round_result.attacker_action
+                  self._console.print(f"{action.attacker_name} attacks!")
+                  self._console.print(f"  Damage: {action.total_damage}")
+                  self._console.print(f"  {action.defender_name}: {action.defender_old_hp} HP -> {action.defender_new_hp} HP")
+                  self._console.display_with_delay("", self._config.attack_delay)
+
+                  # Defender counter-attack (if alive)
+                  if round_result.defender_action:
+                      action = round_result.defender_action
+                      self._console.print(f"{action.attacker_name} counter-attacks!")
+                      self._console.print(f"  Damage: {action.total_damage}")
+                      self._console.print(f"  {action.defender_name}: {action.defender_old_hp} HP -> {action.defender_new_hp} HP")
+                      self._console.display_with_delay("", self._config.attack_delay)
+                  else:
+                      self._console.print(f"{round_result.attacker_action.defender_name} has been defeated!")
+                      self._console.display_with_delay("", self._config.death_delay)
+
+              def _render_victory(self, result: CombatResult) -> None:
+                  """Display victory announcement."""
+                  self._console.print(f"\n=== {result.winner.name.upper()} WINS! ===")
+                  self._console.print(f"Combat lasted {result.total_rounds} rounds")
+                  self._console.print(f"{result.winner.name}: {result.winner.hp} HP remaining")
+                  self._console.print(f"{result.loser.name}: 0 HP (defeated)")
+                  self._console.prompt_continue("\nPress ENTER to exit...")
+          ```
+
+          Unit tests:
+          - File: tests/unit/infrastructure/cli/test_combat_renderer.py
+          - Test: test_render_initiative_displays_rolls()
+          - Test: test_render_round_displays_attacker_action()
+          - Test: test_render_round_displays_counter_if_alive()
+          - Test: test_render_round_no_counter_if_defender_dead()
+          - Test: test_render_victory_displays_winner()
+
+          Test pattern (using test_mode for zero delays):
+          ```python
+          def test_render_initiative_displays_rolls():
+              mock_console = Mock(spec=ConsoleOutput)
+              config = CLIConfig.test_mode()
+              renderer = CombatRenderer(mock_console, config)
+
+              # Create InitiativeResult with known values
+              char1 = Character("Hero", 50, 10)
+              char2 = Character("Villain", 40, 8)
+              init_result = InitiativeResult(
+                  attacker=char1, defender=char2,
+                  attacker_roll=5, defender_roll=3,
+                  attacker_total=65, defender_total=51
+              )
+
+              renderer._render_initiative(init_result)
+
+              # Verify output contains expected text
+              calls = [str(call) for call in mock_console.print.call_args_list]
+              assert any("Hero" in str(call) for call in calls)
+              assert any("attacks first" in str(call) for call in calls)
+          ```
+
+          Validation:
+          - pytest tests/unit/infrastructure/cli/test_combat_renderer.py -v
+          - All unit tests PASS (5 tests minimum)
+          - Code coverage > 85%
+        motivation: |
+          CombatRenderer is the heart of combat visualization. Plain text implementation proves
+          rendering logic works before adding visual complexity (emoji, colors). Testable in isolation.
+        estimated_hours: 2.0
+        dependencies: ["1.3"]
+        acceptance_criteria:
+          - "CombatRenderer class exists"
+          - "render_combat() orchestrates full visualization"
+          - "_render_initiative() displays rolls and winner"
+          - "_render_round() displays attacker and defender actions"
+          - "_render_victory() displays winner and stats"
+          - "Conditional logic: counter-attack only if defender alive"
+          - "Unit tests pass (5 tests minimum)"
+          - "Code coverage > 85%"
+        test_driven_by: "Unit tests for CombatRenderer"
+
+      - number: "1.5"
+        name: "Wire CLI Main with Hardcoded Characters"
+        description: |
+          Complete CLI Main entry point with dependency injection and hardcoded characters.
+
+          File: modules/infrastructure/cli/main.py
+
+          Implementation:
+          ```python
+          from rich.console import Console
+          from modules.infrastructure.cli.console_output import ConsoleOutput
+          from modules.infrastructure.cli.combat_renderer import CombatRenderer
+          from modules.infrastructure.cli.config import CLIConfig
+          from modules.application.combat_simulator import CombatSimulator
+          from modules.domain.services.initiative_resolver import InitiativeResolver
+          from modules.domain.services.attack_resolver import AttackResolver
+          from modules.domain.services.combat_round import CombatRound
+          from modules.infrastructure.random_dice_roller import RandomDiceRoller
+          from modules.domain.model.character import Character
+
+          def run_cli() -> None:
+              """Main CLI entry point."""
+              try:
+                  # Configuration
+                  config = CLIConfig()  # Production mode (with delays)
+
+                  # Rich Console
+                  rich_console = Console()
+                  console = ConsoleOutput(rich_console, config)
+
+                  # Domain services
+                  dice_roller = RandomDiceRoller()
+                  attack_resolver = AttackResolver(dice_roller)
+                  initiative_resolver = InitiativeResolver(dice_roller)
+                  combat_round = CombatRound(attack_resolver)
+
+                  # Application service
+                  combat_simulator = CombatSimulator(initiative_resolver, combat_round)
+
+                  # CLI components
+                  renderer = CombatRenderer(console, config)
+
+                  # Welcome
+                  console.print("\n=== COMBAT SIMULATOR ===\n")
+
+                  # Hardcoded characters (Phase 1 baseline)
+                  char1 = Character("Hero", 50, 10)
+                  char2 = Character("Villain", 40, 8)
+
+                  console.print(f"Character 1: {char1.name} (HP: {char1.hp}, Attack: {char1.attack_power})")
+                  console.print(f"Character 2: {char2.name} (HP: {char2.hp}, Attack: {char2.attack_power})")
+                  console.print("")
+
+                  # Run combat
+                  result = combat_simulator.run_combat(char1, char2)
+
+                  # Display combat
+                  renderer.render_combat(result)
+
+              except KeyboardInterrupt:
+                  console.print("\n⚠️  Combat interrupted by user. Exiting...", style="yellow")
+                  import sys
+                  sys.exit(130)
+              except Exception as e:
+                  console.print(f"\n❌ Unexpected error: {e}", style="red")
+                  import sys
+                  sys.exit(1)
+
+          if __name__ == "__main__":
+              run_cli()
+          ```
+
+          Update top-level cli.py:
+          ```python
+          #!/usr/bin/env python3
+          """Convenience entry point for CLI."""
+          from modules.infrastructure.cli.main import run_cli
+
+          if __name__ == "__main__":
+              run_cli()
+          ```
+
+          Manual validation:
+          - python cli.py (runs complete combat, displays winner, waits for ENTER)
+          - Verify welcome message displays
+          - Verify hardcoded characters shown
+          - Verify combat runs (initiative, rounds, victory)
+          - Verify ENTER exits cleanly
+          - Verify CTRL-C shows interruption message
+
+          Automated validation:
+          - pytest tests/e2e/test_cli_combat.py::test_baseline -v
+          - E2E test should now PASS (green phase)
+        motivation: |
+          Dependency injection demonstrates hexagonal architecture compliance. Hardcoded characters
+          prove integration works before adding input complexity. E2E test passing validates architecture.
+        estimated_hours: 1.0
+        dependencies: ["1.4"]
+        acceptance_criteria:
+          - "run_cli() creates all dependencies via DI"
+          - "Hardcoded characters (Hero, Villain) created"
+          - "CombatSimulator called with characters"
+          - "CombatRenderer displays combat result"
+          - "KeyboardInterrupt handled gracefully"
+          - "Exception handling catches unexpected errors"
+          - "Manual test: python cli.py completes successfully"
+          - "E2E Test 1.1 PASSES (green phase)"
+        test_driven_by: "E2E Test 1.1 (Baseline Combat)"
+
+      - number: "1.6"
+        name: "Phase 1 Validation and Refactoring"
+        description: |
+          Validate Phase 1 deliverable and refactor if needed.
+
+          Validation checklist:
+          - [ ] E2E Test 1.1 passes consistently (run 5 times)
+          - [ ] All unit tests pass (console_output, combat_renderer)
+          - [ ] Manual testing on local machine works
+          - [ ] Code coverage > 80% for new CLI components
+          - [ ] No regressions in existing tests (9 E2E domain tests, 34 unit tests)
+
+          Refactoring opportunities:
+          - Extract magic strings to constants (e.g., "=== COMBAT SIMULATOR ===")
+          - Simplify render methods if overly complex
+          - Add docstrings to all public methods
+          - Type hints for all function signatures
+
+          Quality checks:
+          - Run pytest --cov=modules/infrastructure/cli tests/
+          - Run mypy modules/infrastructure/cli/ (type checking)
+          - Run pre-commit hooks (if configured)
+
+          Documentation:
+          - Add inline comments for non-obvious logic
+          - Document hardcoded character limitation (Phase 1 only)
+
+          Commit:
+          - git add modules/infrastructure/cli/ tests/unit/infrastructure/cli/ tests/e2e/
+          - git add cli.py
+          - git commit -m "feat(cli): Phase 1 - Baseline CLI with hardcoded characters
+
+          - Implement ConsoleOutput (Rich wrapper with timing control)
+          - Implement CombatRenderer (plain text visualization)
+          - Wire CLI Main with dependency injection
+          - E2E Test 1.1 passing (baseline combat)
+
+          Phase 1 delivers working CLI demonstrating hexagonal architecture integration.
+
+          Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+        motivation: |
+          Validation checkpoint ensures Phase 1 quality before proceeding. Refactoring prevents
+          technical debt accumulation. Commit captures working baseline for rollback if needed.
+        estimated_hours: 0.5
+        dependencies: ["1.5"]
+        acceptance_criteria:
+          - "E2E Test 1.1 passes 5 consecutive runs"
+          - "All unit tests pass (10+ tests)"
+          - "Code coverage > 80% for CLI components"
+          - "No regressions in existing tests"
+          - "Code quality checks pass (mypy, linting)"
+          - "Refactoring complete (docstrings, type hints)"
+          - "Git commit created with detailed message"
+        test_driven_by: "Phase 1 quality gates"
+
+  - id: phase-2
+    name: "Phase 2: Interactive Input with Validation"
+    description: "Replace hardcoded characters with Rich prompts and validation"
+    purpose: "Robust user input handling with random defaults and error recovery"
+    estimated_hours: 6-10
+    deliverable: "Full character creation flow with validation, random defaults, and error messages"
+
+    steps:
+      - number: "2.1"
+        name: "Enable E2E Tests 2.1-2.3 (Character Creation)"
+        description: |
+          Enable acceptance tests for character creation to drive Phase 2 implementation.
+
+          Tests to enable in tests/e2e/features/cli_combat.feature:
+          1. "User creates both characters with manual input"
+          2. "User uses random defaults for character attributes"
+          3. "Invalid HP input triggers validation error and re-prompt"
+          4. "Invalid attack power input triggers validation error"
+          5. "Empty name input triggers validation error"
+
+          Step definitions in tests/e2e/test_cli_combat.py:
+          - @when('I enter "{value}" for character {num} name')
+          - @when('I enter "{value}" for character {num} HP')
+          - @when('I press INVIO for character {num} HP')
+          - @then('validation error is displayed in red')
+          - @then('error message contains "{text}"')
+          - @then('I am re-prompted for character {num} {field}')
+          - @then('character {num} has name "{name}", HP {hp}, attack power {attack}, agility {agility}')
+
+          Mock input strategy:
+          - Use pytest-mock to mock Rich Prompt.ask() and IntPrompt.ask()
+          - Provide input sequences including invalid values
+          - Verify error messages displayed
+          - Verify re-prompting occurs
+
+          Example step implementation:
+          ```python
+          @when('I enter "{value}" for character 1 HP')
+          def step_enter_hp(context, value, monkeypatch):
+              # Mock Rich IntPrompt to return value
+              inputs = [value]
+              input_iter = iter(inputs)
+              monkeypatch.setattr(
+                  "rich.prompt.IntPrompt.ask",
+                  lambda *args, **kwargs: int(next(input_iter))
+              )
+          ```
+
+          Validation:
+          - pytest tests/e2e/test_cli_combat.py -k "character creation" -v
+          - Tests FAIL initially (CharacterCreator doesn't exist)
+        motivation: |
+          Outside-In TDD: E2E tests define interactive input behavior before implementation.
+          Ensures we build exactly the validation logic users need.
+        estimated_hours: 1.0
+        dependencies: ["1.6"]
+        acceptance_criteria:
+          - "5 E2E tests enabled in cli_combat.feature"
+          - "Step definitions implemented for input and validation"
+          - "Mock strategy for Rich Prompt defined"
+          - "pytest runs tests and FAILS (red phase)"
+          - "Error messages indicate missing CharacterCreator"
+        test_driven_by: "E2E Tests 2.1-2.3 (Character Creation)"
+
+      - number: "2.2"
+        name: "Implement CharacterCreator with Rich Prompts"
+        description: |
+          Create CharacterCreator for interactive character creation.
+
+          File: modules/infrastructure/cli/character_creator.py
+
+          Implementation:
+          ```python
+          from rich.prompt import Prompt, IntPrompt
+          from rich.panel import Panel
+          from modules.infrastructure.cli.console_output import ConsoleOutput
+          from modules.domain.model.character import Character
+          from modules.infrastructure.random_dice_roller import RandomDiceRoller
+
+          class CharacterCreator:
+              """Handles interactive character creation via Rich prompts."""
+
+              def __init__(self, console: ConsoleOutput, dice_roller: RandomDiceRoller):
+                  self._console = console
+                  self._dice_roller = dice_roller
+
+              def create_character(self, character_number: int) -> Character:
+                  """Create character through interactive prompts."""
+                  self._console.print(f"\n--- Create Character {character_number} ---")
+
+                  # Name prompt (required, no default)
+                  while True:
+                      name = Prompt.ask(f"Nome personaggio {character_number}")
+                      name = name.strip()
+                      if name:
+                          break
+                      else:
+                          self._console.print("❌ Name cannot be empty. Please enter a name.", style="red")
+
+                  # HP prompt (with random default)
+                  hp = self._prompt_int_with_default(
+                      prompt=f"HP [1-999, INVIO=random 20-80]",
+                      min_val=1,
+                      max_val=999,
+                      default_generator=self._random_hp,
+                      field_name="HP"
+                  )
+
+                  # Attack power prompt (with random default)
+                  attack = self._prompt_int_with_default(
+                      prompt=f"Potere d'attacco [1-99, INVIO=random 5-15]",
+                      min_val=1,
+                      max_val=99,
+                      default_generator=self._random_attack,
+                      field_name="Attack power"
+                  )
+
+                  # Create Character domain object
+                  try:
+                      character = Character(name, hp, attack)
+                  except ValueError as e:
+                      self._console.print(f"❌ Invalid character: {e}", style="red")
+                      return self.create_character(character_number)  # Retry
+
+                  # Display character confirmation
+                  self._display_character_card(character)
+
+                  return character
+
+              def _prompt_int_with_default(self, prompt: str, min_val: int, max_val: int,
+                                           default_generator, field_name: str) -> int:
+                  """Prompt for integer with validation and random default."""
+                  while True:
+                      value_str = Prompt.ask(prompt, default="")
+
+                      # Empty input → random default
+                      if value_str == "":
+                          value = default_generator()
+                          self._console.print(f"  → Random {field_name}: {value}", style="dim")
+                          return value
+
+                      # Validate integer
+                      try:
+                          value = int(value_str)
+                      except ValueError:
+                          self._console.print(f"❌ {field_name} must be a whole number. Please try again.", style="red")
+                          continue
+
+                      # Validate range
+                      if min_val <= value <= max_val:
+                          return value
+                      else:
+                          self._console.print(
+                              f"❌ {field_name} must be between {min_val} and {max_val}. Please try again.",
+                              style="red"
+                          )
+
+              def _random_hp(self) -> int:
+                  """Generate random HP [20-80] using dice roller."""
+                  # Simulate 10d6+20 for HP range [20-80]
+                  total = sum(self._dice_roller.roll() for _ in range(10))
+                  return 20 + total
+
+              def _random_attack(self) -> int:
+                  """Generate random attack [5-15] using dice roller."""
+                  # Simulate 2d6+4 for attack range [5-15]
+                  total = sum(self._dice_roller.roll() for _ in range(2))
+                  return 4 + total
+
+              def _display_character_card(self, character: Character) -> None:
+                  """Display character summary card."""
+                  card_text = f"🧙 {character.name}\n❤️  HP: {character.hp}\n⚔️  Attack: {character.attack_power}\n⚡ Agility: {character.agility}"
+
+                  panel = Panel(card_text, title="Character Created", border_style="green")
+                  self._console._console.print(panel)  # Access Rich Console directly for Panel
+          ```
+
+          Unit tests:
+          - File: tests/unit/infrastructure/cli/test_character_creator.py
+          - Test: test_create_character_with_manual_input()
+          - Test: test_create_character_with_random_hp()
+          - Test: test_create_character_with_random_attack()
+          - Test: test_invalid_name_triggers_error()
+          - Test: test_invalid_hp_triggers_error()
+          - Test: test_invalid_attack_triggers_error()
+          - Test: test_random_hp_range()
+          - Test: test_random_attack_range()
+
+          Validation:
+          - pytest tests/unit/infrastructure/cli/test_character_creator.py -v
+          - All unit tests PASS (8 tests minimum)
+        motivation: |
+          CharacterCreator encapsulates all input validation logic. Rich Prompt integration provides
+          professional UX. Random defaults use RandomDiceRoller for consistency with combat.
+        estimated_hours: 3.0
+        dependencies: ["2.1"]
+        acceptance_criteria:
+          - "CharacterCreator class exists"
+          - "create_character() returns Character domain object"
+          - "Name validation rejects empty input"
+          - "HP validation enforces range [1-999]"
+          - "Attack validation enforces range [1-99]"
+          - "INVIO generates random HP [20-80]"
+          - "INVIO generates random attack [5-15]"
+          - "Character confirmation card displayed"
+          - "Unit tests pass (8 tests minimum)"
+        test_driven_by: "E2E Tests 2.1-2.3"
+
+      - number: "2.3"
+        name: "Integrate CharacterCreator into CLI Main"
+        description: |
+          Replace hardcoded characters with CharacterCreator in main.py.
+
+          File: modules/infrastructure/cli/main.py (update)
+
+          Changes:
+          ```python
+          from modules.infrastructure.cli.character_creator import CharacterCreator
+
+          def run_cli() -> None:
+              # ... (existing setup) ...
+
+              # CLI components
+              renderer = CombatRenderer(console, config)
+              character_creator = CharacterCreator(console, dice_roller)
+
+              # Welcome
+              console.print("\n⚔️  COMBAT SIMULATOR  ⚔️\n")
+              console.print("Create two characters and watch them battle!\n")
+
+              # Interactive character creation (Phase 2)
+              char1 = character_creator.create_character(1)
+              char2 = character_creator.create_character(2)
+
+              console.print("\n--- Combat Starting ---\n")
+
+              # Run combat
+              result = combat_simulator.run_combat(char1, char2)
+
+              # Display combat
+              renderer.render_combat(result)
+
+              # ... (existing error handling) ...
+          ```
+
+          Manual validation:
+          - python cli.py
+          - Create characters manually (enter name, HP, attack)
+          - Create characters with random defaults (press INVIO for HP/attack)
+          - Test validation errors (enter 150 for HP, see error, enter 50)
+          - Verify combat runs and displays winner
+
+          Automated validation:
+          - pytest tests/e2e/test_cli_combat.py -k "character creation" -v
+          - E2E tests 2.1-2.3 should now PASS (green phase)
+        motivation: |
+          Integration proves CharacterCreator works in real CLI context. E2E tests passing validate
+          interactive input flow including validation and random defaults.
+        estimated_hours: 0.5
+        dependencies: ["2.2"]
+        acceptance_criteria:
+          - "CLI Main calls character_creator.create_character() twice"
+          - "Hardcoded characters removed"
+          - "Welcome message includes instructions"
+          - "Manual test: Create characters interactively"
+          - "Manual test: Validation errors display and re-prompt"
+          - "Manual test: Random defaults work (INVIO)"
+          - "E2E Tests 2.1-2.3 PASS"
+        test_driven_by: "E2E Tests 2.1-2.3"
+
+      - number: "2.4"
+        name: "Enable E2E Tests 2.4-2.5 (Edge Cases)"
+        description: |
+          Enable additional character creation edge case tests.
+
+          Tests to enable:
+          1. "Non-numeric HP input triggers validation error"
+          2. "Random HP values are within valid range across multiple generations"
+          3. "Random attack power values are within valid range"
+
+          Step definitions:
+          - @when('I enter "abc" for character {num} HP')
+          - @when('I create 10 characters using random HP defaults')
+          - @then('all random HP values are in range [20-80]')
+          - @then('all random attack power values are in range [5-15]')
+
+          Test implementation:
+          ```python
+          @when('I create 10 characters using random HP defaults')
+          def step_create_multiple_characters(context):
+              creator = CharacterCreator(console_output, dice_roller)
+              context.random_hp_values = []
+              for i in range(10):
+                  # Mock input: empty string for HP (random default)
+                  # Collect HP values
+                  char = creator.create_character(i+1)
+                  context.random_hp_values.append(char.hp)
+
+          @then('all random HP values are in range [20-80]')
+          def step_verify_hp_range(context):
+              for hp in context.random_hp_values:
+                  assert 20 <= hp <= 80, f"HP {hp} outside range [20-80]"
+          ```
+
+          Validation:
+          - pytest tests/e2e/test_cli_combat.py -k "random" -v
+          - Tests FAIL initially (step definitions incomplete)
+        motivation: |
+          Edge case tests ensure validation robustness and random generation correctness.
+          Critical for production reliability.
+        estimated_hours: 0.5
+        dependencies: ["2.3"]
+        acceptance_criteria:
+          - "3 additional E2E tests enabled"
+          - "Step definitions for edge cases implemented"
+          - "Random generation test creates 10 characters"
+          - "pytest runs tests (FAIL initially)"
+        test_driven_by: "E2E Tests 2.4-2.5 (Edge Cases)"
+
+      - number: "2.5"
+        name: "Enhance CharacterCreator for Edge Cases"
+        description: |
+          Ensure CharacterCreator handles all edge cases from tests.
+
+          Enhancements needed (if not already present):
+
+          1. Non-numeric input handling:
+          - Already implemented in _prompt_int_with_default() try/except ValueError
+
+          2. Random generation range validation:
+          - Add assertions in _random_hp() and _random_attack()
+          - Ensure dice_roller consistently produces [1-6] values
+
+          Updated methods:
+          ```python
+          def _random_hp(self) -> int:
+              """Generate random HP [20-80]."""
+              total = sum(self._dice_roller.roll() for _ in range(10))
+              hp = 20 + total
+              assert 20 <= hp <= 80, f"Random HP {hp} outside expected range"
+              return hp
+
+          def _random_attack(self) -> int:
+              """Generate random attack [5-15]."""
+              total = sum(self._dice_roller.roll() for _ in range(2))
+              attack = 4 + total
+              assert 5 <= attack <= 15, f"Random attack {attack} outside expected range"
+              return attack
+          ```
+
+          Additional unit tests:
+          - Test: test_non_numeric_hp_handled()
+          - Test: test_random_hp_100_iterations()
+          - Test: test_random_attack_100_iterations()
+
+          Validation:
+          - pytest tests/unit/infrastructure/cli/test_character_creator.py -v
+          - pytest tests/e2e/test_cli_combat.py -k "random" -v
+          - All tests PASS
+        motivation: |
+          Edge case handling ensures production robustness. Assertions catch dice_roller bugs early.
+          100-iteration tests validate statistical distribution.
+        estimated_hours: 1.0
+        dependencies: ["2.4"]
+        acceptance_criteria:
+          - "Non-numeric input handled gracefully"
+          - "Random HP assertions added"
+          - "Random attack assertions added"
+          - "100-iteration tests validate ranges"
+          - "All unit tests pass"
+          - "E2E Tests 2.4-2.5 PASS"
+        test_driven_by: "E2E Tests 2.4-2.5"
+
+      - number: "2.6"
+        name: "Phase 2 Validation and Refactoring"
+        description: |
+          Validate Phase 2 deliverable and refactor.
+
+          Validation checklist:
+          - [ ] All Phase 2 E2E tests pass (tests 2.1-2.5)
+          - [ ] All unit tests pass (character_creator tests)
+          - [ ] Manual testing: Create 5 characters with various inputs
+          - [ ] Manual testing: Trigger all validation errors
+          - [ ] Manual testing: Use random defaults multiple times
+          - [ ] Code coverage > 85% for CharacterCreator
+          - [ ] No regressions (Phase 1 tests still pass)
+
+          Refactoring:
+          - Simplify _prompt_int_with_default() if overly complex
+          - Extract validation error messages to constants
+          - Improve docstrings for validation logic
+          - Type hints complete
+
+          Quality checks:
+          - pytest --cov=modules/infrastructure/cli tests/
+          - mypy modules/infrastructure/cli/
+
+          Commit:
+          - git add modules/infrastructure/cli/ tests/
+          - git commit -m "feat(cli): Phase 2 - Interactive character creation with validation
+
+          - Implement CharacterCreator with Rich Prompts
+          - Add validation for name, HP, attack power
+          - Implement random defaults (INVIO behavior)
+          - Display character confirmation cards
+          - E2E Tests 2.1-2.5 passing
+
+          Phase 2 delivers robust input handling with professional UX.
+
+          Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+        motivation: |
+          Validation checkpoint ensures Phase 2 quality. Commit captures interactive input milestone.
+        estimated_hours: 0.5
+        dependencies: ["2.5"]
+        acceptance_criteria:
+          - "All Phase 2 E2E tests pass"
+          - "Code coverage > 85%"
+          - "Manual testing complete"
+          - "Refactoring done"
+          - "Git commit created"
+        test_driven_by: "Phase 2 quality gates"
+
+  - id: phase-3
+    name: "Phase 3: Visual Enhancement (Emoji, Colors, Pacing)"
+    description: "Add emoji, colors, and proper pacing to combat visualization"
+    purpose: "Professional, engaging combat display with visual polish"
+    estimated_hours: 8-12
+    deliverable: "Visually polished combat display with emoji, colors, and fixed timing"
+
+    steps:
+      - number: "3.1"
+        name: "Enable E2E Test 3.1 (Combat Visualization with Emoji)"
+        description: |
+          Enable acceptance test for combat visualization with emoji.
+
+          Test: "Combat round displays all event details with emoji"
+
+          Step definitions needed:
+          - @then('each combat round displays round number')
+          - @then('attacker action shows ⚔️ emoji')
+          - @then('attack details show dice roll with 🎲 emoji')
+          - @then('attack details show total damage with 💥 emoji')
+          - @then('HP change shows old HP → new HP with ❤️ emoji')
+          - @then('defender counter-attack shows 🛡️ emoji if defender survives')
+          - @then('death announcement shows ☠️ emoji when character dies')
+
+          Emoji detection strategy:
+          - Check if output contains emoji Unicode characters
+          - OR check for fallback text ([ATK], [DMG], etc.)
+          - Both considered valid (platform-dependent)
+
+          Example step:
+          ```python
+          @then('attacker action shows ⚔️ emoji')
+          def step_verify_attack_emoji(context):
+              output = context.cli_output
+              # Check for emoji or fallback
+              assert '⚔️' in output or '[ATK]' in output
+          ```
+
+          Validation:
+          - pytest tests/e2e/test_cli_combat.py -k "emoji" -v
+          - Test FAILS (emoji not implemented yet)
+        motivation: |
+          E2E test defines visual requirements. Emoji fallback strategy ensures cross-platform compatibility.
+        estimated_hours: 0.5
+        dependencies: ["2.6"]
+        acceptance_criteria:
+          - "E2E test 3.1 enabled"
+          - "Step definitions for emoji verification"
+          - "Fallback detection strategy implemented"
+          - "Test FAILS (red phase)"
+        test_driven_by: "E2E Test 3.1 (Emoji Visualization)"
+
+      - number: "3.2"
+        name: "Add Emoji Mapping to CLIConfig"
+        description: |
+          Extend CLIConfig with emoji and fallback mappings.
+
+          File: modules/infrastructure/cli/config.py (update)
+
+          Add emoji dictionaries:
+          ```python
+          @dataclass(frozen=True)
+          class CLIConfig:
+              # ... (existing timing fields) ...
+
+              # Emoji Configuration
+              emoji: dict[str, str] = field(default_factory=lambda: {
+                  'attack': '⚔️',
+                  'damage': '💥',
+                  'hp': '❤️',
+                  'dice': '🎲',
+                  'initiative': '⚡',
+                  'victory': '🏆',
+                  'death': '☠️',
+                  'defend': '🛡️',
+                  'character': '🧙',
+              })
+
+              fallback: dict[str, str] = field(default_factory=lambda: {
+                  'attack': '[ATK]',
+                  'damage': '[DMG]',
+                  'hp': '[HP]',
+                  'dice': '[D6]',
+                  'initiative': '[INIT]',
+                  'victory': '[WIN]',
+                  'death': '[DEAD]',
+                  'defend': '[DEF]',
+                  'character': '[CHAR]',
+              })
+
+              def get_symbol(self, key: str) -> str:
+                  """Get emoji or fallback symbol."""
+                  if self.emoji_enabled:
+                      return self.emoji.get(key, key)
+                  else:
+                      return self.fallback.get(key, key)
+          ```
+
+          Unit tests:
+          - Test: test_get_symbol_returns_emoji_when_enabled()
+          - Test: test_get_symbol_returns_fallback_when_disabled()
+          - Test: test_all_emoji_keys_have_fallbacks()
+
+          Validation:
+          - pytest tests/unit/infrastructure/cli/test_config.py -v
+        motivation: |
+          Centralized emoji configuration enables easy cross-platform adjustment. get_symbol()
+          method simplifies emoji usage in renderer.
+        estimated_hours: 0.5
+        dependencies: ["3.1"]
+        acceptance_criteria:
+          - "emoji dict with 9 entries in CLIConfig"
+          - "fallback dict with matching entries"
+          - "get_symbol() method returns emoji or fallback"
+          - "Unit tests pass (3 tests)"
+        test_driven_by: "Unit tests for CLIConfig emoji"
+
+      - number: "3.3"
+        name: "Enhance CombatRenderer with Emoji and Colors"
+        description: |
+          Update CombatRenderer to use emoji and Rich color styling.
+
+          File: modules/infrastructure/cli/combat_renderer.py (update)
+
+          Major changes:
+
+          1. Use config.get_symbol() for all emoji:
+          ```python
+          def _render_initiative(self, init_result) -> None:
+              dice_emoji = self._config.get_symbol('dice')
+              init_emoji = self._config.get_symbol('initiative')
+
+              self._console.print(f"{dice_emoji} Rolling Initiative...", style="bold cyan")
+              # ...
+              self._console.print(f"{init_emoji} {init_result.attacker.name} wins initiative and attacks first!", style="bold yellow")
+          ```
+
+          2. Add color styling to HP display:
+          ```python
+          def _hp_color(self, current_hp: int, max_hp: int) -> str:
+              """Return color based on HP percentage."""
+              pct = current_hp / max_hp
+              if pct >= 0.7:
+                  return "green"
+              elif pct >= 0.4:
+                  return "yellow"
+              elif pct >= 0.2:
+                  return "orange"
+              else:
+                  return "red"
+          ```
+
+          3. Update round rendering with full emoji and colors:
+          ```python
+          def _render_round(self, round_result) -> None:
+              # Header
+              attack_emoji = self._config.get_symbol('attack')
+              self._console.print(f"\n{'='*35}", style="dim")
+              self._console.print(f"{attack_emoji}  ROUND {round_result.round_number}", style="bold magenta")
+              self._console.print(f"{'='*35}", style="dim")
+              self._console.display_with_delay("", self._config.round_header_delay)
+
+              # Attacker action
+              action = round_result.attacker_action
+              dice_emoji = self._config.get_symbol('dice')
+              damage_emoji = self._config.get_symbol('damage')
+              hp_emoji = self._config.get_symbol('hp')
+
+              self._console.print(f"\n{attack_emoji}  {action.attacker_name} attacks!", style="bold cyan")
+              self._console.print(f"   {dice_emoji} Roll: {action.dice_roll} + ⚔️  Power: {action.attack_power} = {damage_emoji} {action.total_damage} damage", style="yellow")
+
+              hp_color = self._hp_color(action.defender_new_hp, action.defender_old_hp)
+              self._console.print(f"   {action.defender_name}: {action.defender_old_hp} HP → {action.defender_new_hp} HP", style=hp_color)
+              self._console.display_with_delay("", self._config.attack_delay)
+
+              # Defender counter-attack (if alive)
+              if round_result.defender_action:
+                  defend_emoji = self._config.get_symbol('defend')
+                  action = round_result.defender_action
+
+                  self._console.print(f"\n{defend_emoji}  {action.attacker_name} counter-attacks!", style="bold blue")
+                  self._console.print(f"   {dice_emoji} Roll: {action.dice_roll} + ⚔️  Power: {action.attack_power} = {damage_emoji} {action.total_damage} damage", style="yellow")
+
+                  hp_color = self._hp_color(action.defender_new_hp, action.defender_old_hp)
+                  self._console.print(f"   {action.defender_name}: {action.defender_old_hp} HP → {action.defender_new_hp} HP", style=hp_color)
+                  self._console.display_with_delay("", self._config.attack_delay)
+              else:
+                  death_emoji = self._config.get_symbol('death')
+                  self._console.print(f"\n{death_emoji}  {round_result.attacker_action.defender_name} has been defeated!", style="bold red dim")
+                  self._console.display_with_delay("", self._config.death_delay)
+          ```
+
+          4. Update victory rendering:
+          ```python
+          def _render_victory(self, result: CombatResult) -> None:
+              victory_emoji = self._config.get_symbol('victory')
+              death_emoji = self._config.get_symbol('death')
+
+              self._console.print(f"\n{'╔' + '═'*35 + '╗'}", style="bold yellow")
+              self._console.print(f"║  {victory_emoji}  {result.winner.name.upper()} WINS!  {victory_emoji}  ║", style="bold yellow")
+              self._console.print(f"{'╚' + '═'*35 + '╝'}", style="bold yellow")
+
+              self._console.print(f"\nCombat lasted {result.total_rounds} rounds", style="dim")
+              self._console.print(f"{result.winner.name}: {result.winner.hp} HP remaining", style="green")
+              self._console.print(f"{result.loser.name}: 0 HP {death_emoji} (defeated)", style="red dim")
+
+              self._console.prompt_continue("\nPremi INVIO per uscire (o CTRL-C per terminare)")
+          ```
+
+          Unit tests updates:
+          - Update existing tests to verify emoji in output
+          - Add test: test_hp_color_gradient()
+          - Add test: test_emoji_used_in_all_messages()
+
+          Validation:
+          - pytest tests/unit/infrastructure/cli/test_combat_renderer.py -v
+        motivation: |
+          Visual enhancements transform plain text into engaging combat narrative. HP color gradient
+          provides intuitive health status. Emoji add visual interest and cross-cultural clarity.
+        estimated_hours: 3.0
+        dependencies: ["3.2"]
+        acceptance_criteria:
+          - "All combat messages use config.get_symbol()"
+          - "_hp_color() method calculates gradient"
+          - "HP display uses color based on percentage"
+          - "Round headers use bold styling"
+          - "Victory banner uses decorative borders"
+          - "Unit tests verify emoji presence"
+          - "Manual test: Emoji display correctly"
+        test_driven_by: "E2E Test 3.1"
+
+      - number: "3.4"
+        name: "Enable E2E Test 3.2 (HP Tracking Accuracy)"
+        description: |
+          Enable test for HP tracking accuracy throughout combat.
+
+          Test: "HP tracking accuracy throughout combat"
+
+          Step definitions:
+          - @given('Hero starts with HP 50')
+          - @when('Hero attacks and deals 14 damage')
+          - @then('Villain HP changes from 40 to 26')
+          - @then('display shows "Villain: 40 HP → 26 HP"')
+
+          Implementation strategy:
+          - Mock dice rolls for deterministic damage
+          - Capture CLI output
+          - Parse HP change lines
+          - Verify exact HP values and format
+
+          Example:
+          ```python
+          @then('display shows "Villain: 40 HP → 26 HP"')
+          def step_verify_hp_display(context):
+              output = context.cli_output
+              assert "Villain: 40 HP → 26 HP" in output or "Villain: 40 HP -> 26 HP" in output
+          ```
+
+          Validation:
+          - pytest tests/e2e/test_cli_combat.py -k "HP tracking" -v
+          - Test should PASS if CombatRenderer correctly displays HP changes
+        motivation: |
+          HP tracking accuracy is critical for user trust. Test validates display matches domain logic.
+        estimated_hours: 0.5
+        dependencies: ["3.3"]
+        acceptance_criteria:
+          - "E2E test 3.2 enabled"
+          - "Step definitions for HP verification"
+          - "Output parsing strategy implemented"
+          - "Test PASSES (emoji updates made display accurate)"
+        test_driven_by: "E2E Test 3.2 (HP Tracking)"
+
+      - number: "3.5"
+        name: "Enable E2E Test 3.3 (Fixed Timing Delays)"
+        description: |
+          Enable test for fixed timing delays between events.
+
+          Test: "Combat uses fixed timing delays between rounds"
+
+          Step definitions:
+          - @when('combat executes with default timing configuration')
+          - @then('delay between rounds is approximately 1.5-2 seconds')
+          - @then('delays are consistent across all rounds')
+
+          Timing measurement strategy:
+          ```python
+          @when('combat executes with default timing configuration')
+          def step_execute_with_timing(context):
+              # Run CLI with production config (not test mode)
+              config = CLIConfig()  # Production delays
+              start = time.time()
+              # ... run combat ...
+              end = time.time()
+              context.combat_duration = end - start
+              context.expected_min_duration = calculate_expected_min(num_rounds)
+              context.expected_max_duration = calculate_expected_max(num_rounds)
+
+          @then('delay between rounds is approximately 1.5-2 seconds')
+          def step_verify_timing(context):
+              assert context.expected_min_duration <= context.combat_duration <= context.expected_max_duration
+          ```
+
+          Validation:
+          - pytest tests/e2e/test_cli_combat.py -k "timing" -v
+          - Test should PASS (delays already implemented in ConsoleOutput)
+        motivation: |
+          Timing validation ensures pacing configuration works correctly. Critical for UX quality.
+        estimated_hours: 0.5
+        dependencies: ["3.4"]
+        acceptance_criteria:
+          - "E2E test 3.3 enabled"
+          - "Timing measurement in step definitions"
+          - "Expected duration calculation"
+          - "Test PASSES (timing already correct)"
+        test_driven_by: "E2E Test 3.3 (Timing)"
+
+      - number: "3.6"
+        name: "Phase 3 Validation and Refactoring"
+        description: |
+          Validate Phase 3 deliverable and refactor.
+
+          Validation checklist:
+          - [ ] All Phase 3 E2E tests pass (3.1-3.3)
+          - [ ] Manual testing: Emoji display on local terminal
+          - [ ] Manual testing: Colors display correctly
+          - [ ] Manual testing: HP color gradient intuitive
+          - [ ] Manual testing: Timing feels natural (1.5-2s delays)
+          - [ ] Code coverage > 85% for CombatRenderer
+          - [ ] No regressions (Phase 1-2 tests pass)
+
+          Cross-platform manual testing:
+          - Windows Terminal (or CMD): Verify emoji or fallbacks
+          - macOS Terminal: Verify emoji display
+          - Linux (if available): Verify emoji display
+
+          Refactoring:
+          - Extract emoji formatting to helper methods
+          - Simplify color logic if repetitive
+          - Improve docstrings for visual methods
+
+          Quality checks:
+          - pytest --cov=modules/infrastructure/cli tests/
+          - mypy modules/infrastructure/cli/
+
+          Commit:
+          - git add modules/infrastructure/cli/ tests/
+          - git commit -m "feat(cli): Phase 3 - Visual enhancement with emoji and colors
+
+          - Add emoji mapping to CLIConfig with fallbacks
+          - Enhance CombatRenderer with emoji and color styling
+          - Implement HP color gradient (green→yellow→orange→red)
+          - Add decorative borders to victory banner
+          - E2E Tests 3.1-3.3 passing
+
+          Phase 3 delivers professional combat visualization with engaging visuals.
+
+          Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+        motivation: |
+          Validation ensures visual quality meets UX requirements. Cross-platform testing critical
+          for emoji fallback strategy validation.
+        estimated_hours: 1.0
+        dependencies: ["3.5"]
+        acceptance_criteria:
+          - "All Phase 3 E2E tests pass"
+          - "Manual cross-platform testing complete"
+          - "Emoji display validated (or fallbacks work)"
+          - "Colors display validated"
+          - "Refactoring done"
+          - "Git commit created"
+        test_driven_by: "Phase 3 quality gates"
+
+  - id: phase-4
+    name: "Phase 4: Polish (Exit, Errors, Edge Cases)"
+    description: "Production-ready refinements including exit confirmation and error handling"
+    purpose: "Handle all edge cases and provide professional finish"
+    estimated_hours: 4-6
+    deliverable: "Production-ready CLI with graceful error handling and exit confirmation"
+
+    steps:
+      - number: "4.1"
+        name: "Enable E2E Tests 4.1-4.2 (Victory and Exit)"
+        description: |
+          Enable tests for victory celebration and exit confirmation.
+
+          Tests:
+          1. "Victory celebration shows all required information"
+          2. "Exit confirmation waits for user keypress"
+          3. "CTRL-C during exit confirmation terminates program"
+
+          Step definitions:
+          - @then('victory banner includes winner name "{name}"')
+          - @then('victory banner includes 🏆 emoji')
+          - @then('combat statistics show "{rounds} rounds"')
+          - @then('program shows exit prompt "Premi INVIO per uscire (o CTRL-C per terminare)"')
+          - @then('program waits for user keypress')
+          - @when('I press INVIO')
+          - @then('program exits with code 0')
+          - @when('I press CTRL-C')
+          - @then('program exits immediately')
+          - @then('exit code is 130')
+
+          Exit code validation:
+          ```python
+          @then('program exits with code 0')
+          def step_verify_exit_code_0(context):
+              assert context.exit_code == 0
+
+          @then('exit code is 130')
+          def step_verify_exit_code_130(context):
+              assert context.exit_code == 130  # Unix convention for SIGINT
+          ```
+
+          Validation:
+          - pytest tests/e2e/test_cli_combat.py -k "exit" -v
+          - Tests should mostly PASS (victory display implemented, exit confirmation exists)
+        motivation: |
+          Exit confirmation prevents abrupt termination. CTRL-C handling ensures graceful interruption.
+          Tests validate professional CLI behavior.
+        estimated_hours: 0.5
+        dependencies: ["3.6"]
+        acceptance_criteria:
+          - "3 E2E tests enabled for victory and exit"
+          - "Step definitions for exit code validation"
+          - "Tests PASS or FAIL with clear diagnostics"
+        test_driven_by: "E2E Tests 4.1-4.2 (Exit Confirmation)"
+
+      - number: "4.2"
+        name: "Enhance Error Handling in CLI Main"
+        description: |
+          Improve error handling and exit code management.
+
+          File: modules/infrastructure/cli/main.py (update)
+
+          Enhancements:
+          ```python
+          import sys
+
+          def run_cli() -> None:
+              """Main CLI entry point with comprehensive error handling."""
+              try:
+                  # ... (existing setup and character creation) ...
+
+                  # Run combat
+                  result = combat_simulator.run_combat(char1, char2)
+
+                  # Display combat
+                  renderer.render_combat(result)
+
+                  # Normal exit (after ENTER pressed in prompt_continue)
+                  sys.exit(0)
+
+              except KeyboardInterrupt:
+                  # User pressed CTRL-C
+                  console.print("\n⚠️  Combat interrupted by user. Exiting...", style="yellow")
+                  sys.exit(130)  # Unix convention for SIGINT
+
+              except ValueError as e:
+                  # Domain validation error (should be caught by CharacterCreator, but defensive)
+                  console.print(f"\n❌ Invalid input: {e}", style="red")
+                  console.print("Please try again.", style="dim")
+                  sys.exit(1)
+
+              except Exception as e:
+                  # Unexpected error
+                  console.print(f"\n❌ Unexpected error occurred: {e}", style="red")
+                  console.print("Please report this issue.", style="dim")
+                  # In debug mode, print stack trace
+                  import traceback
+                  traceback.print_exc()
+                  sys.exit(1)
+          ```
+
+          Update KeyboardInterrupt handling in CharacterCreator:
+          ```python
+          def create_character(self, character_number: int) -> Character:
+              """Create character - propagates KeyboardInterrupt."""
+              try:
+                  # ... (existing prompts) ...
+                  return character
+              except KeyboardInterrupt:
+                  # Propagate to CLI Main for consistent handling
+                  raise
+          ```
+
+          Manual validation:
+          - python cli.py
+          - Press CTRL-C during character creation → exits with code 130
+          - Press CTRL-C during combat → exits with code 130
+          - Complete combat and press ENTER → exits with code 0
+          - Verify exit codes: echo $? (Unix) or echo %ERRORLEVEL% (Windows)
+
+          Automated validation:
+          - pytest tests/e2e/test_cli_combat.py -k "interrupt" -v
+        motivation: |
+          Proper exit code conventions enable scripting and automation. Comprehensive error handling
+          prevents stack trace leakage to users. Defensive programming for production.
+        estimated_hours: 1.0
+        dependencies: ["4.1"]
+        acceptance_criteria:
+          - "sys.exit(0) after normal completion"
+          - "sys.exit(130) after CTRL-C"
+          - "sys.exit(1) after unexpected errors"
+          - "KeyboardInterrupt propagates from CharacterCreator"
+          - "Manual test: All exit codes correct"
+          - "E2E Tests 4.1-4.2 PASS"
+        test_driven_by: "E2E Tests 4.1-4.2"
+
+      - number: "4.3"
+        name: "Enable E2E Tests 4.3-4.4 (Edge Cases)"
+        description: |
+          Enable tests for combat edge cases.
+
+          Tests:
+          1. "Extended combat displays all rounds with consistent formatting"
+          2. "Defender death prevents counter-attack display"
+          3. "Initiative tie-breaker is transparently explained"
+
+          Step definitions:
+          - @given('two balanced characters are created')
+          - @when('combat runs for 7 rounds')
+          - @then('all 7 rounds are displayed with consistent formatting')
+          - @then('no output is truncated or skipped')
+          - @given('combat will result in lethal damage to Villain in round 1')
+          - @then('Villain counter-attack is NOT displayed')
+          - @given('two characters with identical agility values')
+          - @when('initiative is rolled with identical dice results')
+          - @then('tie-breaker message is displayed')
+          - @then('tie-breaker rule explanation is shown')
+
+          Extended combat validation:
+          ```python
+          @then('all 7 rounds are displayed with consistent formatting')
+          def step_verify_all_rounds_displayed(context):
+              output = context.cli_output
+              for round_num in range(1, 8):
+                  assert f"ROUND {round_num}" in output
+          ```
+
+          Tie-breaker validation:
+          ```python
+          @then('tie-breaker message is displayed')
+          def step_verify_tiebreaker(context):
+              output = context.cli_output
+              assert "tie" in output.lower() or "equal" in output.lower()
+          ```
+
+          Validation:
+          - pytest tests/e2e/test_cli_combat.py -k "edge" -v
+          - Tests may FAIL if tie-breaker message not explicit
+        motivation: |
+          Edge case tests ensure combat display handles unusual scenarios. Extended combat validates
+          no adaptive summarization. Tie-breaker transparency builds user trust.
+        estimated_hours: 0.5
+        dependencies: ["4.2"]
+        acceptance_criteria:
+          - "3 E2E tests enabled for edge cases"
+          - "Step definitions for extended combat"
+          - "Step definitions for tie-breaker"
+          - "Tests FAIL if tie-breaker not explained"
+        test_driven_by: "E2E Tests 4.3-4.4 (Edge Cases)"
+
+      - number: "4.4"
+        name: "Add Initiative Tie-Breaker Explanation"
+        description: |
+          Enhance initiative display to explain tie-breaker rule when applicable.
+
+          File: modules/infrastructure/cli/combat_renderer.py (update)
+
+          Update _render_initiative():
+          ```python
+          def _render_initiative(self, init_result) -> None:
+              """Display initiative resolution with tie-breaker explanation."""
+              dice_emoji = self._config.get_symbol('dice')
+              init_emoji = self._config.get_symbol('initiative')
+
+              self._console.print(f"\n{dice_emoji} Rolling Initiative...", style="bold cyan")
+              self._console.display_with_delay("", self._config.initiative_roll_delay)
+
+              # Display rolls with agility
+              self._console.print(
+                  f"{init_result.attacker.name}: Base agility {init_result.attacker.agility} + {dice_emoji} {init_result.attacker_roll} = {init_result.attacker_total}",
+                  style="cyan"
+              )
+              self._console.print(
+                  f"{init_result.defender.name}: Base agility {init_result.defender.agility} + {dice_emoji} {init_result.defender_roll} = {init_result.defender_total}",
+                  style="cyan"
+              )
+
+              # Check for tie
+              if init_result.attacker_total == init_result.defender_total:
+                  self._console.print(f"\nInitiative tied at {init_result.attacker_total}!", style="yellow")
+                  if init_result.attacker.agility == init_result.defender.agility:
+                      self._console.print(f"{init_emoji} {init_result.attacker.name} wins by tie-breaker rule (first character).", style="bold yellow")
+                  else:
+                      self._console.print(f"{init_emoji} {init_result.attacker.name} wins by tie-breaker rule (higher agility).", style="bold yellow")
+              else:
+                  self._console.print(f"\n{init_emoji} {init_result.attacker.name} wins initiative and attacks first!", style="bold yellow")
+
+              self._console.display_with_delay("", self._config.initiative_winner_delay)
+          ```
+
+          Unit test:
+          - Test: test_initiative_tie_displays_explanation()
+
+          Manual validation:
+          - Create two characters with same agility (e.g., HP 30, Attack 10 both)
+          - Mock dice rolls to return same value
+          - Verify tie-breaker message displays
+
+          Automated validation:
+          - pytest tests/e2e/test_cli_combat.py -k "tie" -v
+          - Test should now PASS
+        motivation: |
+          Tie-breaker transparency eliminates user confusion. Explains why one character won despite
+          equal totals. Educational value for understanding combat mechanics.
+        estimated_hours: 1.0
+        dependencies: ["4.3"]
+        acceptance_criteria:
+          - "Initiative display shows agility values"
+          - "Tie detection logic implemented"
+          - "Tie-breaker rule explanation displayed"
+          - "Different messages for agility tie vs dice tie"
+          - "Unit test for tie-breaker"
+          - "E2E Tests 4.3-4.4 PASS"
+        test_driven_by: "E2E Test 4.4 (Tie-Breaker)"
+
+      - number: "4.5"
+        name: "Phase 4 Validation and Refactoring"
+        description: |
+          Validate Phase 4 deliverable and final polish.
+
+          Validation checklist:
+          - [ ] All Phase 4 E2E tests pass (4.1-4.4)
+          - [ ] All error handling scenarios tested manually
+          - [ ] Exit codes verified (0, 1, 130)
+          - [ ] Extended combat (10+ rounds) displays correctly
+          - [ ] Tie-breaker explanation clear and accurate
+          - [ ] Code coverage > 85% overall
+          - [ ] All phases (1-4) regression test pass
+
+          Manual testing scenarios:
+          1. Normal completion: Create characters → watch combat → press ENTER → exit 0
+          2. CTRL-C during character 1 creation → exit 130
+          3. CTRL-C during combat round 2 → exit 130
+          4. CTRL-C at exit confirmation → exit 130
+          5. Create characters with identical agility → verify tie-breaker message
+          6. Create very strong character vs weak → verify 1-round combat displays correctly
+          7. Create balanced characters → verify 10+ round combat displays fully
+
+          Final refactoring:
+          - Code review: Look for duplication in CombatRenderer
+          - Extract magic strings to constants
+          - Ensure all error messages consistent
+          - Verify all docstrings complete
+          - Type hints comprehensive
+
+          Quality checks:
+          - pytest --cov=modules/infrastructure/cli tests/ --cov-report=term-missing
+          - mypy modules/infrastructure/cli/
+          - Check for any TODO comments
+
+          Commit:
+          - git add modules/infrastructure/cli/ tests/
+          - git commit -m "feat(cli): Phase 4 - Polish with exit handling and edge cases
+
+          - Add comprehensive error handling with proper exit codes
+          - Enhance initiative display with tie-breaker explanation
+          - Validate extended combat display (no truncation)
+          - Validate defender death prevents counter-attack display
+          - E2E Tests 4.1-4.4 passing
+
+          Phase 4 completes production-ready CLI with professional error handling.
+
+          Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+        motivation: |
+          Final validation ensures production readiness. All edge cases handled. Professional polish complete.
+        estimated_hours: 1.0
+        dependencies: ["4.4"]
+        acceptance_criteria:
+          - "All Phase 4 E2E tests pass"
+          - "Manual testing scenarios complete"
+          - "Exit codes verified"
+          - "Code coverage > 85%"
+          - "No regressions"
+          - "Final refactoring done"
+          - "Git commit created"
+        test_driven_by: "Phase 4 quality gates"
+
+  - id: phase-5
+    name: "Phase 5: Cross-Platform Compatibility"
+    description: "Validate CLI works on Windows, macOS, Linux with emoji fallbacks"
+    purpose: "Ensure cross-platform compatibility and graceful degradation"
+    estimated_hours: 2-4
+    deliverable: "Validated cross-platform CLI with emoji fallback"
+
+    steps:
+      - number: "5.1"
+        name: "Enable E2E Tests 5.1-5.2 (Cross-Platform)"
+        description: |
+          Enable tests for cross-platform emoji and color support.
+
+          Tests:
+          1. "Emoji display correctly on Unicode-capable terminals"
+          2. "Graceful degradation for terminals without emoji support"
+          3. "Cross-platform emoji fallback mapping"
+
+          Step definitions:
+          - @given('terminal supports Unicode emoji')
+          - @then('emoji are rendered correctly: ⚔️ 💥 ❤️ 🎲 🏆 ☠️ 🛡️')
+          - @given('terminal does not support emoji')
+          - @then('emoji fallback to text equivalents')
+          - @then('⚔️ displays as "[ATK]"')
+          - @then('💥 displays as "[DMG]"')
+
+          Emoji detection strategy:
+          ```python
+          @given('terminal supports Unicode emoji')
+          def step_unicode_terminal(context):
+              # Run CLI with emoji enabled
+              context.config = CLIConfig(emoji_enabled=True)
+
+          @given('terminal does not support emoji')
+          def step_no_emoji_terminal(context):
+              # Run CLI with emoji disabled
+              context.config = CLIConfig(emoji_enabled=False)
+          ```
+
+          Validation:
+          - pytest tests/e2e/test_cli_combat.py -k "cross-platform" -v
+          - Tests should PASS (emoji support already implemented)
+        motivation: |
+          Cross-platform tests validate emoji fallback strategy. Ensures CLI works on all major platforms.
+        estimated_hours: 0.5
+        dependencies: ["4.5"]
+        acceptance_criteria:
+          - "3 E2E tests enabled for cross-platform"
+          - "Step definitions for emoji detection"
+          - "Fallback validation implemented"
+          - "Tests PASS (emoji logic already works)"
+        test_driven_by: "E2E Tests 5.1-5.2 (Cross-Platform)"
+
+      - number: "5.2"
+        name: "Manual Cross-Platform Testing"
+        description: |
+          Perform manual testing on Windows, macOS, Linux terminals.
+
+          Testing platforms (if available):
+
+          **Windows:**
+          - Windows Terminal (recommended): Verify emoji display
+          - PowerShell 7: Verify emoji display
+          - CMD.exe: Verify fallback symbols work
+
+          **macOS:**
+          - Terminal.app: Verify emoji display
+          - iTerm2: Verify emoji display
+
+          **Linux:**
+          - GNOME Terminal: Verify emoji display
+          - Konsole (KDE): Verify emoji display
+
+          Testing checklist per platform:
+          - [ ] CLI launches without errors
+          - [ ] Character creation prompts display correctly
+          - [ ] Validation errors display in red
+          - [ ] Combat visualization displays emoji OR fallbacks
+          - [ ] Colors display appropriately (or degrade gracefully)
+          - [ ] HP color gradient works
+          - [ ] Victory banner displays correctly
+          - [ ] Exit confirmation works
+          - [ ] CTRL-C exits gracefully
+
+          Document results:
+          - Create docs/testing/cross-platform-results.md
+          - List tested platforms with status (PASS/FAIL)
+          - Note any emoji display issues
+          - Screenshot examples if possible
+
+          Fallback testing:
+          - Force emoji_enabled=False in CLIConfig
+          - Run CLI and verify fallback symbols used
+          - Verify functionality preserved without emoji
+
+          If only one platform available:
+          - Document limitation in roadmap notes
+          - Test emoji fallback mode thoroughly
+          - Note need for future multi-platform validation
+        motivation: |
+          Manual testing catches platform-specific issues automated tests miss. Emoji rendering
+          platform-dependent. Validates Rich library cross-platform capabilities.
+        estimated_hours: 2.0
+        dependencies: ["5.1"]
+        acceptance_criteria:
+          - "Manual testing on at least one platform"
+          - "Emoji display or fallback validated"
+          - "Color display validated"
+          - "All functionality works cross-platform"
+          - "Testing results documented"
+          - "Fallback mode tested explicitly"
+        test_driven_by: "Manual cross-platform validation"
+
+      - number: "5.3"
+        name: "Phase 5 Final Validation and Project Completion"
+        description: |
+          Final validation of complete CLI implementation.
+
+          Comprehensive validation checklist:
+          - [ ] All 31 E2E acceptance tests PASS
+          - [ ] All unit tests PASS (20+ tests)
+          - [ ] Code coverage > 85% for CLI components
+          - [ ] No regressions in domain/application tests (9 E2E + 34 unit)
+          - [ ] Manual testing complete on available platforms
+          - [ ] Cross-platform emoji fallback validated
+          - [ ] All 8 functional requirements (FR-01 to FR-08) implemented
+          - [ ] All 6 non-functional requirements (NFR-01 to NFR-06) met
+          - [ ] All 6 user stories (US-01 to US-06) acceptance criteria satisfied
+
+          Quality metrics:
+          - Run: pytest --cov=modules/infrastructure/cli tests/ --cov-report=html
+          - Open htmlcov/index.html and verify > 85% coverage
+          - Run: mypy modules/infrastructure/cli/ --strict
+          - Verify no type errors
+
+          Documentation updates:
+          - Update README.md with CLI usage instructions
+          - Add "How to Run" section
+          - Document platform requirements
+          - Note emoji fallback behavior
+
+          Final refactoring sweep:
+          - Remove any debug print statements
+          - Remove any TODO comments (or convert to GitHub issues)
+          - Verify all docstrings complete
+          - Ensure consistent code style
+
+          Pre-commit validation:
+          - Run all pre-commit hooks
+          - Fix any linting issues
+          - Ensure all tests pass
+
+          Final commit:
+          - git add modules/infrastructure/cli/ tests/ docs/ README.md
+          - git commit -m "feat(cli): Phase 5 - Cross-platform validation and project completion
+
+          - Validate emoji display on Unicode-capable terminals
+          - Validate emoji fallback on limited terminals
+          - Complete manual cross-platform testing
+          - All 31 E2E acceptance tests passing
+          - Code coverage > 85% for CLI components
+          - All functional requirements (FR-01 to FR-08) implemented
+          - All non-functional requirements (NFR-01 to NFR-06) met
+          - README updated with CLI usage instructions
+
+          Interactive CLI Combat Viewer feature COMPLETE.
+
+          Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+
+          Project completion criteria:
+          - [ ] All tests passing
+          - [ ] Code coverage targets met
+          - [ ] Documentation complete
+          - [ ] No known bugs
+          - [ ] Ready for user demonstration
+          - [ ] Ready for DELIVER wave handoff
+        motivation: |
+          Final validation ensures project completion to professional standards. All requirements met.
+          Ready for production use and demonstration.
+        estimated_hours: 1.5
+        dependencies: ["5.2"]
+        acceptance_criteria:
+          - "All 31 E2E tests PASS"
+          - "All unit tests PASS"
+          - "Code coverage > 85%"
+          - "No regressions"
+          - "Documentation complete"
+          - "Quality metrics met"
+          - "Final commit created"
+          - "Project COMPLETE"
+        test_driven_by: "Project completion quality gates"
+
+dependencies_summary:
+  phase_1_to_phase_2: "Phase 2 starts after Phase 1 baseline CLI works (step 1.6 complete)"
+  phase_2_to_phase_3: "Phase 3 starts after interactive input validated (step 2.6 complete)"
+  phase_3_to_phase_4: "Phase 4 starts after visual enhancement complete (step 3.6 complete)"
+  phase_4_to_phase_5: "Phase 5 starts after polish and error handling complete (step 4.5 complete)"
+
+  critical_path:
+    - "1.1: Enable baseline test (starts red-green-refactor cycle)"
+    - "1.5: Wire CLI Main (proves hexagonal integration)"
+    - "2.2: Implement CharacterCreator (core input logic)"
+    - "3.3: Enhance CombatRenderer (visual transformation)"
+    - "4.2: Enhance error handling (production robustness)"
+    - "5.3: Final validation (project completion)"
+
+notes:
+  methodology_adherence: |
+    This roadmap strictly follows Outside-In TDD:
+    1. Each phase starts with E2E test enablement (red phase)
+    2. Implementation driven by making tests pass (green phase)
+    3. Refactoring at phase end (refactor phase)
+    4. Validate no regressions before proceeding
+
+    E2E tests defined in DISTILL wave (cli_combat.feature) drive all development.
+
+  atomic_step_design: |
+    Each step is self-contained with:
+    - Complete context (what to implement, how to implement)
+    - Clear dependencies (which prior steps required)
+    - Specific acceptance criteria (how to validate success)
+    - Time estimates (realistic including testing and debugging)
+    - Test-driven-by reference (which test validates this step)
+
+  time_estimates_basis: |
+    Estimates based on:
+    - Component complexity (simple wrapper: 1-1.5h, complex logic: 2-3h)
+    - TDD overhead (+30-50% for red-green-refactor cycles)
+    - Integration complexity (+20% if multiple services)
+    - Testing time (unit + integration + manual validation)
+    - Documentation (+10% for docstrings and comments)
+
+    Total: 22-36 hours across 5 phases matches DISTILL wave estimate.
+
+  hexagonal_architecture_compliance: |
+    All steps maintain hexagonal architecture:
+    - CLI components in modules/infrastructure/cli/ (infrastructure layer)
+    - CLI depends on Application (CombatSimulator), never directly on Domain services
+    - Domain layer unchanged (no CLI dependencies)
+    - Dependency injection throughout (testability)
+
+  risk_mitigation: |
+    Roadmap mitigates risks identified in DESIGN wave:
+    - R-02 (Testing CLI in CI/CD): CLIConfig.test_mode() with zero delays
+    - R-03 (Timing variations): Configurable timing with tolerance in tests
+    - R-04 (Platform compatibility): Manual testing phase + emoji fallbacks
+    - R-07 (Rich API changes): Abstraction via ConsoleOutput wrapper
