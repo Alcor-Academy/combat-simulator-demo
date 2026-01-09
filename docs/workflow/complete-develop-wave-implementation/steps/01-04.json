@@ -1,0 +1,226 @@
+{
+  "task_id": "01-04",
+  "phase": 1,
+  "step": 4,
+  "name": "Implement RandomDiceRoller Infrastructure Adapter",
+  "driven_by_scenario": "Infrastructure implementation for production CLI (not E2E-scenario-driven; required by application layer which is driven by E2E scenarios)",
+  "description": "Create production dice roller using random.randint(1, 6). Infrastructure adapter implementing DiceRoller port. Not used by E2E tests (they use FixedDiceRoller), but required for production CLI in DELIVER wave.",
+  "motivation": "Production adapter for DiceRoller port - enables real gameplay in CLI. Completes hexagonal architecture: port defined (DiceRoller), test adapter exists (FixedDiceRoller), production adapter implemented (RandomDiceRoller).",
+  "estimated_hours": 0.17,
+  "estimated_minutes": 10,
+  "dependencies": ["01-03"],
+  "prerequisite_knowledge": {
+    "dice_roller_protocol": "DiceRoller Protocol (defined in step 01-03):\nfrom typing import Protocol\n\nclass DiceRoller(Protocol):\n    '''Port interface for dice rolling functionality.\n    Uses structural typing - no explicit inheritance required.\n    '''\n    def roll(self) -> int:\n        '''Roll D6 and return random result.\n        \n        Returns:\n            int: Random value in range [1, 6] inclusive\n        '''\n        ...",
+    "structural_typing_explanation": "Python's Protocol uses structural typing: RandomDiceRoller automatically 'satisfies' DiceRoller Protocol if it has a roll() method with matching signature. No need to explicitly inherit or declare Protocol implementation."
+  },
+  "acceptance_criteria": [
+    "RandomDiceRoller class in modules/infrastructure/random_dice_roller.py",
+    "roll() method returns random.randint(1, 6)",
+    "Satisfies DiceRoller Protocol (structural typing - no explicit inheritance)",
+    "1 unit test PASS validating range [1, 6] (statistical validation: 100 rolls all in [1, 6])",
+    "No E2E scenarios affected (E2E tests use FixedDiceRoller for determinism)"
+  ],
+  "instructions": {
+    "outer_loop_e2e": {
+      "description": "E2E tests unaffected - they use FixedDiceRoller for deterministic testing",
+      "note": "This adapter is for production CLI (DELIVER wave), not for testing"
+    },
+    "inner_loop_unit": {
+      "description": "Statistical validation test - 100 rolls should all be in [1, 6]",
+      "tdd_cycles": [
+        {
+          "cycle": 1,
+          "feature": "Random roll returns value in range [1, 6]",
+          "red_phase": {
+            "steps": [
+              "Create file: tests/unit/infrastructure/test_random_dice_roller.py",
+              "Add imports:",
+              "from modules.infrastructure.random_dice_roller import RandomDiceRoller",
+              "Write test:",
+              "def test_roll_returns_value_between_1_and_6():",
+              "    roller = RandomDiceRoller()",
+              "    # Statistical validation: 100 rolls should all be in range",
+              "    for _ in range(100):",
+              "        result = roller.roll()",
+              "        assert 1 <= result <= 6, f'Roll {result} outside valid range [1, 6]'",
+              "Run: pytest tests/unit/infrastructure/test_random_dice_roller.py -v",
+              "EXPECT: ImportError - cannot import RandomDiceRoller",
+              "This is RED phase - EXPECTED"
+            ]
+          },
+          "green_phase": {
+            "steps": [
+              "Create file: modules/infrastructure/random_dice_roller.py",
+              "Add import: import random",
+              "Define class:",
+              "class RandomDiceRoller:",
+              "    '''Production dice roller using Python's random module.",
+              "    ",
+              "    Implements DiceRoller port interface with random number generation.",
+              "    Returns uniformly distributed random integers in range [1, 6].",
+              "    ",
+              "    Note: Uses random.randint which is deterministic given seed,",
+              "    but not explicitly seeded for production use.",
+              "    '''",
+              "    ",
+              "    def roll(self) -> int:",
+              "        '''Roll D6 and return random result.",
+              "        ",
+              "        Returns:",
+              "            int: Random value in range [1, 6] inclusive",
+              "        '''",
+              "        return random.randint(1, 6)",
+              "Run: pytest tests/unit/infrastructure/test_random_dice_roller.py -v",
+              "EXPECT: 1 test PASSED (GREEN phase)",
+              "All 100 rolls in [1, 6] range - statistical validation passes"
+            ]
+          },
+          "refactor_phase": null
+        }
+      ],
+      "enhancements_after_acceptance": [
+        {
+          "feature": "Optional: Test distribution uniformity (advanced)",
+          "description": "Could add chi-square test for uniform distribution, but overkill for production readiness",
+          "note": "AFTER acceptance criteria satisfied: Consider adding chi-square test to validate uniform distribution across 1-6 range",
+          "rationale": "Simple range validation [1, 6] sufficient for adapter correctness; chi-square test is educational but not required"
+        }
+      ]
+    },
+    "verification_steps": [
+      "pytest tests/unit/infrastructure/test_random_dice_roller.py -v → 1 test PASSED",
+      "Verify RandomDiceRoller has roll() method returning int",
+      "Verify satisfies DiceRoller Protocol (structural typing)",
+      "Verify uses random.randint(1, 6) implementation"
+    ]
+  },
+  "hexagonal_architecture_context": {
+    "layer": "Infrastructure - Adapters",
+    "purpose": "Concrete implementation of DiceRoller port using Python's random module",
+    "dependency_direction": "RandomDiceRoller (infrastructure) implements DiceRoller (domain port)",
+    "usage_context": "Production CLI in DELIVER wave will inject RandomDiceRoller into services"
+  },
+  "implementation_notes": {
+    "simplicity": "Keep implementation trivial - just random.randint(1, 6)",
+    "no_explicit_inheritance": "No need to inherit from DiceRoller Protocol - structural typing handles it",
+    "randomness_source": "Uses Python's random.randint (Mersenne Twister PRNG)",
+    "seeding": "Not explicitly seeded - uses default system entropy",
+    "future_enhancement": "Could accept random.Random instance for testing with seed, but YAGNI for now"
+  },
+  "refactoring_level": 0,
+  "refactoring_notes": "Adapter is trivial (3 lines) - no refactoring needed",
+  "e2e_scenarios_affected": [],
+  "scenarios_passing_after": [],
+  "cross_step_impacts": [
+    "02-01 (InitiativeResolver): Production DiceRoller now available for production CLI initialization"
+  ],
+  "verification": {
+    "unit_tests": ["pytest tests/unit/infrastructure/test_random_dice_roller.py -v → 1 test PASSED"],
+    "implementation_validation": [
+      "RandomDiceRoller class exists in modules/infrastructure/",
+      "roll() method returns int in range [1, 6]",
+      "Structural typing verified by usage in services (no explicit Protocol inheritance needed)"
+    ]
+  },
+  "commit_message": "feat(infrastructure): Implement RandomDiceRoller adapter\n\nHexagonal Architecture - Infrastructure adapter:\n- RandomDiceRoller implements DiceRoller port\n- Uses random.randint(1, 6) for D6 die roll\n- Structural typing (no explicit Protocol inheritance)\n- Simple, focused implementation (3 lines)\n\nImplementation:\n- Layer: Infrastructure - Adapters\n- Randomness source: Python's random.randint (Mersenne Twister)\n- No explicit seeding (uses system entropy)\n- Satisfies DiceRoller Protocol through structural typing\n\nTests:\n- 1-2 unit tests PASSED (range validation)\n- Statistical test: 100 rolls all in [1, 6] range\n- Validates adapter correctness\n\nPurpose:\n- Production adapter for CLI (DELIVER wave)\n- Not used in E2E tests (FixedDiceRoller for determinism)\n- Enables real gameplay with random outcomes\n\nArchitecture:\n- Dependency: RandomDiceRoller → DiceRoller (port)\n- Services depend on DiceRoller abstraction\n- CLI injects RandomDiceRoller into services at runtime\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>",
+  "reviews": [
+    {
+      "reviewer": "software-crafter-reviewer",
+      "date": "2026-01-09T00:00:00Z",
+      "ready_for_execution": false,
+      "approval_status": "NEEDS_REVISION",
+      "review_dimensions": {
+        "outside_in_atdd_integrity": {
+          "status": "FAILED",
+          "finding": "driven_by_scenario field claims 'Infrastructure - production adapter for CLI (DELIVER wave)' but this is NOT E2E-driven. This step is purely unit-test-driven infrastructure work without E2E acceptance test traceability.",
+          "severity": "HIGH",
+          "recommendation": "Clarify: Infrastructure adapters in Outside-In TDD should be driven by application/domain layer needs that ultimately serve E2E scenarios. Either: (1) Remove 'driven_by_scenario' field, or (2) Trace back to which E2E scenario requires this production RandomDiceRoller (likely none - this is DELIVER wave, not test infrastructure)."
+        },
+        "test_first_discipline": {
+          "status": "PASSED",
+          "finding": "Tests written BEFORE implementation. RED phase with expected ImportError documented. GREEN phase with passing assertion. Proper TDD semantics for Python (ImportError is RED phase, not broken).",
+          "severity": null,
+          "recommendation": null
+        },
+        "self_containment_atomicity": {
+          "status": "PARTIAL",
+          "finding": "Step is atomic and executable, but assumes developer knows DiceRoller Protocol definition from step 01-03. For true self-containment, Protocol definition should be referenced or included.",
+          "severity": "MEDIUM",
+          "recommendation": "Add section 'prerequisite_knowledge' with Protocol definition or reference: 'Protocol DiceRoller: def roll(self) -> int: ...' to ensure developer understands structural typing requirement."
+        },
+        "result_dataclass_specifications": {
+          "status": "N/A",
+          "finding": "Not applicable - this is infrastructure adapter implementation, not domain model creation.",
+          "severity": null,
+          "recommendation": null
+        },
+        "refactoring_strategy": {
+          "status": "PASSED",
+          "finding": "Refactoring level 0 correctly identifies trivial 3-line adapter. Notes state 'no refactoring needed' appropriately.",
+          "severity": null,
+          "recommendation": null
+        },
+        "solid_hexagonal_architecture": {
+          "status": "PASSED",
+          "finding": "Correct dependency direction (Infrastructure implements Domain port). Protocol-based abstraction with structural typing. No domain logic in infrastructure. Hexagonal context clearly provided.",
+          "severity": null,
+          "recommendation": null
+        },
+        "acceptance_criteria_quality": {
+          "status": "PARTIAL",
+          "finding": "Criteria specify '1-2 unit tests PASS' but only 1 test implementation shown. Ambiguity: Is 2 tests required, or is 1 sufficient? Statistical validation (100 rolls in range) is good practice but not explicitly required in AC.",
+          "severity": "MEDIUM",
+          "recommendation": "Clarify acceptance criteria: (1) Specify if 1 or 2 tests required, (2) If 2 required, add second test (e.g., test_roll_consistency_over_multiple_calls or test_protocol_adherence). If 1 sufficient, update AC to say '1 unit test PASS'."
+        }
+      },
+      "critiques": [
+        {
+          "dimension": "Outside-In ATDD Integrity",
+          "issue": "Misleading driven_by_scenario field",
+          "severity": "HIGH",
+          "details": "driven_by_scenario claims 'Infrastructure - production adapter for CLI (DELIVER wave)' but this is NOT scenario-driven. Infrastructure adapters in Outside-In TDD are driven by application layer needs, which are themselves driven by E2E scenarios. This step appears to be purely infrastructure work without E2E traceability.",
+          "implication": "Violates Outside-In TDD principle where infrastructure follows application demand.",
+          "recommendation": "Either: (1) Remove or clarify driven_by_scenario to indicate this is 'Infrastructure implementation for production CLI' (not scenario-driven), OR (2) Trace dependency to which E2E scenario requires real random outcomes in DELIVER wave."
+        },
+        {
+          "dimension": "Self-Containment",
+          "issue": "Missing DiceRoller Protocol definition",
+          "severity": "MEDIUM",
+          "details": "Step assumes developer completed 01-03 and understands DiceRoller Protocol. For true self-containment and clarity on structural typing, Protocol definition should be referenced.",
+          "implication": "Developer may be unclear on 'satisfies DiceRoller Protocol (structural typing)' requirement without seeing Protocol definition.",
+          "recommendation": "Add 'prerequisite_knowledge' section: 'DiceRoller Protocol (from step 01-03): from typing import Protocol\\nclass DiceRoller(Protocol):\\n    def roll(self) -> int: ...' "
+        },
+        {
+          "dimension": "Acceptance Criteria Quality",
+          "issue": "Ambiguous test count requirement",
+          "severity": "MEDIUM",
+          "details": "AC states '1-2 unit tests PASS' (optional range) but step shows implementation of only 1 test. Unclear if 2 tests are required for completion or if 1 is sufficient.",
+          "implication": "Developer may not know when acceptance criteria are satisfied.",
+          "recommendation": "Specify exact requirement: If '1 test sufficient', update AC to '1 unit test PASS validating range [1, 6]'. If '2 required', add second test implementation (e.g., test idempotency or edge cases)."
+        },
+        {
+          "dimension": "Test-First Discipline",
+          "issue": "Optional cycle 2 may confuse priorities",
+          "severity": "LOW",
+          "details": "Cycle 2 presents optional chi-square distribution test. While marked optional and rationale provided, it could distract from primary acceptance criteria.",
+          "implication": "Developer may spend time on advanced testing not required for acceptance.",
+          "recommendation": "Consider moving to separate 'enhancement' section after primary AC completion, clearly labeled: 'AFTER acceptance criteria satisfied, optional: consider adding chi-square test'."
+        }
+      ],
+      "summary": {
+        "total_issues": 4,
+        "high_severity": 1,
+        "medium_severity": 2,
+        "low_severity": 1,
+        "blocking_issues": [
+          "HIGH: driven_by_scenario field is misleading - this is NOT E2E-scenario-driven work"
+        ],
+        "should_fix_before_execution": [
+          "Clarify driven_by_scenario or remove it",
+          "Add DiceRoller Protocol definition for self-containment",
+          "Specify exact test count requirement (1 or 2?)"
+        ]
+      }
+    }
+  ]
+}

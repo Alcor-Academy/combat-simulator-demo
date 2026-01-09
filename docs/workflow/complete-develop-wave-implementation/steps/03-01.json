@@ -1,0 +1,228 @@
+{
+  "task_id": "03-01",
+  "phase": 3,
+  "step": 1,
+  "name": "Implement CombatSimulator Application Service",
+  "driven_by_scenario": "E2E Scenario 1 (full combat with complete integration)",
+  "description": "Orchestrate full combat from initiative roll to victory. Rolls initiative ONCE at start, executes combat rounds in loop until one character dies. Returns CombatResult with winner, loser, and all round history. This completes the Outside-In TDD cycle - all 9 E2E scenarios will PASS after this step.",
+  "motivation": "Top-level use case - completes Outside-In TDD cycle. Orchestrates InitiativeResolver and CombatRound to deliver complete combat simulation. Final implementation making ALL 9 E2E scenarios pass.",
+  "estimated_hours": 0.58,
+  "estimated_minutes": 35,
+  "dependencies": ["02-01", "02-03"],
+  "result_dataclass_required": {
+    "name": "CombatResult",
+    "location": "modules/domain/model/combat_result.py",
+    "purpose": "Immutable value object containing complete combat simulation results",
+    "create_first": true,
+    "fields": [
+      {"name": "winner", "type": "Character", "description": "Victorious character"},
+      {"name": "loser", "type": "Character", "description": "Defeated character with 0 HP"},
+      {"name": "total_rounds", "type": "int", "description": "Number of rounds fought"},
+      {"name": "rounds", "type": "tuple[RoundResult, ...]", "description": "All round results, immutable tuple"},
+      {"name": "initiative_result", "type": "InitiativeResult", "description": "Who attacked first"}
+    ],
+    "immutability": "@dataclass(frozen=True)",
+    "critical_note": "Use tuple[RoundResult, ...] for rounds (immutable), NOT list"
+  },
+  "acceptance_criteria": [
+    "CombatResult value object in modules/domain/model/combat_result.py (@dataclass(frozen=True) with 5 fields)",
+    "CombatSimulator service in modules/application/combat_simulator.py",
+    "run_combat(char1, char2) returns CombatResult",
+    "Rolls initiative ONCE at start (not per round)",
+    "Executes combat rounds in loop with condition: while attacker.is_alive AND defender.is_alive (loop terminates when either reaches 0 HP)",
+    "Returns CombatResult with: winner, loser, total_rounds, rounds (tuple), initiative_result",
+    "Handles 1-round combat correctly (character dies on first round)",
+    "Handles extended combat (10+ rounds) without stack overflow",
+    "CombatResult.rounds tuple correctly sized (len(rounds) == total_rounds)",
+    "Both characters cannot be alive when combat ends",
+    "Winner always has is_alive == True, loser always has is_alive == False",
+    "4-5 unit tests PASS",
+    "E2E Scenario 1 PASS (was SKIP)",
+    "ALL 9 E2E SCENARIOS PASS ✅ (complete Outside-In TDD cycle)"
+  ],
+  "instructions": {
+    "outer_loop_e2e": ["Run: pytest tests/e2e/ -v", "OBSERVE: Scenario 1 SKIP (CombatSimulator import fails)", "OBSERVE: 8/9 scenarios already PASS (only Scenario 1 remaining)", "IDENTIFY: Need CombatResult + CombatSimulator with combat loop"],
+    "result_dataclass_creation": ["Create modules/domain/model/combat_result.py", "Import: from dataclasses import dataclass", "from modules.domain.model.character import Character", "from modules.domain.model.round_result import RoundResult", "from modules.domain.model.initiative_result import InitiativeResult", "@dataclass(frozen=True)", "class CombatResult:", "    winner: Character", "    loser: Character", "    total_rounds: int", "    rounds: tuple[RoundResult, ...]  # CRITICAL: tuple, not list", "    initiative_result: InitiativeResult"],
+    "inner_loop_unit": {
+      "tdd_cycles": [
+        {
+          "cycle": 1,
+          "feature": "Initiative rolled once at start",
+          "red": ["Create tests/unit/application/test_combat_simulator.py", "Write test_run_combat_rolls_initiative_once():", "    Mock InitiativeResolver and CombatRound", "    Verify initiative_resolver.roll_initiative called exactly once", "Run: pytest tests/unit/application/test_combat_simulator.py::test_run_combat_rolls_initiative_once -v", "Expected failure: FAILED - ModuleNotFoundError: No module named 'modules.application.combat_simulator' (or similar import error)"],
+          "green": ["Create modules/application/combat_simulator.py", "class CombatSimulator:", "    def __init__(self, initiative_resolver: InitiativeResolver, combat_round: CombatRound):", "        self._initiative_resolver = initiative_resolver", "        self._combat_round = combat_round", "    ", "    def run_combat(self, char1: Character, char2: Character) -> CombatResult:", "        # Roll initiative once", "        initiative = self._initiative_resolver.roll_initiative(char1, char2)", "        attacker = initiative.attacker", "        defender = initiative.defender", "        ", "        # Placeholder: no loop yet", "        return CombatResult(", "            winner=attacker,", "            loser=defender,", "            total_rounds=0,", "            rounds=tuple(),", "            initiative_result=initiative", "        )", "Run: pytest → 1 test PASSED (GREEN)"]
+        },
+        {
+          "cycle": 2,
+          "feature": "Combat loop executes until victory",
+          "red": ["Write test_run_combat_executes_rounds_until_victory():", "    Mock services to simulate 3 rounds before victory", "    Verify combat_round.execute_round called 3 times", "    Verify loop terminates when character dies", "Run: pytest tests/unit/application/test_combat_simulator.py::test_run_combat_executes_rounds_until_victory -v", "Expected failure: FAILED - AssertionError: assert call_count == 3 (currently 0 or 1 because no combat loop exists yet)"],
+          "green": ["Modify run_combat to add combat loop:", "    def run_combat(self, char1: Character, char2: Character) -> CombatResult:", "        initiative = self._initiative_resolver.roll_initiative(char1, char2)", "        attacker = initiative.attacker", "        defender = initiative.defender", "        ", "        rounds_list = []", "        round_number = 1", "        ", "        # Combat loop", "        while attacker.is_alive and defender.is_alive:", "            round_result = self._combat_round.execute_round(", "                attacker, defender, round_number", "            )", "            rounds_list.append(round_result)", "            ", "            # Update characters from round result", "            # Need to determine who is who after round", "            # This is complex - attacker/defender roles don't swap", "            # Use character names to track", "            if round_result.combat_ended:", "                break", "            ", "            # Update character states for next round", "            # ... (implementation details)", "            round_number += 1", "        ", "        # Determine winner/loser", "        winner = attacker if attacker.is_alive else defender", "        loser = defender if not defender.is_alive else attacker", "        ", "        return CombatResult(", "            winner=winner,", "            loser=loser,", "            total_rounds=len(rounds_list),", "            rounds=tuple(rounds_list),  # Convert list to tuple", "            initiative_result=initiative", "        )", "Run: pytest → 2 tests PASSED (GREEN)"]
+        },
+        {
+          "cycle": 3,
+          "feature": "CombatResult structure validation",
+          "red": ["Write test_run_combat_returns_combat_result():", "    Verify return type is CombatResult", "    Verify all 5 fields present: winner, loser, total_rounds, rounds, initiative_result", "Write test_combat_result_has_all_rounds():", "    Verify rounds is tuple (not list)", "    Verify len(rounds) == total_rounds", "Run: pytest tests/unit/application/test_combat_simulator.py::test_run_combat_returns_combat_result tests/unit/application/test_combat_simulator.py::test_combat_result_has_all_rounds -v", "Expected: Tests PASS (all implementation exists from Cycles 1-2)"],
+          "green": ["No implementation needed - tests should PASS immediately", "All required fields already in CombatResult and run_combat returns them", "Verify Cycles 1-2 implementation is complete and correct", "Run: pytest tests/unit/application/test_combat_simulator.py -v", "Expected: 4-5 tests PASSED (all cycles complete)"]
+        }
+      ],
+      "refactoring": {
+        "critical_safety_rules": [
+          "CRITICAL: ONLY refactor AFTER all tests are GREEN",
+          "If you accidentally refactor during RED phase (test fails), follow 7-step recovery:",
+          "  Step 1: Run: git diff (to see what changed)",
+          "  Step 2: Review changes - are they refactoring (structure) or implementation (logic)?",
+          "  Step 3: If refactoring during RED, run: git checkout -- . (REVERT all changes)",
+          "  Step 4: Get tests to GREEN first by fixing implementation",
+          "  Step 5: Run full test suite: pytest tests/unit/application/test_combat_simulator.py -v (verify all GREEN)",
+          "  Step 6: Then apply refactoring changes",
+          "  Step 7: Verify tests still GREEN after refactoring: pytest tests/unit/application/test_combat_simulator.py -v"
+        ],
+        "progressive_levels": [
+          "Level 1 (Foundation): NOT needed - code is straightforward, minimal comments",
+          "Level 2 (Complexity): APPLY IF needed - Extract helpers from while loop if exceeds 15 lines",
+          "Levels 3-4: NOT applicable yet - responsibility organization deferred to future steps",
+          "Default strategy: Keep code simple, extract only if while loop becomes unreadable"
+        ],
+        "level_2_examples": [
+          "Example 1: Extract _execute_combat_loop(attacker, defender) helper if while loop exceeds 15 lines",
+          "Example 2: Extract _determine_winner(attacker, defender) helper if victory logic exceeds 5 lines",
+          "When to apply: Only if code readability suffers (method body hard to understand at a glance)"
+        ]
+      }
+    },
+    "return_to_e2e": ["Run: pytest tests/e2e/ -v", "OBSERVE: Scenario 1 now PASSED ✅", "OBSERVE: ALL 9 E2E SCENARIOS NOW PASS ✅✅✅", "VALIDATE: 9 passed, 0 skipped, 0 failed", "CELEBRATE: Outside-In TDD cycle complete!"],
+    "e2e_troubleshooting": {
+      "if_scenario_1_still_skip": [
+        "Symptom: Test still shows SKIP",
+        "Possible cause: CombatSimulator import fails in test module",
+        "Diagnosis: Check modules/__init__.py exports CombatSimulator",
+        "Fix: Add 'from modules.application.combat_simulator import CombatSimulator' to __init__.py"
+      ],
+      "if_scenario_1_fails": [
+        "Symptom: Test runs but FAILS",
+        "Possible cause: Initiative rolled multiple times (not once), or combat loop logic incorrect",
+        "Diagnosis: Run unit tests first: pytest tests/unit/application/test_combat_simulator.py -v",
+        "Fix: Debug which unit test fails (check_initiative_once or check_loop), fix that first"
+      ],
+      "if_other_scenarios_regress": [
+        "Symptom: Scenarios 2-9 that were PASSING now FAIL",
+        "Possible cause: Character state mutation or immutability broken",
+        "Diagnosis: Check if Character objects being mutated (should never happen)",
+        "Fix: Verify Character remains frozen dataclass, verify state updates use new instances"
+      ],
+      "if_tests_timeout_or_hang": [
+        "Symptom: Tests run but never complete (timeout)",
+        "Possible cause: Infinite loop in combat (while condition never false)",
+        "Diagnosis: Check while condition: 'while attacker.is_alive and defender.is_alive'",
+        "Fix: Verify is_alive returns False when HP reaches 0, verify HP updated from round results"
+      ]
+    }
+  },
+  "python_tdd_semantics": {
+    "critical_implementation_detail": "Tracking character states through combat loop",
+    "challenge": "After each round, attacker/defender have updated HP. Need to update references for next round iteration.",
+    "solution": "Extract updated Character objects from RoundResult and use for next iteration. Maintain attacker/defender roles throughout (initiative determines roles once).",
+    "character_state_update_pattern": {
+      "roundresult_structure": "RoundResult contains: updated_attacker (Character with new HP), updated_defender (Character with new HP)",
+      "extraction_logic": "attacker = round_result.updated_attacker, defender = round_result.updated_defender",
+      "loop_update": "After each round, assign new Character instances: attacker = round_result.updated_attacker, defender = round_result.updated_defender",
+      "immutability_critical": "Characters are immutable (frozen dataclass), so new instances are returned each round",
+      "never_mutate": "CRITICAL: Never mutate original char1/char2 passed to run_combat - always use updated instances from RoundResult"
+    }
+  },
+  "verification": {
+    "unit_tests": ["pytest tests/unit/application/test_combat_simulator.py -v → 4-5 tests PASSED"],
+    "e2e_tests": ["pytest tests/e2e/ -v → ALL 9 SCENARIOS PASSED ✅", "Scenarios: 1, 2, 3, 4, 5, 6, 7, 8, 9 all PASS", "0 skipped, 0 failed"],
+    "implementation_checks": ["Initiative rolled ONCE (not per round)", "Rounds stored as tuple (immutable), not list", "Combat loop terminates when one character dies", "Winner/loser correctly identified", "All round history preserved in CombatResult"]
+  },
+  "e2e_scenarios_affected": ["1"],
+  "scenarios_passing_after": ["1"],
+  "cross_step_impacts": [
+    "None - final integration step",
+    "CombatSimulator is the end of the implementation chain",
+    "Depends on all previous steps: Character, InitiativeResolver, CombatRound, CombatResult",
+    "No downstream steps depend on CombatSimulator (this completes the DEVELOP wave)"
+  ],
+  "reviews": [
+    {
+      "reviewer": "software-crafter-reviewer",
+      "date": "2026-01-09T00:00:00Z",
+      "ready_for_execution": false,
+      "approval_status": "NEEDS_REVISION",
+      "critiques": [
+        {
+          "dimension": "Test-First Discipline",
+          "severity": "HIGH",
+          "issue": "RED phase lacks explicit pytest command verification with failure output expectations",
+          "detail": "Cycle 1 and 2 describe expected failures (ImportError, Test FAILED) but don't show actual pytest invocation that proves RED state. Step should include explicit pytest output expectations like 'pytest → FAILED: assert initiative_resolver.roll_initiative.call_count == 1'",
+          "recommendation": "Add explicit pytest command with expected failure output for each RED phase. Example: 'Run: pytest tests/unit/application/test_combat_simulator.py::test_run_combat_rolls_initiative_once -v\nExpected: FAILED - AssertionError: assert 1 == 0 (initiative not called yet)'",
+          "files_affected": ["instructions.inner_loop_unit.tdd_cycles[0].red", "instructions.inner_loop_unit.tdd_cycles[1].red"]
+        },
+        {
+          "dimension": "Test-First Discipline",
+          "severity": "HIGH",
+          "issue": "Cycle 3 uses inconsistent 'red_green' shorthand instead of proper RED/GREEN separation",
+          "detail": "Cycles 1-2 follow explicit RED→GREEN structure, but Cycle 3 combines both phases under 'red_green' key. This breaks the consistent TDD semantics and makes it unclear when to run tests vs implement.",
+          "recommendation": "Expand Cycle 3 to match format of Cycles 1-2:\n- 'red' phase: Write tests for structure and tuple validation, show expected failures\n- 'green' phase: Verify implementation already passes these tests (no new code needed)",
+          "files_affected": ["instructions.inner_loop_unit.tdd_cycles[2]"]
+        },
+        {
+          "dimension": "Refactoring Strategy",
+          "severity": "HIGH",
+          "issue": "Missing 'ONLY refactor after GREEN' explicit rule and 7-step recovery procedure",
+          "detail": "Step provides Level 2 refactoring examples but omits critical safety rule preventing refactoring during RED phase. If developer accidentally refactors during RED, there's no recovery guidance.",
+          "recommendation": "Add refactoring safety section:\n'CRITICAL REFACTORING RULES:\n1. ONLY refactor AFTER all tests GREEN\n2. If refactored during RED (mistake):\n   - Step 1: Run: git diff\n   - Step 2: Review changes - are they refactoring or implementation?\n   - Step 3: If refactoring during RED, run: git checkout -- . (revert all changes)\n   - Step 4: Get tests to GREEN first\n   - Step 5: Then apply refactoring\n   - Step 6: Verify tests still GREEN\n   - Step 7: Commit refactoring separately from feature\n3. Progressive levels: Apply Level 1-2 only (readability, complexity)\n4. Examples:\n   - Level 1: Rename _execute_combat_loop with clearer name if >3 words\n   - Level 2: Extract while loop to helper method if >15 lines'",
+          "files_affected": ["instructions.inner_loop_unit.refactoring"]
+        },
+        {
+          "dimension": "Refactoring Strategy",
+          "severity": "MEDIUM",
+          "issue": "Progressive refactoring levels 1-4 guidance missing; only Level 2 addressed",
+          "detail": "Step references 'level_2' refactoring but doesn't explain when to apply Level 1 (foundation), or why Levels 3-4 are not applicable here. Developer may over-engineer or apply wrong level.",
+          "recommendation": "Add guidance:\n'Refactoring Level Guidance for this step:\n- Level 1 (Foundation): NOT needed - code is straightforward, minimal comments\n- Level 2 (Complexity): APPLY IF needed - Extract helpers from while loop if >15 lines\n- Levels 3-4: NOT applicable yet - responsibility organization deferred to future refactoring\nDefault: Keep code simple, extract only if while loop becomes unreadable'",
+          "files_affected": ["instructions.inner_loop_unit.refactoring"]
+        },
+        {
+          "dimension": "Acceptance Criteria Quality",
+          "severity": "MEDIUM",
+          "issue": "AC criteria lack edge case coverage specifications",
+          "detail": "ACs cover happy path (initiative rolled once, loop executes, winner/loser identified) but miss edge cases: 1-round combat, multi-round combat (5+ rounds), character health edge values (1 HP remaining, etc.)",
+          "recommendation": "Add edge case ACs:\n- 'Handles 1-round combat correctly (character dies on first round)'\n- 'Handles extended combat (10+ rounds) without stack overflow'\n- 'CombatResult.rounds tuple correctly sized (len(rounds) == total_rounds)'\n- 'Both characters cannot be alive when combat ends'\n- 'Winner always has is_alive == True, loser always has is_alive == False'",
+          "files_affected": ["acceptance_criteria"]
+        },
+        {
+          "dimension": "Acceptance Criteria Quality",
+          "severity": "MEDIUM",
+          "issue": "AC #32 condition should be more explicit about loop termination",
+          "detail": "Current: 'Executes rounds in loop until one character dies (while both are_alive)'\nThis is ambiguous - does it mean 'while both alive' or 'until one is not alive'? Logic is correct but wording is confusing.",
+          "recommendation": "Revise to: 'Executes combat rounds in loop with condition: while attacker.is_alive AND defender.is_alive (loop terminates when either reaches 0 HP)'",
+          "files_affected": ["acceptance_criteria[2]"]
+        },
+        {
+          "dimension": "Python TDD Semantics",
+          "severity": "MEDIUM",
+          "issue": "Character state tracking section identifies challenge but lacks concrete implementation detail",
+          "detail": "Section notes 'Extract updated Character objects from RoundResult' but doesn't specify: Does RoundResult contain updated Character objects or just damage dealt? Are Character objects mutated or returned as new immutable instances?",
+          "recommendation": "Add clarification:\n'CHARACTER STATE UPDATE PATTERN:\n- RoundResult contains: updated_attacker (Character), updated_defender (Character)\n- Extract from round_result: attacker = round_result.updated_attacker\n- Loop updates: attacker, defender = round_result.updated_attacker, round_result.updated_defender\n- Characters are immutable (frozen dataclass), so new instances returned each round\n- CRITICAL: Never mutate original char1/char2 passed to run_combat'",
+          "files_affected": ["python_tdd_semantics"]
+        },
+        {
+          "dimension": "Outside-In ATDD Integrity",
+          "severity": "LOW",
+          "issue": "E2E validation step exists but doesn't show how to interpret 'ALL 9 PASS' outcome",
+          "detail": "Return to E2E section shows commands to run but doesn't explain: What if only 8 pass? What if Scenario 1 still fails? Troubleshooting guidance missing.",
+          "recommendation": "Add diagnostic guidance:\n'DIAGNOSTIC CHECKLIST if E2E tests don't all pass:\n1. If Scenario 1 still SKIP: Check CombatSimulator import in __init__.py\n2. If Scenario 1 FAIL: Debug run_combat - check initiative rolled only once\n3. If other scenarios regress: Likely character state mutation - verify immutability\n4. If timeout: Possible infinite loop - check while condition carefully'",
+          "files_affected": ["instructions.return_to_e2e"]
+        }
+      ],
+      "summary": "Step 03-01 has strong ATDD structure and hexagonal architecture, but needs critical revisions to test-first discipline and refactoring safety before execution. HIGH severity issues: (1) RED phase lacks explicit pytest verification, (2) Cycle 3 uses inconsistent format, (3) Missing refactoring safety rules and recovery procedure. These must be addressed for step quality.",
+      "strengths": [
+        "Excellent result dataclass specification with frozen immutability enforced",
+        "Clear dependency injection pattern and hexagonal architecture compliance",
+        "Strong E2E → unit test traceability with Scenario 1 driving implementation",
+        "Good coverage of all 9 E2E scenarios with expected passing conditions",
+        "Concrete examples of TDD cycles showing RED→GREEN progression"
+      ]
+    }
+  ],
+  "commit_message": "feat(application): Implement CombatSimulator use case\n\nOutside-In TDD (Unit → E2E validation):\n- CombatResult value object (5 fields, frozen dataclass)\n- CombatSimulator orchestrates complete combat\n- Rolls initiative once at start (not per round)\n- Executes combat rounds until victory\n- Returns CombatResult with winner, loser, all rounds\n\nImplementation:\n- Constructor injection: CombatSimulator(initiative_resolver, combat_round)\n- Combat loop: while attacker.is_alive and defender.is_alive\n- Character state updated from round results each iteration\n- Rounds stored as tuple (immutable) for CombatResult\n- CRITICAL: Initiative rolled ONCE, roles fixed throughout\n\nTests: 4-5 unit tests PASSED\nE2E: Scenario 1 now PASS (was SKIP)\n\nALL 9 E2E SCENARIOS NOW PASS\n\nOutside-In TDD cycle complete:\n- 9 E2E scenarios driving implementation\n- 20-25 unit tests validating components\n- Hexagonal architecture validated\n- 100% domain logic coverage achieved\n- Immutability enforced throughout\n- Production services called in acceptance tests\n\nScenarios passing:\n1. Full combat with attacker advantage enforcement\n2. Character with higher agility wins initiative\n3. Attacker kills defender - no counter-attack occurs\n4. Defender survives and counter-attacks\n5. Character immutability during combat\n6. Derived agility reflects current health\n7. Character creation fails with empty name\n8. Dead character cannot initiate attack\n9. Initiative tie resolved by first character rule\n\nDriven by:\n- Scenario 1: Full combat with complete integration\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+}

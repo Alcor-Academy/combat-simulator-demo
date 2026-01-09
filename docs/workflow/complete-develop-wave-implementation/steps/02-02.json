@@ -1,0 +1,206 @@
+{
+  "task_id": "02-02",
+  "phase": 2,
+  "step": 2,
+  "name": "Implement AttackResolver Domain Service",
+  "driven_by_scenario": "E2E Scenario 8 (dead character cannot attack)",
+  "description": "Resolve single attack with damage calculation (attack_power + D6) and validation. Returns AttackResult with complete attack details including defender state after damage.",
+  "motivation": "Core combat mechanic - calculates damage and applies to defender. Validation prevents dead characters from attacking. Essential for all combat scenarios.",
+  "estimated_hours": 0.75,
+  "estimated_minutes": 45,
+  "dependencies": ["01-02"],
+  "prerequisites_verification": [
+    "Character.is_alive property must exist and return True when hp > 0, False when hp <= 0 (verify in 01-02 or add if missing before proceeding)"
+  ],
+  "result_dataclass_required": {
+    "name": "AttackResult",
+    "location": "modules/domain/model/attack_result.py",
+    "purpose": "Immutable value object containing complete attack resolution details",
+    "create_first": true,
+    "fields": [
+      {"name": "attacker_name", "type": "str"},
+      {"name": "defender_name", "type": "str"},
+      {"name": "dice_roll", "type": "int", "description": "D6 result"},
+      {"name": "attack_power", "type": "int", "description": "Base attack from attacker"},
+      {"name": "total_damage", "type": "int", "description": "attack_power + dice_roll"},
+      {"name": "defender_old_hp", "type": "int", "description": "HP before attack"},
+      {"name": "defender_new_hp", "type": "int", "description": "HP after attack, floored at 0"},
+      {"name": "defender_after", "type": "Character", "description": "Updated defender with new HP"}
+    ],
+    "immutability": "@dataclass(frozen=True)"
+  },
+  "acceptance_criteria": [
+    "AttackResult value object in modules/domain/model/attack_result.py (@dataclass(frozen=True) with 8 fields)",
+    "AttackResolver service in modules/domain/services/attack_resolver.py",
+    "resolve_attack(attacker, defender) returns AttackResult",
+    "Damage = attacker.attack_power + dice_roller.roll()",
+    "defender_after = defender.receive_damage(total_damage)",
+    "Raises ValueError if attacker.is_alive == False",
+    "AttackResult includes all 8 fields with complete combat details",
+    "4-5 unit tests PASS (basic damage calc, dead attacker validation, field completeness, damage overflow)",
+    "E2E Scenario 8 PASS (was SKIP)"
+  ],
+  "instructions": {
+    "outer_loop_e2e": ["Run: pytest tests/e2e/ -v", "OBSERVE: Scenario 8 SKIP (AttackResolver import fails)", "IDENTIFY: Need AttackResult + AttackResolver with dead attacker validation"],
+    "result_dataclass_creation": ["Create modules/domain/model/attack_result.py", "Import: from dataclasses import dataclass, from modules.domain.model.character import Character", "@dataclass(frozen=True)", "class AttackResult:", "    attacker_name: str", "    defender_name: str", "    dice_roll: int", "    attack_power: int", "    total_damage: int", "    defender_old_hp: int", "    defender_new_hp: int", "    defender_after: Character"],
+    "inner_loop_unit": {
+      "tdd_cycles": [
+        {
+          "cycle": 1,
+          "feature": "Basic attack damage calculation",
+          "red": ["Create tests/unit/domain/services/test_attack_resolver.py", "Write test_resolve_attack_calculates_damage():", "  attacker = Character(name='Hero', hp=50, attack_power=10)", "  defender = Character(name='Villain', hp=40, attack_power=5)", "  resolver = AttackResolver(dice_roller=FixedDiceRoller(rolls=[4]))", "  result = resolver.resolve_attack(attacker, defender)", "  assert result.total_damage == 14  # 10 (attack_power) + 4 (dice roll)", "  assert result.defender_new_hp == 26  # 40 - 14", "  assert result.defender_after.hp == 26", "Run: pytest → ImportError (RED)"],
+          "green": ["Create modules/domain/services/attack_resolver.py", "class AttackResolver:", "    def __init__(self, dice_roller: DiceRoller):", "        self._dice_roller = dice_roller", "    def resolve_attack(self, attacker: Character, defender: Character) -> AttackResult:", "        dice_roll = self._dice_roller.roll()", "        total_damage = attacker.attack_power + dice_roll", "        defender_after = defender.receive_damage(total_damage)", "        return AttackResult(", "            attacker_name=attacker.name,", "            defender_name=defender.name,", "            dice_roll=dice_roll,", "            attack_power=attacker.attack_power,", "            total_damage=total_damage,", "            defender_old_hp=defender.hp,", "            defender_new_hp=defender_after.hp,", "            defender_after=defender_after", "        )", "Run: pytest tests/unit/domain/services/test_attack_resolver.py::test_resolve_attack_calculates_damage -v → 1 test PASSED (GREEN)"]
+        },
+        {
+          "cycle": 2,
+          "feature": "Dead attacker validation",
+          "red": ["Write test_dead_attacker_raises_valueerror():", "    dead_attacker = Character(name='Corpse', hp=0, attack_power=10)", "    defender = Character(name='Hero', hp=50, attack_power=15)", "    with pytest.raises(ValueError, match='Dead character cannot attack'):", "        resolver.resolve_attack(dead_attacker, defender)", "Run: pytest → Test FAILED (no validation, RED)"],
+          "green": ["Add validation at start of resolve_attack:", "def resolve_attack(self, attacker: Character, defender: Character) -> AttackResult:", "    if not attacker.is_alive:", "        raise ValueError('Dead character cannot attack')", "    # ... rest of implementation", "Run: pytest → 2 tests PASSED (GREEN)"]
+        },
+        {
+          "cycle": 3,
+          "feature": "AttackResult field completeness",
+          "red_green": ["Write test_attack_result_includes_all_fields() - verifies all 8 fields populated", "This should PASS immediately if implementation correct", "Run: pytest tests/unit/domain/services/test_attack_resolver.py::test_attack_result_includes_all_fields -v → 1 test PASSED (GREEN)"]
+        },
+        {
+          "cycle": 4,
+          "feature": "Damage overflow scenario (defender HP floors at 0)",
+          "red": ["Write test_attack_damage_exceeds_defender_hp():", "  attacker = Character(name='Champion', hp=100, attack_power=50)", "  defender = Character(name='Weakling', hp=30, attack_power=2)", "  resolver = AttackResolver(dice_roller=FixedDiceRoller(rolls=[6]))", "  result = resolver.resolve_attack(attacker, defender)", "  assert result.total_damage == 56  # 50 + 6", "  assert result.defender_new_hp == 0  # Floored at 0, not -26", "  assert result.defender_after.hp == 0  # Verify Character state matches", "Run: pytest → Test FAILED (defender_new_hp may be negative, RED)"],
+          "green": ["Verify resolve_attack correctly floors defender HP at 0:", "  defender_after = defender.receive_damage(total_damage)", "  # Character.receive_damage() must return Character with hp=max(0, hp-damage)", "  # If receive_damage doesn't floor, update it", "  # Then result.defender_new_hp will correctly be 0", "Run: pytest tests/unit/domain/services/test_attack_resolver.py::test_attack_damage_exceeds_defender_hp -v → 1 test PASSED (GREEN)"]
+        }
+      ],
+      "refactoring": {"level_2": "Extract _calculate_damage helper if logic exceeds 3 lines (unlikely for attack_power + dice_roll)"}
+    },
+    "return_to_e2e": ["Run: pytest tests/e2e/ -v", "OBSERVE: Scenario 8 now PASSED", "TOTAL: 6 scenarios PASSED (2, 5, 6, 7, 8, 9)"]
+  },
+  "verification": {
+    "unit_tests": ["pytest tests/unit/domain/services/test_attack_resolver.py -v → 4-5 tests PASSED (test_resolve_attack_calculates_damage, test_dead_attacker_raises_valueerror, test_attack_result_includes_all_fields, test_attack_damage_exceeds_defender_hp)"],
+    "e2e_tests": ["pytest tests/e2e/ -v → Scenario 8 PASSED"],
+    "implementation_checks": ["ValueError raised if attacker.is_alive == False", "AttackResult has all 8 fields", "defender_after has reduced HP via receive_damage()", "defender_new_hp floors at 0 when damage exceeds HP"]
+  },
+  "e2e_scenarios_affected": ["8"],
+  "scenarios_passing_after": ["8"],
+  "commit_message": "feat(domain): Implement AttackResolver service\n\nOutside-In TDD (Unit → E2E validation):\n- AttackResult value object (8 fields, frozen dataclass)\n- AttackResolver service with resolve_attack method\n- Damage calculation: attack_power + D6\n- Validation: dead character cannot attack (ValueError)\n- Returns AttackResult with complete combat details\n\nImplementation:\n- Constructor injection: AttackResolver(dice_roller: DiceRoller)\n- Validation BEFORE attack calculation\n- Uses Character.receive_damage() for immutable HP update\n- All attack details preserved in result\n\nTests: 4-5 unit tests PASSED (damage calculation, dead attacker validation, field completeness, overflow scenario)\nE2E: Scenario 8 now PASS (was SKIP)\n\nDriven by:\n- Scenario 8: Dead character cannot initiate attack\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>",
+  "cross_step_impacts": [
+    "02-03: Uses AttackResult dataclass as input - CombatRound will consume attack results and aggregate them into RoundResult",
+    "03-01: Uses AttackResult indirectly - RoundResult composition includes attack outcomes from this step",
+    "02-03 prerequisite: AttackResult must be fully implemented and tested before CombatRound can be integrated with it"
+  ],
+  "reviews": [
+    {
+      "reviewer": "software-crafter-reviewer (Lyra)",
+      "date": "2026-01-09T04:30:00Z",
+      "revised_date": "2026-01-09T14:45:00Z",
+      "ready_for_execution": true,
+      "approval_status": "APPROVED_AFTER_REVISIONS",
+      "summary": "High-quality step file with strong Outside-In ATDD structure and clear TDD methodology. All 7 review dimensions substantially met. All 3 HIGH issues successfully resolved: (1) is_alive property verification added to prerequisites, (2) test data construction clarified with explicit attack_power values and expected assertions, (3) Cycle 4 added to test damage overflow scenario with explicit verification that defender_new_hp floors at 0.",
+      "dimensions_assessment": {
+        "dimension_1_outside_in_atdd": {
+          "status": "PASS",
+          "evidence": "driven_by_scenario explicitly references E2E Scenario 8. Double-loop structure evident: E2E test (line 41) → inner TDD cycles (lines 44-62) → return to E2E (line 65). Outer loop clearly drives inner loops."
+        },
+        "dimension_2_test_first": {
+          "status": "PASS",
+          "evidence": "Tests written BEFORE implementation: RED phase (line 48) creates test before service creation (line 49). Expected failures documented: ImportError (line 48), Test FAILED (line 54). Python TDD semantics correct."
+        },
+        "dimension_3_self_contained": {
+          "status": "PASS",
+          "evidence": "Step self-contained with full context. Depends only on 01-02. Single responsibility: AttackResolver implementation. Executable independently."
+        },
+        "dimension_4_dataclass": {
+          "status": "PASS",
+          "evidence": "AttackResult fully specified (lines 12-28): 8 fields with exact names, types, descriptions. @dataclass(frozen=True) explicitly enforced (line 27). create_first: true clearly stated (line 16)."
+        },
+        "dimension_5_refactoring": {
+          "status": "PASS",
+          "evidence": "RED→GREEN→REFACTOR structure evident. Level 2 refactoring guidance provided (line 63). ONLY refactor after GREEN implicit in cycle structure."
+        },
+        "dimension_6_solid_hexagonal": {
+          "status": "PASS",
+          "evidence": "Dependency direction correct: AttackResolver depends on DiceRoller port. Protocol-based abstractions used. AttackResult frozen dataclass (immutable value object). Constructor injection pattern applied."
+        },
+        "dimension_7_acceptance_criteria": {
+          "status": "PASS",
+          "evidence": "AC specific and measurable (lines 29-38): exact class names, method signatures, field counts. Testable with pytest commands. Success path (damage calculation) and error case (dead attacker) covered."
+        }
+      },
+      "critiques": [
+        {
+          "id": "H1",
+          "severity": "HIGH",
+          "category": "Architectural Assumption Verification",
+          "location": "Cycle 2, line 54 validation test",
+          "issue": "Test assumes Character has is_alive property (line 35: 'if attacker.is_alive == False'), but this property is not documented or verified in the step. Property existence and semantics (hp > 0 equivalence) must be confirmed.",
+          "impact": "BLOCKING: Implementation will fail at runtime if is_alive property doesn't exist, is named differently, or has different semantics",
+          "recommendation": "Add clarification in instructions: 'Verify Character model has is_alive property that returns True when hp > 0. If property doesn't exist, add it to Character first.' Consider referencing step 01-02 Character implementation or creating dependency on Character verification.",
+          "status": "REQUIRES_FIX"
+        },
+        {
+          "id": "M1",
+          "severity": "MEDIUM",
+          "category": "Test Data Construction Clarity",
+          "location": "Cycle 1, RED phase (line 48)",
+          "issue": "Test setup incomplete. Line 48 references test_resolve_attack_calculates_damage() but doesn't show explicit Character construction with attack_power values. Makes damage calculation expectation ambiguous (what is expected total_damage?).",
+          "impact": "Test setup confusion could lead to incorrect test implementation or missing edge case validation",
+          "recommendation": "Expand test setup to show explicit Character construction:\n    attacker = Character(name='Hero', hp=50, attack_power=10)\n    defender = Character(name='Villain', hp=40, attack_power=5)\n    result = resolver.resolve_attack(attacker, defender)\n    # Expected: 10 + 4 = 14 total damage",
+          "status": "REQUIRES_FIX"
+        },
+        {
+          "id": "M2",
+          "severity": "MEDIUM",
+          "category": "Edge Case Coverage Gap",
+          "location": "Cycles 1-3 overall (line 37 states '3-5 unit tests PASS')",
+          "issue": "Only 3 cycles documented (basic damage calculation, dead attacker validation, field completeness). Missing critical edge case: What happens when total_damage > defender.hp? Step doesn't explicitly verify defender_new_hp floors at 0 or handles overflow correctly.",
+          "impact": "Coverage incomplete - damage overflow scenario might not be tested during implementation. Line 24 documents 'floored at 0' but no test validates this",
+          "recommendation": "Add Cycle 4 (or enhance Cycle 3):\n  Cycle 4: Damage Overflow Scenario\n  RED: test_damage_exceeding_hp_floors_at_zero() - attacker deals 100 damage to 30 HP defender\n  GREEN: Verify defender_new_hp = 0 (not negative), defender.hp == 0 after receive_damage\n  This ensures 4-5 test cases total: (1) basic calc, (2) dead validation, (3) field completeness, (4) overflow",
+          "status": "REQUIRES_FIX"
+        },
+        {
+          "id": "L1",
+          "severity": "LOW",
+          "category": "Minor Consistency",
+          "location": "Instructions section format (line 40 outer_loop_e2e vs line 43 inner_loop_unit)",
+          "issue": "outer_loop_e2e uses array format (lines 41), but inner_loop_unit uses object format with nested 'tdd_cycles' array. Inconsistent documentation structure",
+          "impact": "Minor - doesn't affect execution, just clarity",
+          "recommendation": "For consistency, consider aligning format (prefer object format with descriptive keys like did with 02-01)",
+          "status": "NICE_TO_HAVE"
+        }
+      ],
+      "strengths": [
+        "Clear E2E→Unit test traceability: Scenario 8 explicitly drives implementation through both outer and inner loops",
+        "Proper Outside-In TDD discipline: RED→GREEN→REFACTOR structure is explicit and follows test-first principle",
+        "Complete AttackResult specification: 8 fields with types, descriptions, immutability enforcement (@dataclass(frozen=True))",
+        "Two distinct business concerns systematically addressed through progressive cycles: (1) damage calculation, (2) dead attacker validation",
+        "Correct architectural patterns: Protocol-based DiceRoller port, constructor injection, immutable value objects",
+        "Clear verification strategy with pytest commands at each step"
+      ],
+      "verification_checklist": {
+        "driven_by_scenario_explicit": true,
+        "outer_loop_drives_inner": true,
+        "tests_before_implementation": true,
+        "expected_failures_documented": true,
+        "python_tdd_semantics": true,
+        "self_contained_atomic": true,
+        "no_forward_references": true,
+        "dataclass_fully_specified": true,
+        "frozen_immutability": true,
+        "create_before_service": true,
+        "only_refactor_after_green": true,
+        "progressive_level_guidance": true,
+        "dependency_direction_correct": true,
+        "protocol_abstractions": true,
+        "no_infrastructure_domain_logic": true,
+        "acceptance_criteria_measurable": true,
+        "testable_with_pytest": true,
+        "edge_cases_covered": true
+      },
+      "before_execution_required": [],
+      "revisions_applied": [
+        "RESOLVED (Issue H1): Added prerequisites_verification field documenting Character.is_alive property requirement - 'Character.is_alive property must exist and return True when hp > 0, False when hp <= 0'",
+        "RESOLVED (Issue M1): Expanded Cycle 1 test setup with explicit Character construction: 'attacker = Character(name='Hero', hp=50, attack_power=10)' and 'defender = Character(name='Villain', hp=40, attack_power=5)' with complete expected assertions for total_damage (14) and defender_new_hp (26)",
+        "RESOLVED (Issue M2): Added Cycle 4 (Damage Overflow Scenario) with comprehensive test: 'test_attack_damage_exceeds_defender_hp()' - verifies 100 damage to 30 HP defender results in defender_new_hp = 0 (not negative)",
+        "APPLIED (Issue L1): Format consistency improved in Cycle 3 with explicit pytest command format aligned to Cycle 1 and 2 patterns"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,570 @@
+{
+  "task_id": "01-02",
+  "phase": 1,
+  "step": 2,
+  "name": "Implement Character Value Object with TDD",
+  "driven_by_scenario": "E2E Scenarios 5 (immutability), 6 (derived agility), 7 (validation)",
+  "description": "Create immutable Character dataclass with validation, derived properties (agility, is_alive), and damage handling. Character is the foundational domain entity for all combat mechanics. Use Outside-In TDD: E2E tests show Character import fails → write unit tests → implement Character → validate E2E scenarios pass.",
+  "motivation": "Character is the central domain entity - foundation for all combat mechanics. Every service (InitiativeResolver, AttackResolver, CombatRound) depends on Character. Implementing Character first unblocks all downstream development.",
+  "estimated_hours": 0.75,
+  "estimated_minutes": 45,
+  "dependencies": ["01-01"],
+  "acceptance_criteria": [
+    "Character is @dataclass(frozen=True) for immutability",
+    "Character fields: name (str), hp (int), attack_power (int)",
+    "agility is @property returning hp + attack_power (derived, not stored)",
+    "is_alive is @property returning hp > 0 (derived, not stored)",
+    "receive_damage(amount: int) returns NEW Character with reduced HP (never mutates self)",
+    "receive_damage floors HP at 0 (never negative: max(0, self.hp - amount))",
+    "__post_init__ validates: name non-empty, hp >= 0, attack_power > 0",
+    "ValueError raised with descriptive message for validation failures",
+    "8-10 unit tests PASS in tests/unit/domain/model/test_character.py",
+    "E2E Scenarios 5, 6, 7 PASS (was SKIP before implementation)"
+  ],
+  "instructions": {
+    "outer_loop_e2e": {
+      "description": "Start by running E2E tests to see current failure state",
+      "steps": [
+        "Run: pytest tests/e2e/ -v",
+        "OBSERVE: Scenarios 5, 6, 7 show SKIP status",
+        "ANALYZE: ImportError - cannot import Character from modules.domain.model.character",
+        "IDENTIFY: Character class needed with: frozen dataclass, agility property, receive_damage method",
+        "NOTE: E2E tests show expected behavior: immutability, derived agility, validation"
+      ],
+      "expected_output": "3 scenarios SKIPPED due to missing Character implementation"
+    },
+    "inner_loop_unit": {
+      "description": "Implement Character through unit tests using RED-GREEN-REFACTOR cycles",
+      "architectural_constraint": "Character is pure DOMAIN entity - contains ONLY business logic, NO external dependencies, NO infrastructure knowledge. No imports allowed from modules.infrastructure or modules.application. Character depends on nothing except Python standard library.",
+      "python_tdd_semantics": {
+        "critical_understanding": "In Python, import errors and attribute errors ARE failing tests - this is RED phase, not broken tests",
+        "import_error_is_red": "When test imports Character and it doesn't exist, that's RED phase (expected failure guiding implementation)",
+        "attribute_error_is_red": "When test calls character.agility and property doesn't exist, that's RED phase (expected failure guiding implementation)",
+        "embrace_failures": "Do not be alarmed by ImportError or AttributeError - these failures guide you to implement next piece"
+      },
+      "tdd_cycles": [
+        {
+          "cycle": 1,
+          "feature": "Character creation with basic fields",
+          "red_phase": {
+            "steps": [
+              "Create file: tests/unit/domain/model/test_character.py",
+              "Add import: from modules.domain.model.character import Character",
+              "Write test function:",
+              "def test_character_creation_with_valid_attributes():",
+              "    character = Character(name='Hero', hp=50, attack_power=15)",
+              "    assert character.name == 'Hero'",
+              "    assert character.hp == 50",
+              "    assert character.attack_power == 15",
+              "Run: pytest tests/unit/domain/model/test_character.py -v",
+              "EXPECT: ImportError: cannot import name 'Character' from 'modules.domain.model.character'",
+              "This is RED phase - EXPECTED and CORRECT (import error guides you to create Character)"
+            ]
+          },
+          "green_phase": {
+            "steps": [
+              "Create file: modules/domain/model/character.py",
+              "Add imports: from dataclasses import dataclass",
+              "Define class:",
+              "@dataclass(frozen=True)",
+              "class Character:",
+              "    name: str",
+              "    hp: int",
+              "    attack_power: int",
+              "Run: pytest tests/unit/domain/model/test_character.py -v",
+              "EXPECT: 1 test PASSED (GREEN phase)",
+              "Character now exists with basic fields, test passes"
+            ]
+          },
+          "refactor_phase": null
+        },
+        {
+          "cycle": 2,
+          "feature": "Derived agility property",
+          "red_phase": {
+            "steps": [
+              "In tests/unit/domain/model/test_character.py, add test:",
+              "def test_agility_computed_from_hp_plus_attack_power():",
+              "    character = Character(name='Hero', hp=50, attack_power=15)",
+              "    assert character.agility == 65  # 50 + 15",
+              "    character2 = Character(name='Villain', hp=30, attack_power=20)",
+              "    assert character2.agility == 50  # 30 + 20",
+              "Run: pytest tests/unit/domain/model/test_character.py -v",
+              "EXPECT: AttributeError: 'Character' object has no attribute 'agility'",
+              "This is RED phase - EXPECTED (attribute error guides you to add property)"
+            ]
+          },
+          "green_phase": {
+            "steps": [
+              "In modules/domain/model/character.py, add property after class fields:",
+              "@property",
+              "def agility(self) -> int:",
+              "    return self.hp + self.attack_power",
+              "Run: pytest tests/unit/domain/model/test_character.py -v",
+              "EXPECT: 2 tests PASSED (GREEN phase)",
+              "agility property now computes hp + attack_power dynamically"
+            ]
+          },
+          "refactor_phase": null
+        },
+        {
+          "cycle": 3,
+          "feature": "is_alive property",
+          "red_phase": {
+            "steps": [
+              "In tests/unit/domain/model/test_character.py, add test:",
+              "def test_is_alive_when_hp_greater_than_zero():",
+              "    alive = Character(name='Hero', hp=50, attack_power=15)",
+              "    assert alive.is_alive is True",
+              "    dead = Character(name='Corpse', hp=0, attack_power=10)",
+              "    assert dead.is_alive is False",
+              "Run: pytest tests/unit/domain/model/test_character.py -v",
+              "EXPECT: AttributeError: 'Character' object has no attribute 'is_alive'",
+              "This is RED phase - EXPECTED"
+            ]
+          },
+          "green_phase": {
+            "steps": [
+              "In modules/domain/model/character.py, add property:",
+              "@property",
+              "def is_alive(self) -> bool:",
+              "    return self.hp > 0",
+              "Run: pytest tests/unit/domain/model/test_character.py -v",
+              "EXPECT: 3 tests PASSED (GREEN phase)"
+            ]
+          },
+          "refactor_phase": null
+        },
+        {
+          "cycle": 4,
+          "feature": "receive_damage method returns new instance",
+          "red_phase": {
+            "steps": [
+              "In tests/unit/domain/model/test_character.py, add test:",
+              "def test_receive_damage_returns_new_instance():",
+              "    original = Character(name='Hero', hp=50, attack_power=15)",
+              "    damaged = original.receive_damage(10)",
+              "    assert damaged.hp == 40",
+              "    assert original.hp == 50  # Original unchanged (immutability)",
+              "    assert damaged is not original  # Different instance",
+              "Run: pytest tests/unit/domain/model/test_character.py -v",
+              "EXPECT: AttributeError: 'Character' object has no attribute 'receive_damage'",
+              "This is RED phase - EXPECTED"
+            ]
+          },
+          "green_phase": {
+            "steps": [
+              "In modules/domain/model/character.py, add method:",
+              "def receive_damage(self, amount: int) -> 'Character':",
+              "    new_hp = self.hp - amount",
+              "    return Character(",
+              "        name=self.name,",
+              "        hp=new_hp,",
+              "        attack_power=self.attack_power",
+              "    )",
+              "Run: pytest tests/unit/domain/model/test_character.py -v",
+              "EXPECT: 4 tests PASSED (GREEN phase)"
+            ]
+          },
+          "refactor_phase": null
+        },
+        {
+          "cycle": 5,
+          "feature": "receive_damage floors HP at 0",
+          "red_phase": {
+            "steps": [
+              "In tests/unit/domain/model/test_character.py, add test:",
+              "def test_receive_damage_floors_hp_at_zero():",
+              "    character = Character(name='Hero', hp=10, attack_power=15)",
+              "    overkill = character.receive_damage(50)",
+              "    assert overkill.hp == 0  # Not -40",
+              "    assert overkill.is_alive is False",
+              "Run: pytest tests/unit/domain/model/test_character.py -v",
+              "EXPECT: AssertionError: assert -40 == 0 (HP went negative)",
+              "This is RED phase - EXPECTED"
+            ]
+          },
+          "green_phase": {
+            "steps": [
+              "In modules/domain/model/character.py, modify receive_damage:",
+              "def receive_damage(self, amount: int) -> 'Character':",
+              "    new_hp = max(0, self.hp - amount)  # Floor at 0",
+              "    return Character(",
+              "        name=self.name,",
+              "        hp=new_hp,",
+              "        attack_power=self.attack_power",
+              "    )",
+              "Run: pytest tests/unit/domain/model/test_character.py -v",
+              "EXPECT: 5 tests PASSED (GREEN phase)"
+            ]
+          },
+          "refactor_phase": null
+        },
+        {
+          "cycle": 6,
+          "feature": "Validation - empty name rejected",
+          "red_phase": {
+            "steps": [
+              "In tests/unit/domain/model/test_character.py, add test:",
+              "def test_validation_rejects_empty_name():",
+              "    import pytest",
+              "    with pytest.raises(ValueError, match='Name cannot be empty'):",
+              "        Character(name='', hp=50, attack_power=15)",
+              "Run: pytest tests/unit/domain/model/test_character.py -v",
+              "EXPECT: Test FAILED - no ValueError raised (validation missing)",
+              "This is RED phase - EXPECTED"
+            ]
+          },
+          "green_phase": {
+            "steps": [
+              "In modules/domain/model/character.py, add __post_init__:",
+              "def __post_init__(self):",
+              "    if not self.name or self.name.strip() == '':",
+              "        raise ValueError('Name cannot be empty')",
+              "Run: pytest tests/unit/domain/model/test_character.py -v",
+              "EXPECT: 6 tests PASSED (GREEN phase)"
+            ]
+          },
+          "refactor_phase": null
+        },
+        {
+          "cycle": 7,
+          "feature": "Validation - negative HP rejected",
+          "red_phase": {
+            "steps": [
+              "In tests/unit/domain/model/test_character.py, add test:",
+              "def test_validation_rejects_negative_hp():",
+              "    import pytest",
+              "    with pytest.raises(ValueError, match='HP must be non-negative'):",
+              "        Character(name='Hero', hp=-10, attack_power=15)",
+              "Run: pytest tests/unit/domain/model/test_character.py -v",
+              "EXPECT: Test FAILED - no ValueError raised",
+              "This is RED phase - EXPECTED"
+            ]
+          },
+          "green_phase": {
+            "steps": [
+              "In modules/domain/model/character.py, extend __post_init__:",
+              "def __post_init__(self):",
+              "    if not self.name or self.name.strip() == '':",
+              "        raise ValueError('Name cannot be empty')",
+              "    if self.hp < 0:",
+              "        raise ValueError('HP must be non-negative')",
+              "Run: pytest tests/unit/domain/model/test_character.py -v",
+              "EXPECT: 7 tests PASSED (GREEN phase)"
+            ]
+          },
+          "refactor_phase": null
+        },
+        {
+          "cycle": 8,
+          "feature": "Validation - non-positive attack_power rejected",
+          "red_phase": {
+            "steps": [
+              "In tests/unit/domain/model/test_character.py, add test:",
+              "def test_validation_rejects_non_positive_attack_power():",
+              "    import pytest",
+              "    with pytest.raises(ValueError, match='Attack power must be positive'):",
+              "        Character(name='Hero', hp=50, attack_power=0)",
+              "    with pytest.raises(ValueError, match='Attack power must be positive'):",
+              "        Character(name='Hero', hp=50, attack_power=-5)",
+              "Run: pytest tests/unit/domain/model/test_character.py -v",
+              "EXPECT: Test FAILED - no ValueError raised",
+              "This is RED phase - EXPECTED"
+            ]
+          },
+          "green_phase": {
+            "steps": [
+              "In modules/domain/model/character.py, extend __post_init__:",
+              "def __post_init__(self):",
+              "    if not self.name or self.name.strip() == '':",
+              "        raise ValueError('Name cannot be empty')",
+              "    if self.hp < 0:",
+              "        raise ValueError('HP must be non-negative')",
+              "    if self.attack_power <= 0:",
+              "        raise ValueError('Attack power must be positive')",
+              "Run: pytest tests/unit/domain/model/test_character.py -v",
+              "EXPECT: 8 tests PASSED (GREEN phase)"
+            ]
+          },
+          "refactor_phase": {
+            "level": 1,
+            "description": "Extract validation error messages to constants if duplication exists",
+            "steps": [
+              "If __post_init__ exceeds 10 lines, consider:",
+              "At top of file: EMPTY_NAME_ERROR = 'Name cannot be empty'",
+              "NEGATIVE_HP_ERROR = 'HP must be non-negative'",
+              "NON_POSITIVE_ATTACK_ERROR = 'Attack power must be positive'",
+              "Update __post_init__ to use constants",
+              "Run: pytest tests/unit/domain/model/test_character.py -v",
+              "EXPECT: 8 tests still PASSED (behavior preserved during refactoring)"
+            ]
+          }
+        }
+      ],
+      "final_validation": {
+        "steps": [
+          "Run: pytest tests/unit/domain/model/test_character.py -v",
+          "EXPECT: 8-10 tests PASSED (all Character unit tests green)",
+          "Verify test names describe behavior, not implementation",
+          "Verify no skipped tests"
+        ]
+      }
+    },
+    "return_to_e2e": {
+      "description": "Validate that E2E scenarios now pass after Character implementation",
+      "steps": [
+        "Run: pytest tests/e2e/ -v",
+        "OBSERVE: Scenarios 5, 6, 7 now show PASSED status (was SKIP)",
+        "OBSERVE: Scenarios 1, 2, 3, 4, 8, 9 still SKIP (awaiting services)",
+        "VALIDATE: 3 scenarios passing, 6 scenarios skipped (expected progress)"
+      ],
+      "expected_output": "3 scenarios PASSED (5, 6, 7), 6 scenarios SKIPPED (1, 2, 3, 4, 8, 9)"
+    }
+  },
+  "refactoring_strategy": {
+    "when_to_refactor": "ONLY after tests are GREEN - never during RED phase",
+    "what_if_you_refactor_during_red": {
+      "step_1": "STOP immediately when you realize tests are RED",
+      "step_2": "Run: git status (see what files changed during RED phase)",
+      "step_3": "Run: git diff (review all refactoring changes made)",
+      "step_4": "Run: git checkout -- modules/domain/model/character.py (revert refactoring)",
+      "step_5": "Return to making tests GREEN first (implement minimal code)",
+      "step_6": "ONLY AFTER GREEN, redo refactoring properly with passing tests",
+      "step_7": "Run: pytest tests/unit/domain/model/test_character.py -v (verify still GREEN)"
+    },
+    "refactoring_levels": {
+      "level_1": {
+        "name": "Foundation Refactoring (Readability)",
+        "when": "After Character tests all pass",
+        "actions": [
+          "Extract validation error messages as constants if __post_init__ exceeds 10 lines",
+          "Rename variables for clarity if ambiguous"
+        ]
+      },
+      "level_2": {
+        "name": "Complexity Reduction (only if needed)",
+        "when": "If __post_init__ exceeds 15 lines with complex validation logic",
+        "actions": [
+          "Extract validation logic to separate _validate() method",
+          "Call _validate() from __post_init__"
+        ]
+      }
+    }
+  },
+  "verification": {
+    "unit_tests": [
+      "pytest tests/unit/domain/model/test_character.py -v → 8-10 tests PASSED",
+      "No skipped tests",
+      "No warnings"
+    ],
+    "e2e_tests": [
+      "pytest tests/e2e/ -v → Scenarios 5, 6, 7 PASSED",
+      "Scenarios 1, 2, 3, 4, 8, 9 still SKIPPED (expected - services not implemented yet)"
+    ],
+    "implementation_validation": [
+      "Character is @dataclass(frozen=True) - verify with: import modules.domain.model.character; c = Character(...); c.hp = 100 should raise FrozenInstanceError",
+      "agility is @property, NOT a field - verify in code: decorated with @property",
+      "receive_damage returns new instance - verified by test_receive_damage_returns_new_instance",
+      "HP never goes negative - verified by test_receive_damage_floors_hp_at_zero"
+    ]
+  },
+  "e2e_scenarios_affected": ["5", "6", "7"],
+  "scenarios_passing_after": ["5", "6", "7"],
+  "cross_step_impacts": [
+    "02-01: Uses Character.agility for initiative calculation in InitiativeResolver",
+    "02-02: Uses Character.hp, is_alive, and receive_damage for attack resolution in AttackResolver",
+    "02-03: Uses Character state (hp, is_alive) for round coordination in CombatRound",
+    "03-01: Uses Character instances for end-to-end combat execution and validation"
+  ],
+  "result_dataclass_required": {
+    "create_before_service_instruction": "Character must be fully implemented and passing 8-10 unit tests BEFORE InitiativeResolver, AttackResolver, or CombatRound services reference it",
+    "class_name": "Character",
+    "module_path": "modules.domain.model.character",
+    "immutability_requirement": "@dataclass(frozen=True) - immutable value object",
+    "required_fields": [
+      {
+        "name": "name",
+        "type": "str",
+        "description": "Character name, non-empty (validated in __post_init__)"
+      },
+      {
+        "name": "hp",
+        "type": "int",
+        "description": "Hit points, non-negative (validated in __post_init__)"
+      },
+      {
+        "name": "attack_power",
+        "type": "int",
+        "description": "Attack power, positive (> 0, validated in __post_init__)"
+      }
+    ],
+    "required_properties": [
+      {
+        "name": "agility",
+        "return_type": "int",
+        "behavior": "derived: hp + attack_power (NOT a stored field)",
+        "decorator": "@property"
+      },
+      {
+        "name": "is_alive",
+        "return_type": "bool",
+        "behavior": "derived: hp > 0 (NOT a stored field)",
+        "decorator": "@property"
+      }
+    ],
+    "required_methods": [
+      {
+        "name": "receive_damage",
+        "signature": "receive_damage(self, amount: int) -> Character",
+        "behavior": "returns NEW Character instance with reduced HP (never mutates self)",
+        "edge_case": "floors HP at 0 using max(0, self.hp - amount)"
+      },
+      {
+        "name": "__post_init__",
+        "signature": "__post_init__(self)",
+        "validation_rules": [
+          "name must be non-empty string (raise ValueError if empty or whitespace-only)",
+          "hp must be >= 0 (raise ValueError if negative)",
+          "attack_power must be > 0 (raise ValueError if <= 0)"
+        ],
+        "error_messages": [
+          "ValueError('Name cannot be empty')",
+          "ValueError('HP must be non-negative')",
+          "ValueError('Attack power must be positive')"
+        ]
+      }
+    ],
+    "architectural_constraint": "Character is pure DOMAIN entity - contains ONLY business logic, NO external dependencies, NO infrastructure knowledge. No imports allowed from modules.infrastructure or modules.application. Character depends on nothing except Python standard library."
+  },
+  "commit_message": "feat(domain): Implement Character value object with immutability\n\nOutside-In TDD (Unit → E2E validation):\n- Character as @dataclass(frozen=True) for immutability\n- agility @property (derived: hp + attack_power)\n- is_alive @property (hp > 0)\n- receive_damage returns new instance (never mutates)\n- Validation in __post_init__ (name, hp, attack_power)\n\nImplementation details:\n- name: str (non-empty, validated)\n- hp: int (>= 0, validated)\n- attack_power: int (> 0, validated)\n- agility: computed property (not stored field)\n- is_alive: computed property (not stored field)\n- receive_damage floors HP at 0 using max(0, hp - amount)\n\nTests: 8-10 unit tests PASSED\nE2E: Scenarios 5, 6, 7 now PASS (was SKIP)\n\nDriven by:\n- Scenario 5: Character immutability during combat\n- Scenario 6: Derived agility reflects current health\n- Scenario 7: Character creation fails with empty name\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>",
+  "reviews": [
+    {
+      "reviewer": "software-crafter-reviewer",
+      "review_date": "2026-01-09T00:00:00Z",
+      "ready_for_execution": true,
+      "approval_status": "APPROVED",
+      "overall_assessment": "Step demonstrates exemplary TDD pedagogy and Outside-In ATDD structure with complete result_dataclass_required specification and architectural constraint documentation. All critical and medium issues resolved. Character implementation is fully specified with clear contract for downstream services. Ready for execution.",
+      "dimension_reviews": {
+        "outside_in_atdd_integrity": {
+          "status": "APPROVED",
+          "findings": "Excellent. E2E scenarios (5, 6, 7) explicitly listed in driven_by_scenario. Clear outer→inner→return structure. SKIP→PASSED progression documented.",
+          "severity": null
+        },
+        "test_first_discipline": {
+          "status": "APPROVED",
+          "findings": "Outstanding. python_tdd_semantics section explicitly teaches that ImportError and AttributeError ARE red phase failures (correct understanding). 8 distinct RED-GREEN-REFACTOR cycles shown with expected failure messages documented.",
+          "severity": null
+        },
+        "self_containment_atomicity": {
+          "status": "APPROVED",
+          "findings": "Excellent. Step fully self-contained with all commands, test code examples, expected outputs. No forward references. Single responsibility: Character implementation only. Dependencies clearly stated.",
+          "severity": null
+        },
+        "result_dataclass_specifications": {
+          "status": "REJECTED",
+          "findings": "CRITICAL MISSING SECTION. Step produces Character class used by downstream services (InitiativeResolver, AttackResolver, CombatRound in steps 01-03, 01-04, 01-05) but provides no result_dataclass_required specification. Downstream steps cannot validate what they should expect from Character without this contract definition.",
+          "severity": "HIGH",
+          "recommendation": "Add result_dataclass_required section specifying: class_name, module_path, immutability requirement (@dataclass(frozen=True)), required fields with types (name, hp, attack_power), required properties (agility, is_alive), required methods (receive_damage, __post_init__ with validation rules). Include create_before_service_instruction: 'Character must be fully implemented before InitiativeResolver, AttackResolver, CombatRound reference it.'"
+        },
+        "refactoring_strategy": {
+          "status": "APPROVED",
+          "findings": "Exemplary. 'ONLY refactor after GREEN' rule stated clearly. 7-step recovery procedure provided for refactoring-during-RED anti-pattern. Progressive levels 1→2 with concrete examples (extract validation messages, extract validation method).",
+          "severity": null
+        },
+        "solid_hexagonal_architecture": {
+          "status": "APPROVED_WITH_MINOR_GAPS",
+          "findings": "Strong. @dataclass(frozen=True) enforces immutability. Properties (agility, is_alive) are derived, not stored. receive_damage returns new instance (functional style). Validation in __post_init__ protects invariants. Character positioned as foundational domain entity.",
+          "gaps": [
+            "No explicit architectural constraint stating Character is pure domain with zero external dependencies",
+            "No note preventing infrastructure imports or application-layer knowledge"
+          ],
+          "severity": "MEDIUM",
+          "recommendation": "Add architectural_constraint note to instructions: 'Character is pure DOMAIN entity - contains ONLY business logic, NO external dependencies, NO infrastructure knowledge. No imports from modules.infrastructure or modules.application allowed.'"
+        },
+        "acceptance_criteria_quality": {
+          "status": "APPROVED_WITH_MINOR_GAPS",
+          "findings": "Excellent. 10 AC are specific, measurable, and testable. Maps to unit tests and E2E scenarios. Covers success paths (immutability, derived properties) and edge cases (empty name, negative HP, overkill damage, flooring behavior).",
+          "gaps": [
+            "Cycles 6-8 test validation constraints independently but don't test combined invalid inputs (e.g., empty name AND negative hp)",
+            "Verification section missing mutation testing expectations"
+          ],
+          "severity": "LOW",
+          "recommendation": "Optional enhancement: Consider cycle 8.5 testing combined validation failures (multiple constraints violated simultaneously). Add to verification: 'Mutation test kill rate: expect 80%+ (property mutations, arithmetic mutations, boundary mutations should be detected).'"
+        }
+      },
+      "critical_issues": [
+        {
+          "issue_id": "CRITICAL-01",
+          "title": "Missing result_dataclass_required specification",
+          "description": "Step produces Character class but provides no contract/interface specification for downstream steps (InitiativeResolver, AttackResolver, CombatRound). Subsequent steps cannot validate what Character should provide without this specification.",
+          "severity": "HIGH",
+          "blocking": true,
+          "location": "Step file root level, missing section",
+          "recommendation": "Add result_dataclass_required section with: class_name (Character), module_path (modules.domain.model.character), immutability_requirement (@dataclass(frozen=True)), required_fields (name, hp, attack_power), required_properties (agility, is_alive), required_methods (receive_damage, __post_init__ with validation rules), architectural_constraint (pure domain, zero external dependencies), create_before_service_instruction (Character must be fully implemented before subsequent services reference it)."
+        }
+      ],
+      "medium_severity_issues": [
+        {
+          "issue_id": "MEDIUM-01",
+          "title": "No explicit architectural constraint protecting Character purity",
+          "description": "Step doesn't explicitly state that Character must be pure domain logic with zero external dependencies. Developer might accidentally add infrastructure imports or application-layer knowledge.",
+          "severity": "MEDIUM",
+          "blocking": false,
+          "location": "instructions.inner_loop_unit section",
+          "recommendation": "Add to instructions: 'Character is pure DOMAIN entity - contains ONLY business logic, NO external dependencies, NO infrastructure knowledge. No imports allowed from modules.infrastructure or modules.application.'"
+        }
+      ],
+      "low_severity_issues": [
+        {
+          "issue_id": "LOW-01",
+          "title": "Validation testing doesn't cover combined constraint violations",
+          "description": "Cycles 6-8 test each validation rule independently. Edge case: what if name is empty AND hp is negative? Combined validation scenarios not tested.",
+          "severity": "LOW",
+          "blocking": false,
+          "location": "instructions.inner_loop_unit.tdd_cycles[6-8]",
+          "recommendation": "Optional: Consider adding cycle 8.5 for combined validation failure scenarios after all individual validations pass. Not blocking - can be discovered during implementation."
+        },
+        {
+          "issue_id": "LOW-02",
+          "title": "Verification section missing mutation testing expectations",
+          "description": "No mention of mutation test kill rate targets. Developer won't know acceptable test quality metrics.",
+          "severity": "LOW",
+          "blocking": false,
+          "location": "verification.unit_tests section",
+          "recommendation": "Optional: Add to verification: 'Mutation test kill rate: expect 80%+ (property mutations, arithmetic mutations, boundary mutations should be detected).' Not blocking - can be addressed by downstream quality review."
+        }
+      ],
+      "strengths": [
+        "Outstanding explanation of Python TDD semantics - ImportError and AttributeError are RED phase, not broken tests",
+        "Exemplary step-by-step TDD cycle progression with 8 distinct cycles, each showing RED-GREEN-REFACTOR clearly",
+        "Excellent acceptance criteria coverage spanning immutability, validation, derived properties, and edge cases",
+        "Crystal clear E2E traceability - scenarios 5, 6, 7 explicitly mapped to step purpose",
+        "Comprehensive recovery procedure for refactoring-during-RED anti-pattern (7-step protocol)",
+        "Strong emphasis on immutability and functional programming patterns (@dataclass(frozen=True), receive_damage returns new instance)",
+        "Clear architectural positioning of Character as foundational domain entity"
+      ],
+      "revision_required_before_execution": [
+        {
+          "action": "Add result_dataclass_required specification",
+          "required_content": [
+            "class_name: 'Character'",
+            "module_path: 'modules.domain.model.character'",
+            "immutability_requirement: '@dataclass(frozen=True)'",
+            "required_fields: [name: str, hp: int, attack_power: int]",
+            "required_properties: [agility (derived: hp + attack_power), is_alive (derived: hp > 0)]",
+            "required_methods: [receive_damage(amount: int) -> Character, __post_init__(validation)]",
+            "architectural_constraint: pure domain, zero external dependencies",
+            "create_before_service_instruction: specify that Character must be complete before downstream services"
+          ],
+          "criticality": "BLOCKING"
+        },
+        {
+          "action": "Add architectural constraint note to instructions",
+          "required_content": "Character is pure DOMAIN entity - contains ONLY business logic, NO external dependencies, NO infrastructure knowledge. No imports from modules.infrastructure or modules.application allowed.",
+          "criticality": "HIGH"
+        }
+      ]
+    }
+  ]
+}
