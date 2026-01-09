@@ -377,6 +377,8 @@
   "e2e_scenarios_affected": ["2", "9"],
   "scenarios_passing_after": ["2", "9"],
   "commit_message": "feat(domain): Implement InitiativeResolver service\n\nOutside-In TDD (Unit → E2E validation):\n- InitiativeResult value object (6 fields, frozen dataclass)\n- InitiativeResolver service with roll_initiative method\n- Initiative calculation: agility + D6\n- Tie-breaker rules:\n  1. Higher initiative total wins\n  2. If equal, higher base agility wins\n  3. If still equal, first character wins\n- Returns InitiativeResult (attacker, defender, rolls, totals)\n\nImplementation details:\n- Constructor injection: InitiativeResolver(dice_roller: DiceRoller)\n- Calls dice_roller.roll() exactly twice (once per character)\n- Deterministic tie-breaking ensures no ambiguity\n\nTests: 3-5 unit tests PASSED\nE2E: Scenarios 2, 9 now PASS (was SKIP)\n\nDriven by:\n- Scenario 2: Character with higher agility wins initiative\n- Scenario 9: Initiative tie resolved by first character rule\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>",
+  "state": "IN_PROGRESS",
+  "execution_start_time": "2026-01-09T12:00:00Z",
   "reviews": [
     {
       "reviewer": "software-crafter-reviewer (Lyra)",

@@ -633,7 +633,7 @@ def verify_first_character_tie_breaker(name: str, combat_context):
     assert init_result.attacker.name == name, f"Expected {name} to win tie-breaker, got {init_result.attacker.name}"
 
 
-@then("both characters have initiative total {total:d}")
+@then(parsers.parse("both characters have initiative total {total:d}"))
 def verify_both_initiative_totals(total: int, combat_context):
     """Validate both characters have same initiative total (tie).
 
@@ -644,7 +644,7 @@ def verify_both_initiative_totals(total: int, combat_context):
     assert init_result.defender_total == total, f"Defender initiative {init_result.defender_total} != {total}"
 
 
-@then("both characters have base agility {agility:d}")
+@then(parsers.parse("both characters have base agility {agility:d}"))
 def verify_both_base_agility(agility: int, combat_context):
     """Validate both characters have same base agility.
 
