@@ -377,8 +377,74 @@
   "e2e_scenarios_affected": ["2", "9"],
   "scenarios_passing_after": ["2", "9"],
   "commit_message": "feat(domain): Implement InitiativeResolver service\n\nOutside-In TDD (Unit → E2E validation):\n- InitiativeResult value object (6 fields, frozen dataclass)\n- InitiativeResolver service with roll_initiative method\n- Initiative calculation: agility + D6\n- Tie-breaker rules:\n  1. Higher initiative total wins\n  2. If equal, higher base agility wins\n  3. If still equal, first character wins\n- Returns InitiativeResult (attacker, defender, rolls, totals)\n\nImplementation details:\n- Constructor injection: InitiativeResolver(dice_roller: DiceRoller)\n- Calls dice_roller.roll() exactly twice (once per character)\n- Deterministic tie-breaking ensures no ambiguity\n\nTests: 3-5 unit tests PASSED\nE2E: Scenarios 2, 9 now PASS (was SKIP)\n\nDriven by:\n- Scenario 2: Character with higher agility wins initiative\n- Scenario 9: Initiative tie resolved by first character rule\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>",
-  "state": "IN_PROGRESS",
+  "state": "DONE",
   "execution_start_time": "2026-01-09T12:00:00Z",
+  "execution_end_time": "2026-01-09T12:30:00Z",
+  "execution_result": {
+    "status": "SUCCESS",
+    "summary": "InitiativeResolver service implemented successfully through Outside-In TDD",
+    "deliverables": [
+      "modules/domain/model/initiative_result.py - InitiativeResult value object (frozen dataclass, 6 fields)",
+      "modules/domain/services/initiative_resolver.py - InitiativeResolver service with tie-breaker logic",
+      "tests/unit/domain/services/test_initiative_resolver.py - 4 unit tests (all PASSED)",
+      "tests/e2e/test_combat_simulation.py - Fixed step definitions for parsers.parse decorator"
+    ],
+    "test_results": {
+      "unit_tests": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "tests": [
+          "test_higher_initiative_total_wins - char1 wins with higher total (68 vs 52)",
+          "test_tie_breaker_higher_agility_wins - char2 wins tie-breaker by higher agility (53 > 50)",
+          "test_tie_breaker_first_character_wins_if_agility_equal - char1 wins when totals and agility equal",
+          "test_char2_higher_initiative_wins - char2 wins with higher total (65 vs 52)"
+        ]
+      },
+      "e2e_tests": {
+        "total": 9,
+        "passed": 5,
+        "skipped": 4,
+        "failed": 0,
+        "scenarios_enabled_by_this_task": [
+          "Scenario 2: Character with higher agility wins initiative - PASSED",
+          "Scenario 9: Initiative tie resolved by first character rule - PASSED"
+        ],
+        "previously_passing": [
+          "Scenario 5: Character immutability during combat - PASSED",
+          "Scenario 6: Derived agility reflects current health - PASSED",
+          "Scenario 7: Character creation fails with empty name - PASSED"
+        ],
+        "still_skipped": [
+          "Scenario 1: Full combat with attacker advantage enforcement - SKIPPED (awaiting CombatSimulator)",
+          "Scenario 3: Attacker kills defender - SKIPPED (awaiting CombatRound)",
+          "Scenario 4: Defender survives and counter-attacks - SKIPPED (awaiting CombatRound)",
+          "Scenario 8: Dead character cannot initiate attack - SKIPPED (awaiting AttackResolver)"
+        ]
+      }
+    },
+    "acceptance_criteria_met": [
+      "✓ InitiativeResult value object created in modules/domain/model/initiative_result.py",
+      "✓ InitiativeResult is @dataclass(frozen=True) with 6 fields (attacker, defender, attacker_roll, defender_roll, attacker_total, defender_total)",
+      "✓ InitiativeResolver service in modules/domain/services/initiative_resolver.py",
+      "✓ roll_initiative(char1, char2) returns InitiativeResult",
+      "✓ Initiative calculation: character.agility + dice_roller.roll()",
+      "✓ Higher total becomes attacker (attacks first)",
+      "✓ Tie-breaker 1: If totals equal, higher base agility wins",
+      "✓ Tie-breaker 2: If agility equal, first character (char1) wins",
+      "✓ 4 unit tests PASS in tests/unit/domain/services/test_initiative_resolver.py",
+      "✓ E2E Scenarios 2, 9 PASS (was SKIP before implementation)"
+    ],
+    "git_commit": "1fafdb1",
+    "notes": [
+      "Outside-In TDD methodology followed: E2E observation → Unit RED-GREEN-REFACTOR → E2E validation",
+      "Double-loop confirmed: Outer loop (E2E Scenarios 2, 9) drove inner loop (4 unit tests)",
+      "All tie-breaker rules implemented and tested: total > agility > first parameter",
+      "Fixed E2E step definitions to use parsers.parse() decorator for parameter matching",
+      "No refactoring needed - code is clean and maintainable at current complexity",
+      "100% test pass rate maintained throughout implementation"
+    ]
+  },
   "reviews": [
     {
       "reviewer": "software-crafter-reviewer (Lyra)",
