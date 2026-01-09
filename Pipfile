@@ -43,9 +43,6 @@ update = "*"
 inquirer = "*"
 typing-extensions = "*"
 
-[requires]
-python_version = "3.11"
-
 [scripts]
 UnitTests = "pytest tests/unit --pspec --tb=long -l"
 IntegrationTests = "pytest tests/integration --pspec --tb=long -l"
