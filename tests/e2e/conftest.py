@@ -4,12 +4,13 @@ This module provides shared fixtures for acceptance test scenarios,
 managing test context and dependency injection for production services.
 """
 
+from typing import Any
+
 import pytest
-from typing import Dict, Any, List
 
 
 @pytest.fixture
-def combat_context() -> Dict[str, Any]:
+def combat_context() -> dict[str, Any]:
     """Shared context for combat scenarios.
 
     This fixture provides a dictionary for storing scenario state across steps.
@@ -32,12 +33,12 @@ def combat_context() -> Dict[str, Any]:
             combat_context['characters'].append(char)
     """
     return {
-        'characters': [],
-        'dice_roller': None,
-        'initiative_result': None,
-        'round_result': None,
-        'combat_result': None,
-        'original_character': None,
-        'damaged_character': None,
-        'combat_rounds': [],
+        "characters": [],
+        "dice_roller": None,
+        "initiative_result": None,
+        "round_result": None,
+        "combat_result": None,
+        "original_character": None,
+        "damaged_character": None,
+        "combat_rounds": [],
     }

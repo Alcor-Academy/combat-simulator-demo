@@ -4,8 +4,6 @@ This test double implements the DiceRoller protocol with predetermined values,
 enabling predictable test scenarios without randomness.
 """
 
-from typing import Union, List
-
 
 class FixedDiceRoller:
     """Test double for DiceRoller that returns predetermined values.
@@ -35,7 +33,7 @@ class FixedDiceRoller:
         _index: Current position in the sequence
     """
 
-    def __init__(self, values: Union[int, List[int]]) -> None:
+    def __init__(self, values: int | list[int]) -> None:
         """Initialize with predetermined dice values.
 
         Args:

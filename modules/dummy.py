@@ -1,6 +1,6 @@
-"""Dummy module demonstrating typed Python code."""
+"""Dummy module for infrastructure validation."""
 
 
 def print_the_title() -> None:
-    """Print the welcome title to stdout."""
+    """Print the welcome title for the Dummy Kata."""
     print("😊 Welcome to Dummy Kata")
