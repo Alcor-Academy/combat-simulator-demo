@@ -31,7 +31,8 @@
       "Character confirmation card displays (Rich Panel)",
       "E2E Test #1 PASSES"
     ],
-    "estimated_hours": 2.0
+    "estimated_hours": 2.0,
+    "commit_policy": "Commit after all unit tests AND E2E test #1 pass. Commit message: 'feat(cli): Implement CharacterCreator with validation - GREEN phase'"
   },
   "dependencies": {
     "requires": [

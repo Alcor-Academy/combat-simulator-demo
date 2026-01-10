@@ -29,9 +29,11 @@
       "Implement _random_hp() using dice_roller",
       "Implement _random_attack() using dice_roller",
       "Update _prompt_int_with_default() to accept empty input",
+      "Agility generation remains unchanged (random [1-20] via Character constructor)",
       "E2E Test #2 passes"
     ],
-    "estimated_hours": 1.5
+    "estimated_hours": 1.5,
+    "commit_policy": "Commit after unit tests pass AND E2E test #2 passes. Commit message: 'feat(cli): Add random defaults for HP and attack - GREEN phase'"
   },
   "dependencies": {
     "requires": [

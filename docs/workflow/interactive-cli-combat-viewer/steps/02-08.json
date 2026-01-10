@@ -13,7 +13,7 @@
       "tests/e2e/test_cli_combat.py (modify)",
       "tests/e2e/features/cli_combat.feature (modify)"
     ],
-    "technical_context": "ATDD GREEN Phase for Tests #3-5.\n\nKey activities:\n- Verify all validation tests pass\n- Add unit tests for edge cases if missing\n- Enhance error messages if needed for clarity\n- All E2E Tests #3-5 pass",
+    "technical_context": "ATDD GREEN Phase for Tests #3-5.\n\nKey activities:\n- Verify all validation tests pass\n- Add unit tests for edge cases if missing\n- Enhance error messages if needed for clarity\n- All E2E Tests #3-5 pass\n\nEdge case unit tests to add:\n- test_hp_zero_rejected() - HP=0 triggers error\n- test_hp_boundary_min() - HP=1 accepted\n- test_hp_boundary_max() - HP=999 accepted\n- test_hp_over_max_rejected() - HP=1000 triggers error\n- test_attack_zero_rejected() - attack=0 triggers error\n- test_attack_boundary_min() - attack=1 accepted\n- test_attack_boundary_max() - attack=99 accepted\n- test_attack_over_max_rejected() - attack=100 triggers error\n- test_name_only_whitespace_rejected() - name=\"   \" triggers error",
     "tdd_phase": "GREEN",
     "active_e2e_test": "E2E Tests #3-5: Validation Errors - should PASS when complete",
     "inactive_e2e_tests": "Tests not yet enabled remain disabled with @skip"
@@ -29,7 +29,8 @@
       "Enhance error messages if needed for clarity",
       "All E2E Tests #3-5 pass"
     ],
-    "estimated_hours": 0.5
+    "estimated_hours": 0.5,
+    "commit_policy": "Commit after all validation tests pass. Commit message: 'feat(cli): Validate all input edge cases - GREEN phase'"
   },
   "dependencies": {
     "requires": [

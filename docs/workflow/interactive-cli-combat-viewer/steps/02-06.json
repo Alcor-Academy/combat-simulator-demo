@@ -24,10 +24,11 @@
     "motivation": "REFACTOR phase of ATDD cycle. ATDD REFACTOR Phase for Test #2.",
     "detailed_instructions": "Follow ATDD discipline:\n\n1. Review random generation logic\n2. Verify dice_roller integration correct\n3. Run statistical tests (100 iterations, ranges valid)\n4. Commit when E2E Test #2 passes",
     "acceptance_criteria": [
-      "Review random generation logic",
-      "Verify dice_roller integration correct",
-      "Run statistical tests (100 iterations, ranges valid)",
-      "Commit when E2E Test #2 passes"
+      "Random generation logic reviewed for correctness",
+      "dice_roller integration verified via unit tests",
+      "Statistical test: 100 iterations, min HP ≥ 20, max HP ≤ 80, min attack ≥ 5, max attack ≤ 15",
+      "All values within specified ranges",
+      "Git commit created after E2E test #2 passes"
     ],
     "estimated_hours": 0.5
   },

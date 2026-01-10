@@ -13,7 +13,7 @@
       "tests/e2e/test_cli_combat.py (modify)",
       "tests/e2e/features/cli_combat.feature (modify)"
     ],
-    "technical_context": "ATDD REFACTOR + Phase Validation.\n\nKey activities:\n- Run full Phase 2 test suite (E2E tests 1-5)\n- Code coverage check (>85% for CharacterCreator)\n- Manual testing (create characters with all scenarios)\n- Final refactoring pass\n- Commit Phase 2 completion\n- Document Phase 2 deliverables",
+    "technical_context": "ATDD REFACTOR + Phase Validation.\n\nKey activities:\n- Run full Phase 2 test suite (E2E tests 1-5)\n- Code coverage check (>85% for CharacterCreator)\n- Manual testing (create characters with all scenarios)\n- Final refactoring pass\n- Commit Phase 2 completion\n- Document Phase 2 deliverables\n\nManual test scenarios (execute: python modules/main.py):\n1. Manual valid input: name=\"Hero\", hp=50, attack=10 → combat runs\n2. Random defaults: name=\"Wizard\", press INVIO for HP and attack → random values shown, combat runs\n3. Invalid HP retry: name=\"Knight\", hp=1500 (error), hp=80 (accepted) → combat runs\n4. Invalid attack retry: name=\"Rogue\", hp=60, attack=150 (error), attack=12 (accepted) → combat runs\n5. Empty name retry: name=\"\" (error), name=\"Paladin\" (accepted) → combat runs\n\nSuccess criteria: All 5 scenarios complete without crashes or exceptions",
     "tdd_phase": "REFACTOR",
     "active_e2e_test": "All Phase 2 E2E tests (1-5) - must ALL PASS",
     "inactive_e2e_tests": "Tests not yet enabled remain disabled with @skip"
@@ -24,12 +24,12 @@
     "motivation": "REFACTOR phase of ATDD cycle. ATDD REFACTOR + Phase Validation.",
     "detailed_instructions": "Follow ATDD discipline:\n\n1. Run full Phase 2 test suite (E2E tests 1-5)\n2. Code coverage check (>85% for CharacterCreator)\n3. Manual testing (create characters with all scenarios)\n4. Final refactoring pass\n5. Commit Phase 2 completion\n6. Document Phase 2 deliverables",
     "acceptance_criteria": [
-      "Run full Phase 2 test suite (E2E tests 1-5)",
-      "Code coverage check (>85% for CharacterCreator)",
-      "Manual testing (create characters with all scenarios)",
-      "Final refactoring pass",
-      "Commit Phase 2 completion",
-      "Document Phase 2 deliverables"
+      "pytest tests/e2e/test_cli_combat.py -k 'character' passes 100% (tests 1-5)",
+      "Code coverage for CharacterCreator ≥ 85% (justified: allows defensive error handling branches)",
+      "Manual test: python modules/main.py completes all 5 scenarios without crashes",
+      "Final refactoring applied (no code duplication, clear naming)",
+      "Git commit created: 'feat(cli): Complete Phase 2 - Interactive character creation'",
+      "Phase 2 summary documented in docs/workflow/interactive-cli-combat-viewer/PHASE-2-SUMMARY.md"
     ],
     "estimated_hours": 0.5
   },

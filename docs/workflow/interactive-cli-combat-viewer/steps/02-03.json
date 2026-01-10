@@ -24,11 +24,12 @@
     "motivation": "REFACTOR phase of ATDD cycle. ATDD REFACTOR Phase for Test #1.",
     "detailed_instructions": "Follow ATDD discipline:\n\n1. Code review (no duplication, clear logic, type hints)\n2. Refactor if needed (extract common patterns)\n3. Integrate CharacterCreator into main.py\n4. Run full test suite (unit + E2E)\n5. Commit when E2E Test #1 passes",
     "acceptance_criteria": [
-      "Code review (no duplication, clear logic, type hints)",
-      "Refactor if needed (extract common patterns)",
-      "Integrate CharacterCreator into main.py",
-      "Run full test suite (unit + E2E)",
-      "Commit when E2E Test #1 passes"
+      "CharacterCreator integrated into main.py with dependency injection",
+      "pytest tests/unit/infrastructure/cli/test_character_creator.py passes 100%",
+      "pytest tests/e2e/test_cli_combat.py::test_manual_input passes",
+      "No TODO comments or dead code in CharacterCreator",
+      "Type hints present on all public methods",
+      "Git commit created with descriptive message"
     ],
     "estimated_hours": 0.5
   },
