@@ -65,6 +65,7 @@ phases:
           Validation:
           - pytest tests/e2e/test_cli_combat.py::test_baseline -v
           - Test FAILS initially (red phase - CLI doesn't exist)
+          - Expected error: ModuleNotFoundError or ImportError (modules.infrastructure.cli not found)
         motivation: |
           Outside-In TDD starts with failing E2E test. This test defines what "working CLI" means
           before writing any implementation. Ensures we build exactly what's needed, no more.
@@ -335,6 +336,10 @@ phases:
               calls = [str(call) for call in mock_console.print.call_args_list]
               assert any("Hero" in str(call) for call in calls)
               assert any("attacks first" in str(call) for call in calls)
+
+              # PHASE 3: After emoji implementation, add emoji/fallback verification
+              # Example: assert any('⚔️' in str(call) or '[ATK]' in str(call) for call in calls)
+              # This validates emoji integration end-to-end (emoji OR fallback present)
           ```
 
           Validation:
@@ -708,6 +713,7 @@ phases:
           - Test: test_invalid_attack_triggers_error()
           - Test: test_random_hp_range()
           - Test: test_random_attack_range()
+          - Test: test_dice_roller_returns_valid_range()  # Verify RandomDiceRoller.roll() returns [1-6]
 
           Validation:
           - pytest tests/unit/infrastructure/cli/test_character_creator.py -v
@@ -971,6 +977,8 @@ phases:
           - Check if output contains emoji Unicode characters
           - OR check for fallback text ([ATK], [DMG], etc.)
           - Both considered valid (platform-dependent)
+          - Test accepts EITHER emoji OR fallback as valid (doesn't enforce emoji availability)
+          - Only requires that ONE of the pair appears (cross-platform compatibility)
 
           Example step:
           ```python
@@ -1034,17 +1042,23 @@ phases:
               })
 
               def get_symbol(self, key: str) -> str:
-                  """Get emoji or fallback symbol."""
+                  """Get emoji or fallback symbol.
+
+                  If key is not found in emoji/fallback dict, returns key itself.
+                  This ensures missing keys pass through unchanged (graceful degradation).
+                  Example: get_symbol('unknown') returns 'unknown'
+                  """
                   if self.emoji_enabled:
-                      return self.emoji.get(key, key)
+                      return self.emoji.get(key, key)  # Returns key if not found
                   else:
-                      return self.fallback.get(key, key)
+                      return self.fallback.get(key, key)  # Returns key if not found
           ```
 
           Unit tests:
           - Test: test_get_symbol_returns_emoji_when_enabled()
           - Test: test_get_symbol_returns_fallback_when_disabled()
           - Test: test_all_emoji_keys_have_fallbacks()
+          - Test: test_get_symbol_returns_key_if_not_found()  # Missing key fallback
 
           Validation:
           - pytest tests/unit/infrastructure/cli/test_config.py -v
@@ -1270,7 +1284,8 @@ phases:
           - [ ] Manual testing: Colors display correctly
           - [ ] Manual testing: HP color gradient intuitive
           - [ ] Manual testing: Timing feels natural (1.5-2s delays)
-          - [ ] Code coverage > 85% for CombatRenderer
+          - [ ] Code coverage > 85% for CLI components (LINE coverage - default pytest metric)
+          - [ ] For critical rendering paths: prioritize branch coverage and mutation testing >75%
           - [ ] No regressions (Phase 1-2 tests pass)
 
           Cross-platform manual testing:
@@ -1424,6 +1439,20 @@ phases:
                   return character
               except KeyboardInterrupt:
                   # Propagate to CLI Main for consistent handling
+                  raise
+          ```
+
+          IMPORTANT - CombatRenderer._render_victory() KeyboardInterrupt:
+          ```python
+          def _render_victory(self, result: CombatResult) -> None:
+              """Display victory announcement."""
+              # ... (display winner, stats) ...
+
+              # Wrap prompt_continue to ensure CTRL-C propagates with exit code 130
+              try:
+                  self._console.prompt_continue("\nPremi INVIO per uscire (o CTRL-C per terminare)")
+              except KeyboardInterrupt:
+                  # Re-raise to propagate to CLI Main for consistent exit code handling
                   raise
           ```
 
@@ -1766,11 +1795,23 @@ phases:
           - Run: mypy modules/infrastructure/cli/ --strict
           - Verify no type errors
 
-          Documentation updates:
-          - Update README.md with CLI usage instructions
-          - Add "How to Run" section
-          - Document platform requirements
-          - Note emoji fallback behavior
+          Documentation updates - README.md must include:
+          1. Quick Start section:
+             - How to install dependencies (pip install -r requirements.txt)
+             - How to run the CLI (python -m modules.infrastructure.cli.main)
+             - Expected first screen (character creation prompts)
+          2. Character Creation Guide:
+             - Explanation of 3 input fields (name, HP, attack power)
+             - Random default behavior (INVIO generates random values)
+             - Valid ranges (HP: 20-80, Attack: 5-15)
+             - Agility is calculated automatically (HP + Attack)
+          3. Platform-Specific Notes:
+             - Emoji support on Windows (may show fallback [ATK], [DMG], etc.)
+             - Emoji support on macOS/Linux (full Unicode emoji)
+             - Color support requirements (modern terminal recommended)
+          4. Example Session Output:
+             - Complete example showing character creation → combat → victory
+             - Include sample emoji/fallback output for both platforms
 
           Final refactoring sweep:
           - Remove any debug print statements
