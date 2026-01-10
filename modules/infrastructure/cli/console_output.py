@@ -1,10 +1,15 @@
 """Rich Console wrapper with timing control for CLI output."""
 
 import time
+from typing import TYPE_CHECKING
 
 from rich.console import Console
 
 from modules.infrastructure.cli.config import CLIConfig
+
+
+if TYPE_CHECKING:
+    from rich.panel import Panel
 
 
 class ConsoleOutput:
@@ -69,3 +74,11 @@ class ConsoleOutput:
             message: Prompt message to display
         """
         self._console.input(message)
+
+    def print_panel(self, panel: "Panel") -> None:
+        """Print a Rich Panel component.
+
+        Args:
+            panel: Rich Panel to display
+        """
+        self._console.print(panel)

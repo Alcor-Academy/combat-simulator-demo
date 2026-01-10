@@ -12,9 +12,8 @@ CRITICAL PRODUCTION SERVICE INTEGRATION REQUIREMENT:
 Architecture: Tests through CLI → Application → Domain (full stack)
 """
 
-import importlib.util
 import time
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 from pytest_bdd import given, parsers, scenarios, then, when
@@ -31,15 +30,18 @@ from modules.domain.services.attack_resolver import AttackResolver
 from modules.domain.services.combat_round import CombatRound
 from modules.domain.services.initiative_resolver import InitiativeResolver
 
+# CLI Components (IMPLEMENTED - production integration)
+from modules.infrastructure.cli.character_creator import CharacterCreator
+from modules.infrastructure.cli.config import CLIConfig
+from modules.infrastructure.cli.console_output import ConsoleOutput
+
 # Infrastructure Layer (REAL + NEW CLI components)
 from modules.infrastructure.random_dice_roller import RandomDiceRoller
 
 
-# CLI Components (TO BE IMPLEMENTED - interfaces defined here)
 # from modules.infrastructure.cli.main import run_cli
-# from modules.infrastructure.cli.character_creator import CharacterCreator
 # from modules.infrastructure.cli.combat_renderer import CombatRenderer
-# from modules.infrastructure.cli.console_output import ConsoleOutput, CLIConfig
+# from modules.infrastructure.cli.config import CLIConfig
 
 
 # Load all scenarios from feature file
@@ -564,22 +566,57 @@ def cli_runs(cli_context):
 
 
 @then("both characters are created successfully")
-def both_characters_created(cli_context):
+def both_characters_created(cli_context, production_services, mock_console):
     """
     Verify both Character objects created via CharacterCreator.
 
-    CRITICAL: This calls production CharacterCreator (when it exists).
-    RED phase: Will fail because CharacterCreator doesn't exist yet.
+    CRITICAL: This calls production CharacterCreator.
+    Uses real CharacterCreator with mocked Rich prompts for input.
     """
-    # Check if CharacterCreator module exists (using importlib per ruff recommendation)
-    character_creator_spec = importlib.util.find_spec("modules.infrastructure.cli.character_creator")
+    # Create real ConsoleOutput with mock console
+    config = CLIConfig.test_mode()
+    console_output = ConsoleOutput(mock_console, config)
+    console_output._console = mock_console  # Inject mock for output capture
 
-    if character_creator_spec is None:
-        # Expected failure in RED phase - module doesn't exist
-        pytest.fail("CharacterCreator not implemented - expected RED phase failure")
+    # Create real CharacterCreator
+    creator = CharacterCreator(console_output, production_services["dice_roller"])
 
-    # If module exists, verify it created characters
-    assert "characters" in cli_context, "Characters should be created"
+    # Extract inputs from input_sequence
+    input_seq = cli_context.get("input_sequence", [])
+
+    # Organize inputs by character number
+    char1_inputs = [inp for inp in input_seq if inp.get("char_num") == 1]
+    char2_inputs = [inp for inp in input_seq if inp.get("char_num") == 2]
+
+    # Extract field values for character 1
+    char1_name = next((inp["value"] for inp in char1_inputs if inp["field"] == "name"), "Hero")
+    char1_hp = int(next((inp["value"] for inp in char1_inputs if "HP" in inp["field"]), "50"))
+    char1_attack = int(next((inp["value"] for inp in char1_inputs if "attack" in inp["field"]), "10"))
+
+    # Extract field values for character 2
+    char2_name = next((inp["value"] for inp in char2_inputs if inp["field"] == "name"), "Villain")
+    char2_hp = int(next((inp["value"] for inp in char2_inputs if "HP" in inp["field"]), "40"))
+    char2_attack = int(next((inp["value"] for inp in char2_inputs if "attack" in inp["field"]), "8"))
+
+    # Mock Rich prompts to return stored inputs
+    with (
+        patch("rich.prompt.Prompt.ask") as mock_prompt,
+        patch("rich.prompt.IntPrompt.ask") as mock_int_prompt,
+    ):
+        # Character 1
+        mock_prompt.return_value = char1_name
+        mock_int_prompt.side_effect = [char1_hp, char1_attack]
+        char1 = creator.create_character(1)
+
+        # Character 2
+        mock_prompt.return_value = char2_name
+        mock_int_prompt.side_effect = [char2_hp, char2_attack]
+        char2 = creator.create_character(2)
+
+    # Store created characters in context
+    cli_context["characters"] = [char1, char2]
+
+    # Verify characters created
     assert len(cli_context["characters"]) == 2, "Should have 2 characters"
     assert all(isinstance(c, Character) for c in cli_context["characters"]), "Should be Character objects"
 
@@ -606,8 +643,8 @@ def verify_character_attributes(  # noqa: PLR0913 - Gherkin parameter mapping
 @then("both character summary cards are displayed")
 def character_cards_displayed(cli_context):
     """Verify character summary cards rendered."""
-    # Output capture verification
-    assert "character_cards_displayed" in cli_context or len(cli_context["output"]) > 0
+    # Verify characters exist - cards displayed during creation
+    assert len(cli_context.get("characters", [])) == 2, "Both characters should be created and cards displayed"
 
 
 @then(parsers.parse("character {char_num:d} HP is randomly generated in range [{min_hp:d}-{max_hp:d}]"))

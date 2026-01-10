@@ -9,6 +9,7 @@ from modules.domain.model.character import Character
 from modules.domain.services.attack_resolver import AttackResolver
 from modules.domain.services.combat_round import CombatRound
 from modules.domain.services.initiative_resolver import InitiativeResolver
+from modules.infrastructure.cli.character_creator import CharacterCreator
 from modules.infrastructure.cli.combat_renderer import CombatRenderer
 from modules.infrastructure.cli.config import CLIConfig
 from modules.infrastructure.cli.console_output import ConsoleOutput
@@ -36,6 +37,7 @@ def run_cli() -> None:
 
         # CLI components
         renderer = CombatRenderer(console, config)
+        _ = CharacterCreator(console, dice_roller)  # Available for Phase 2 (unused in Phase 1)
 
         # Welcome
         console.print("\n=== COMBAT SIMULATOR ===\n")
