@@ -1,0 +1,178 @@
+baseline:
+  project_id: "interactive-cli-combat-viewer"
+  created: "2026-01-10T00:00:00Z"
+  type: "feature_development"
+  author: "researcher"
+
+  problem_statement:
+    summary: "No interactive human interface for combat simulator system"
+    evidence: |
+      Combat simulator exists as complete library (domain + application + infrastructure)
+      but has no user-facing interface. Interaction possible ONLY via automated tests.
+
+      Evidence from codebase:
+      - 9 E2E scenarios exist (tests/e2e/features/combat_simulation.feature)
+      - 34 unit tests exist
+      - No entry point for human users (no __main__.py, no CLI command)
+      - System designed as library for programmatic use, not end-user application
+
+      Current system state (from architecture review):
+      - Domain layer: COMPLETE (Character, Combat Services, Value Objects)
+      - Application layer: COMPLETE (CombatSimulator use case)
+      - Infrastructure layer: PARTIALLY COMPLETE (RandomDiceRoller only)
+      - Presentation layer: MISSING (this feature addresses the gap)
+
+      Existing modules:
+      - modules/domain/model/ (Character, CombatResult, RoundResult, AttackResult, InitiativeResult)
+      - modules/domain/services/ (InitiativeResolver, AttackResolver, CombatRound)
+      - modules/domain/ports/ (DiceRoller protocol)
+      - modules/application/ (CombatSimulator)
+      - modules/infrastructure/ (RandomDiceRoller)
+      - NO modules/infrastructure/cli/ (to be created)
+
+    scope:
+      in_scope:
+        - "CLI presentation layer (Infrastructure adapter)"
+        - "Interactive character creation"
+        - "Visual combat display with Rich library"
+        - "Cross-platform compatibility (Windows, macOS, Linux)"
+      out_of_scope:
+        - "Domain model changes (Character, CombatResult, etc.)"
+        - "Application layer changes (CombatSimulator)"
+        - "Web interface or GUI"
+        - "Multi-player support"
+
+  current_state:
+    description: |
+      **Type**: Greenfield CLI enhancement
+
+      Complete combat simulator library exists with no user-facing interface:
+
+      **What exists today** (library layers):
+      - Domain: Character value object, domain services (InitiativeResolver, AttackResolver, CombatRound)
+      - Application: CombatSimulator use case orchestrating combat flow
+      - Infrastructure: RandomDiceRoller adapter for deterministic testing
+      - Tests: 9 E2E acceptance tests + 34 unit tests (all PASSING)
+
+      **What's missing** (presentation layer):
+      - No CLI entry point or main() function
+      - No user input handling (character creation)
+      - No visual output formatting (combat display)
+      - No error messages for users (only ValueError exceptions)
+
+      **Current "user" interaction**:
+      Users = developers running automated tests via pytest. No mechanism for
+      non-developers to interact with system.
+
+    capabilities:
+      - "Complete combat logic (domain + application layers)"
+      - "Deterministic testing (RandomDiceRoller with seeding)"
+      - "Hexagonal architecture (clear layer boundaries)"
+      - "Comprehensive test coverage (9 E2E + 34 unit)"
+
+    limitations:
+      - "No user-facing entry point"
+      - "No interactive character creation"
+      - "No visual combat display"
+      - "Not accessible to non-developers"
+      - "Limited educational value (cannot demonstrate behavior)"
+
+  requirements_source:
+    origin: |
+      Requirements derived from DISCUSS wave user collaboration:
+      - User explicitly requested: "applicazione a riga di comando testuale"
+      - User requested: "emoji per rendere il tutto più divertente e visuale"
+      - User requested: "workflow ottimizzato usando principi buona UX"
+      - User requested: "visualizzazione sufficientemente lenta da capire"
+
+      Validated through:
+      - AskUserQuestion tool (4 question sets, 13 decisions documented)
+      - User confirmed: Rich library, emoji usage, fixed timing, input validation
+      - Architecture review: Hexagonal placement approved (ADR-002)
+      - Acceptance criteria: 31 scenarios created and approved
+
+    validation: |
+      Requirements validated through 3-wave process:
+      - DISCUSS: User collaboration (AskUserQuestion) + requirements approval
+      - DESIGN: Architecture review (solution-architect peer-reviewed)
+      - DISTILL: Acceptance test creation (31 scenarios, 100% user story coverage)
+
+      Stakeholder: User (project owner) confirmed all decisions
+      Quality gates: All waves completed peer review (conditionally approved)
+
+    requirements:
+      - "FR-01: CLI entry point with hexagonal architecture"
+      - "FR-02: Character creation (3 inputs: name, hp, attack_power)"
+      - "FR-03: Combat visualization (log format with emoji/colors)"
+      - "FR-04: Pacing control (fixed 1.5-2s delays, no skip)"
+      - "FR-05: Error handling (validation with re-prompting)"
+      - "FR-06: Victory announcement (complete combat summary)"
+      - "FR-07: Platform detection (emoji or text fallback)"
+      - "FR-08: Exit confirmation (wait for INVIO or CTRL-C)"
+      - "NFR-01: UX quality (intuitive, clear, properly paced)"
+      - "NFR-02: Performance (<100ms validation, <500ms startup)"
+      - "NFR-03: Cross-platform (Windows, macOS, Linux)"
+      - "NFR-04: Testability (automated E2E tests, mock I/O only)"
+
+  simplest_alternatives_considered:
+    - alternative: "Simple print() statements in __main__.py"
+      description: |
+        Create basic __main__.py with hardcoded characters, call CombatSimulator,
+        print results with basic print() statements. No validation, no colors, no interactivity.
+      why_insufficient: |
+        Rejected during DISCUSS wave for poor UX:
+        - No input validation (users can crash system with bad data)
+        - No visual appeal (plain text, no colors/emoji)
+        - No interactivity (hardcoded values, not educational)
+        - No error handling (ValueError propagates to user)
+
+        Effort savings: ~18-32 hours (vs Rich CLI)
+        Value loss: Cannot demonstrate system behavior, not educational
+      verdict: "INSUFFICIENT"
+
+    - alternative: "Command-line arguments with argparse"
+      description: |
+        CLI accepts --name, --hp, --attack arguments for both characters.
+        Validates inputs, runs combat, prints plain text results.
+        Example: python -m cli --char1-name Hero --char1-hp 50 ...
+      why_insufficient: |
+        Rejected during DISCUSS wave (user decision):
+        - Not interactive (must know all arguments upfront)
+        - Tedious for experimentation (long command lines)
+        - Poor for demos (cannot show flow, just results)
+        - Not educational (hides combat progression)
+
+        User explicitly requested: "workflow ottimizzato usando principi buona UX"
+        Argparse violates UX principle (cognitive load, not guided)
+      verdict: "INSUFFICIENT"
+
+    - alternative: "Rich-based interactive CLI (SELECTED)"
+      description: |
+        Interactive CLI with Rich library:
+        - Guided prompts (Rich.Prompt.ask with validation)
+        - Visual output (emoji, colors, styled text)
+        - Pacing control (time.sleep for readable combat)
+        - Error recovery (re-prompting with helpful messages)
+      why_insufficient: "N/A - This alternative was SELECTED"
+      verdict: "ADEQUATE"
+      selection_rationale: |
+        Best balance of UX quality vs implementation complexity:
+        - Effort: 22-36 hours (medium complexity)
+        - Value: Professional UX, educational, reusable patterns
+        - Risk: LOW (Rich is mature v13.x, proven technology)
+        - User confirmation: Explicit approval via AskUserQuestion
+
+        Quick wins identified:
+        - Rich auto-handles cross-platform emoji/colors (saves 4-6h)
+        - Fixed timing vs skip mechanism (saves 4-6h platform code)
+        - Random defaults with INVIO (saves testing time)
+
+  validation:
+    status: "complete"
+    validated_by: "researcher"
+    validation_date: "2026-01-10"
+    notes: |
+      Baseline established from completed DISCUSS, DESIGN, and DISTILL waves.
+      All requirements traced to user decisions (AskUserQuestion records).
+      Alternative analysis documented from wave artifacts.
+      No quantitative performance target (greenfield feature, not optimization).
