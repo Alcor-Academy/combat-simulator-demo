@@ -1,0 +1,47 @@
+{
+  "task_id": "02-04",
+  "project_id": "interactive-cli-combat-viewer",
+  "execution_agent": "software-crafter",
+  "self_contained_context": {
+    "background": "Part of Phase 2: Interactive Input with Validation. Edge case tests ensure validation robustness and random generation correctness.\nCritical for production reliability.\n",
+    "prerequisites_completed": [
+      "02-03"
+    ],
+    "relevant_files": [
+      "tests/e2e/test_cli_combat.py (modify)",
+      "tests/e2e/features/cli_combat.feature (modify)"
+    ],
+    "technical_context": "Enable additional character creation edge case tests.\n\nTests to enable:\n1. \"Non-numeric HP input triggers validation error\"\n2. \"Random HP values are within valid range across multiple generations\"\n3. \"Random attack power values are within valid range\"\n\nStep definitions:\n- @when('I enter \"abc\" for character {num} HP')\n- @when('I create 10 characters using random HP defaults')\n- @then('all random HP values are in range [20-80]')\n- @then('all random attack power values are in range [5-15]')\n\nTest implementation:\n```python\n@when('I create 10 characters using random HP defaults')\ndef step_create_multiple_characters(context):\n    creator = CharacterCreator(console_output, dice_roller)\n    context.random_hp_values = []\n    for i in range(10):\n        # Mock input: empty string for HP (random default)\n        # Collect HP values\n        char = creator.create_character(i+1)\n        context.random_hp_values.append(char.hp)\n\n@then('all random HP values are in range [20-80]')\ndef step_verify_hp_range(context):\n    for hp in context.random_hp_values:\n        assert 20 <= hp <= 80, f\"HP {hp} outside range [20-80]\"\n```\n\nValidation:\n- pytest tests/e2e/test_cli_combat.py -k \"random\" -v\n- Tests FAIL initially (step definitions incomplete)\n",
+    "tdd_phase": "RED",
+    "active_e2e_test": "E2E Tests 2.4-2.5 (Edge Cases) - SHOULD FAIL (RED)",
+    "inactive_e2e_tests": "All E2E tests except the active one should remain disabled with @pytest.mark.skip or similar"
+  },
+  "task_specification": {
+    "name": "Enable E2E Tests 2.4-2.5 (Edge Cases)",
+    "description": "Enable additional character creation edge case tests.\n\nTests to enable:\n1. \"Non-numeric HP input triggers validation error\"\n2. \"Random HP values are within valid range across multiple generations\"\n3. \"Random attack power values are within valid range\"\n\nStep definitions:\n- @when('I enter \"abc\" for character {num} HP')\n- @when('I create 10 characters using random HP defaults')\n- @then('all random HP values are in range [20-80]')\n- @then('all random attack power values are in range [5-15]')\n\nTest implementation:\n```python\n@when('I create 10 characters using random HP defaults')\ndef step_create_multiple_characters(context):\n    creator = CharacterCreator(console_output, dice_roller)\n    context.random_hp_values = []\n    for i in range(10):\n        # Mock input: empty string for HP (random default)\n        # Collect HP values\n        char = creator.create_character(i+1)\n        context.random_hp_values.append(char.hp)\n\n@then('all random HP values are in range [20-80]')\ndef step_verify_hp_range(context):\n    for hp in context.random_hp_values:\n        assert 20 <= hp <= 80, f\"HP {hp} outside range [20-80]\"\n```\n\nValidation:\n- pytest tests/e2e/test_cli_combat.py -k \"random\" -v\n- Tests FAIL initially (step definitions incomplete)\n",
+    "motivation": "Edge case tests ensure validation robustness and random generation correctness.\nCritical for production reliability.\n",
+    "detailed_instructions": "Enable additional character creation edge case tests.\n\nTests to enable:\n1. \"Non-numeric HP input triggers validation error\"\n2. \"Random HP values are within valid range across multiple generations\"\n3. \"Random attack power values are within valid range\"\n\nStep definitions:\n- @when('I enter \"abc\" for character {num} HP')\n- @when('I create 10 characters using random HP defaults')\n- @then('all random HP values are in range [20-80]')\n- @then('all random attack power values are in range [5-15]')\n\nTest implementation:\n```python\n@when('I create 10 characters using random HP defaults')\ndef step_create_multiple_characters(context):\n    creator = CharacterCreator(console_output, dice_roller)\n    context.random_hp_values = []\n    for i in range(10):\n        # Mock input: empty string for HP (random default)\n        # Collect HP values\n        char = creator.create_character(i+1)\n        context.random_hp_values.append(char.hp)\n\n@then('all random HP values are in range [20-80]')\ndef step_verify_hp_range(context):\n    for hp in context.random_hp_values:\n        assert 20 <= hp <= 80, f\"HP {hp} outside range [20-80]\"\n```\n\nValidation:\n- pytest tests/e2e/test_cli_combat.py -k \"random\" -v\n- Tests FAIL initially (step definitions incomplete)\n",
+    "acceptance_criteria": [
+      "3 additional E2E tests enabled",
+      "Step definitions for edge cases implemented",
+      "Random generation test creates 10 characters",
+      "pytest runs tests (FAIL initially)"
+    ],
+    "estimated_hours": 0.5
+  },
+  "dependencies": {
+    "requires": [
+      "02-03"
+    ],
+    "blocking": [
+      "02-05"
+    ]
+  },
+  "state": {
+    "status": "TODO",
+    "assigned_to": null,
+    "started_at": null,
+    "completed_at": null,
+    "updated": "2026-01-10T12:41:07.248054+00:00"
+  }
+}

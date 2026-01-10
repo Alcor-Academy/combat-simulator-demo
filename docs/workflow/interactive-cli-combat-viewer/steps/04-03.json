@@ -1,0 +1,46 @@
+{
+  "task_id": "04-03",
+  "project_id": "interactive-cli-combat-viewer",
+  "execution_agent": "software-crafter",
+  "self_contained_context": {
+    "background": "Part of Phase 4: Polish (Exit, Errors, Edge Cases). Edge case tests ensure combat display handles unusual scenarios. Extended combat validates\nno adaptive summarization. Tie-breaker transparency builds user trust.\n",
+    "prerequisites_completed": [
+      "04-02"
+    ],
+    "relevant_files": [
+      "tests/e2e/test_cli_combat.py (modify)"
+    ],
+    "technical_context": "Enable tests for combat edge cases.\n\nTests:\n1. \"Extended combat displays all rounds with consistent formatting\"\n2. \"Defender death prevents counter-attack display\"\n3. \"Initiative tie-breaker is transparently explained\"\n\nStep definitions:\n- @given('two balanced characters are created')\n- @when('combat runs for 7 rounds')\n- @then('all 7 rounds are displayed with consistent formatting')\n- @then('no output is truncated or skipped')\n- @given('combat will result in lethal damage to Villain in round 1')\n- @then('Villain counter-attack is NOT displayed')\n- @given('two characters with identical agility values')\n- @when('initiative is rolled with identical dice results')\n- @then('tie-breaker message is displayed')\n- @then('tie-breaker rule explanation is shown')\n\nExtended combat validation:\n```python\n@then('all 7 rounds are displayed with consistent formatting')\ndef step_verify_all_rounds_displayed(context):\n    output = context.cli_output\n    for round_num in range(1, 8):\n        assert f\"ROUND {round_num}\" in output\n```\n\nTie-breaker validation:\n```python\n@then('tie-breaker message is displayed')\ndef step_verify_tiebreaker(context):\n    output = context.cli_output\n    assert \"tie\" in output.lower() or \"equal\" in output.lower()\n```\n\nValidation:\n- pytest tests/e2e/test_cli_combat.py -k \"edge\" -v\n- Tests may FAIL if tie-breaker message not explicit\n",
+    "tdd_phase": "RED",
+    "active_e2e_test": "E2E Tests 4.3-4.4 (Edge Cases) - SHOULD FAIL (RED)",
+    "inactive_e2e_tests": "All E2E tests except the active one should remain disabled with @pytest.mark.skip or similar"
+  },
+  "task_specification": {
+    "name": "Enable E2E Tests 4.3-4.4 (Edge Cases)",
+    "description": "Enable tests for combat edge cases.\n\nTests:\n1. \"Extended combat displays all rounds with consistent formatting\"\n2. \"Defender death prevents counter-attack display\"\n3. \"Initiative tie-breaker is transparently explained\"\n\nStep definitions:\n- @given('two balanced characters are created')\n- @when('combat runs for 7 rounds')\n- @then('all 7 rounds are displayed with consistent formatting')\n- @then('no output is truncated or skipped')\n- @given('combat will result in lethal damage to Villain in round 1')\n- @then('Villain counter-attack is NOT displayed')\n- @given('two characters with identical agility values')\n- @when('initiative is rolled with identical dice results')\n- @then('tie-breaker message is displayed')\n- @then('tie-breaker rule explanation is shown')\n\nExtended combat validation:\n```python\n@then('all 7 rounds are displayed with consistent formatting')\ndef step_verify_all_rounds_displayed(context):\n    output = context.cli_output\n    for round_num in range(1, 8):\n        assert f\"ROUND {round_num}\" in output\n```\n\nTie-breaker validation:\n```python\n@then('tie-breaker message is displayed')\ndef step_verify_tiebreaker(context):\n    output = context.cli_output\n    assert \"tie\" in output.lower() or \"equal\" in output.lower()\n```\n\nValidation:\n- pytest tests/e2e/test_cli_combat.py -k \"edge\" -v\n- Tests may FAIL if tie-breaker message not explicit\n",
+    "motivation": "Edge case tests ensure combat display handles unusual scenarios. Extended combat validates\nno adaptive summarization. Tie-breaker transparency builds user trust.\n",
+    "detailed_instructions": "Enable tests for combat edge cases.\n\nTests:\n1. \"Extended combat displays all rounds with consistent formatting\"\n2. \"Defender death prevents counter-attack display\"\n3. \"Initiative tie-breaker is transparently explained\"\n\nStep definitions:\n- @given('two balanced characters are created')\n- @when('combat runs for 7 rounds')\n- @then('all 7 rounds are displayed with consistent formatting')\n- @then('no output is truncated or skipped')\n- @given('combat will result in lethal damage to Villain in round 1')\n- @then('Villain counter-attack is NOT displayed')\n- @given('two characters with identical agility values')\n- @when('initiative is rolled with identical dice results')\n- @then('tie-breaker message is displayed')\n- @then('tie-breaker rule explanation is shown')\n\nExtended combat validation:\n```python\n@then('all 7 rounds are displayed with consistent formatting')\ndef step_verify_all_rounds_displayed(context):\n    output = context.cli_output\n    for round_num in range(1, 8):\n        assert f\"ROUND {round_num}\" in output\n```\n\nTie-breaker validation:\n```python\n@then('tie-breaker message is displayed')\ndef step_verify_tiebreaker(context):\n    output = context.cli_output\n    assert \"tie\" in output.lower() or \"equal\" in output.lower()\n```\n\nValidation:\n- pytest tests/e2e/test_cli_combat.py -k \"edge\" -v\n- Tests may FAIL if tie-breaker message not explicit\n",
+    "acceptance_criteria": [
+      "3 E2E tests enabled for edge cases",
+      "Step definitions for extended combat",
+      "Step definitions for tie-breaker",
+      "Tests FAIL if tie-breaker not explained"
+    ],
+    "estimated_hours": 0.5
+  },
+  "dependencies": {
+    "requires": [
+      "04-02"
+    ],
+    "blocking": [
+      "04-04"
+    ]
+  },
+  "state": {
+    "status": "TODO",
+    "assigned_to": null,
+    "started_at": null,
+    "completed_at": null,
+    "updated": "2026-01-10T12:41:07.248054+00:00"
+  }
+}

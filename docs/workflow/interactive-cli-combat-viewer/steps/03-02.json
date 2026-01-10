@@ -1,0 +1,46 @@
+{
+  "task_id": "03-02",
+  "project_id": "interactive-cli-combat-viewer",
+  "execution_agent": "software-crafter",
+  "self_contained_context": {
+    "background": "Part of Phase 3: Visual Enhancement (Emoji, Colors, Pacing). Centralized emoji configuration enables easy cross-platform adjustment. get_symbol()\nmethod simplifies emoji usage in renderer.\n",
+    "prerequisites_completed": [
+      "03-01"
+    ],
+    "relevant_files": [
+      "modules/infrastructure/cli/config.py (modify)"
+    ],
+    "technical_context": "Extend CLIConfig with emoji and fallback mappings.\n\nFile: modules/infrastructure/cli/config.py (update)\n\nAdd emoji dictionaries:\n```python\n@dataclass(frozen=True)\nclass CLIConfig:\n    # ... (existing timing fields) ...\n\n    # Emoji Configuration\n    emoji: dict[str, str] = field(default_factory=lambda: {\n        'attack': '⚔️',\n        'damage': '💥',\n        'hp': '❤️',\n        'dice': '🎲',\n        'initiative': '⚡',\n        'victory': '🏆',\n        'death': '☠️',\n        'defend': '🛡️',\n        'character': '🧙',\n    })\n\n    fallback: dict[str, str] = field(default_factory=lambda: {\n        'attack': '[ATK]',\n        'damage': '[DMG]',\n        'hp': '[HP]',\n        'dice': '[D6]',\n        'initiative': '[INIT]',\n        'victory': '[WIN]',\n        'death': '[DEAD]',\n        'defend': '[DEF]',\n        'character': '[CHAR]',\n    })\n\n    def get_symbol(self, key: str) -> str:\n        \"\"\"Get emoji or fallback symbol.\n\n        If key is not found in emoji/fallback dict, returns key itself.\n        This ensures missing keys pass through unchanged (graceful degradation).\n        Example: get_symbol('unknown') returns 'unknown'\n        \"\"\"\n        if self.emoji_enabled:\n            return self.emoji.get(key, key)  # Returns key if not found\n        else:\n            return self.fallback.get(key, key)  # Returns key if not found\n```\n\nUnit tests:\n- Test: test_get_symbol_returns_emoji_when_enabled()\n- Test: test_get_symbol_returns_fallback_when_disabled()\n- Test: test_all_emoji_keys_have_fallbacks()\n- Test: test_get_symbol_returns_key_if_not_found()  # Missing key fallback\n\nValidation:\n- pytest tests/unit/infrastructure/cli/test_config.py -v\n",
+    "tdd_phase": "GREEN",
+    "active_e2e_test": "E2E Test 3.1 (Combat Visualization) - should PASS when complete",
+    "inactive_e2e_tests": "All E2E tests except the active one should remain disabled with @pytest.mark.skip or similar"
+  },
+  "task_specification": {
+    "name": "Add Emoji Mapping to CLIConfig",
+    "description": "Extend CLIConfig with emoji and fallback mappings.\n\nFile: modules/infrastructure/cli/config.py (update)\n\nAdd emoji dictionaries:\n```python\n@dataclass(frozen=True)\nclass CLIConfig:\n    # ... (existing timing fields) ...\n\n    # Emoji Configuration\n    emoji: dict[str, str] = field(default_factory=lambda: {\n        'attack': '⚔️',\n        'damage': '💥',\n        'hp': '❤️',\n        'dice': '🎲',\n        'initiative': '⚡',\n        'victory': '🏆',\n        'death': '☠️',\n        'defend': '🛡️',\n        'character': '🧙',\n    })\n\n    fallback: dict[str, str] = field(default_factory=lambda: {\n        'attack': '[ATK]',\n        'damage': '[DMG]',\n        'hp': '[HP]',\n        'dice': '[D6]',\n        'initiative': '[INIT]',\n        'victory': '[WIN]',\n        'death': '[DEAD]',\n        'defend': '[DEF]',\n        'character': '[CHAR]',\n    })\n\n    def get_symbol(self, key: str) -> str:\n        \"\"\"Get emoji or fallback symbol.\n\n        If key is not found in emoji/fallback dict, returns key itself.\n        This ensures missing keys pass through unchanged (graceful degradation).\n        Example: get_symbol('unknown') returns 'unknown'\n        \"\"\"\n        if self.emoji_enabled:\n            return self.emoji.get(key, key)  # Returns key if not found\n        else:\n            return self.fallback.get(key, key)  # Returns key if not found\n```\n\nUnit tests:\n- Test: test_get_symbol_returns_emoji_when_enabled()\n- Test: test_get_symbol_returns_fallback_when_disabled()\n- Test: test_all_emoji_keys_have_fallbacks()\n- Test: test_get_symbol_returns_key_if_not_found()  # Missing key fallback\n\nValidation:\n- pytest tests/unit/infrastructure/cli/test_config.py -v\n",
+    "motivation": "Centralized emoji configuration enables easy cross-platform adjustment. get_symbol()\nmethod simplifies emoji usage in renderer.\n",
+    "detailed_instructions": "Extend CLIConfig with emoji and fallback mappings.\n\nFile: modules/infrastructure/cli/config.py (update)\n\nAdd emoji dictionaries:\n```python\n@dataclass(frozen=True)\nclass CLIConfig:\n    # ... (existing timing fields) ...\n\n    # Emoji Configuration\n    emoji: dict[str, str] = field(default_factory=lambda: {\n        'attack': '⚔️',\n        'damage': '💥',\n        'hp': '❤️',\n        'dice': '🎲',\n        'initiative': '⚡',\n        'victory': '🏆',\n        'death': '☠️',\n        'defend': '🛡️',\n        'character': '🧙',\n    })\n\n    fallback: dict[str, str] = field(default_factory=lambda: {\n        'attack': '[ATK]',\n        'damage': '[DMG]',\n        'hp': '[HP]',\n        'dice': '[D6]',\n        'initiative': '[INIT]',\n        'victory': '[WIN]',\n        'death': '[DEAD]',\n        'defend': '[DEF]',\n        'character': '[CHAR]',\n    })\n\n    def get_symbol(self, key: str) -> str:\n        \"\"\"Get emoji or fallback symbol.\n\n        If key is not found in emoji/fallback dict, returns key itself.\n        This ensures missing keys pass through unchanged (graceful degradation).\n        Example: get_symbol('unknown') returns 'unknown'\n        \"\"\"\n        if self.emoji_enabled:\n            return self.emoji.get(key, key)  # Returns key if not found\n        else:\n            return self.fallback.get(key, key)  # Returns key if not found\n```\n\nUnit tests:\n- Test: test_get_symbol_returns_emoji_when_enabled()\n- Test: test_get_symbol_returns_fallback_when_disabled()\n- Test: test_all_emoji_keys_have_fallbacks()\n- Test: test_get_symbol_returns_key_if_not_found()  # Missing key fallback\n\nValidation:\n- pytest tests/unit/infrastructure/cli/test_config.py -v\n",
+    "acceptance_criteria": [
+      "emoji dict with 9 entries in CLIConfig",
+      "fallback dict with matching entries",
+      "get_symbol() method returns emoji or fallback",
+      "Unit tests pass (3 tests)"
+    ],
+    "estimated_hours": 0.5
+  },
+  "dependencies": {
+    "requires": [
+      "03-01"
+    ],
+    "blocking": [
+      "03-03"
+    ]
+  },
+  "state": {
+    "status": "TODO",
+    "assigned_to": null,
+    "started_at": null,
+    "completed_at": null,
+    "updated": "2026-01-10T12:41:07.248054+00:00"
+  }
+}

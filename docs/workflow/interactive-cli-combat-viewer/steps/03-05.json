@@ -1,0 +1,46 @@
+{
+  "task_id": "03-05",
+  "project_id": "interactive-cli-combat-viewer",
+  "execution_agent": "software-crafter",
+  "self_contained_context": {
+    "background": "Part of Phase 3: Visual Enhancement (Emoji, Colors, Pacing). Timing validation ensures pacing configuration works correctly. Critical for UX quality.\n",
+    "prerequisites_completed": [
+      "03-04"
+    ],
+    "relevant_files": [
+      "tests/e2e/test_cli_combat.py (modify)"
+    ],
+    "technical_context": "Enable test for fixed timing delays between events.\n\nTest: \"Combat uses fixed timing delays between rounds\"\n\nStep definitions:\n- @when('combat executes with default timing configuration')\n- @then('delay between rounds is approximately 1.5-2 seconds')\n- @then('delays are consistent across all rounds')\n\nTiming measurement strategy:\n```python\n@when('combat executes with default timing configuration')\ndef step_execute_with_timing(context):\n    # Run CLI with production config (not test mode)\n    config = CLIConfig()  # Production delays\n    start = time.time()\n    # ... run combat ...\n    end = time.time()\n    context.combat_duration = end - start\n    context.expected_min_duration = calculate_expected_min(num_rounds)\n    context.expected_max_duration = calculate_expected_max(num_rounds)\n\n@then('delay between rounds is approximately 1.5-2 seconds')\ndef step_verify_timing(context):\n    assert context.expected_min_duration <= context.combat_duration <= context.expected_max_duration\n```\n\nValidation:\n- pytest tests/e2e/test_cli_combat.py -k \"timing\" -v\n- Test should PASS (delays already implemented in ConsoleOutput)\n",
+    "tdd_phase": "RED",
+    "active_e2e_test": "E2E Test 3.3 (Fixed Timing Delays) - SHOULD FAIL (RED)",
+    "inactive_e2e_tests": "All E2E tests except the active one should remain disabled with @pytest.mark.skip or similar"
+  },
+  "task_specification": {
+    "name": "Enable E2E Test 3.3 (Fixed Timing Delays)",
+    "description": "Enable test for fixed timing delays between events.\n\nTest: \"Combat uses fixed timing delays between rounds\"\n\nStep definitions:\n- @when('combat executes with default timing configuration')\n- @then('delay between rounds is approximately 1.5-2 seconds')\n- @then('delays are consistent across all rounds')\n\nTiming measurement strategy:\n```python\n@when('combat executes with default timing configuration')\ndef step_execute_with_timing(context):\n    # Run CLI with production config (not test mode)\n    config = CLIConfig()  # Production delays\n    start = time.time()\n    # ... run combat ...\n    end = time.time()\n    context.combat_duration = end - start\n    context.expected_min_duration = calculate_expected_min(num_rounds)\n    context.expected_max_duration = calculate_expected_max(num_rounds)\n\n@then('delay between rounds is approximately 1.5-2 seconds')\ndef step_verify_timing(context):\n    assert context.expected_min_duration <= context.combat_duration <= context.expected_max_duration\n```\n\nValidation:\n- pytest tests/e2e/test_cli_combat.py -k \"timing\" -v\n- Test should PASS (delays already implemented in ConsoleOutput)\n",
+    "motivation": "Timing validation ensures pacing configuration works correctly. Critical for UX quality.\n",
+    "detailed_instructions": "Enable test for fixed timing delays between events.\n\nTest: \"Combat uses fixed timing delays between rounds\"\n\nStep definitions:\n- @when('combat executes with default timing configuration')\n- @then('delay between rounds is approximately 1.5-2 seconds')\n- @then('delays are consistent across all rounds')\n\nTiming measurement strategy:\n```python\n@when('combat executes with default timing configuration')\ndef step_execute_with_timing(context):\n    # Run CLI with production config (not test mode)\n    config = CLIConfig()  # Production delays\n    start = time.time()\n    # ... run combat ...\n    end = time.time()\n    context.combat_duration = end - start\n    context.expected_min_duration = calculate_expected_min(num_rounds)\n    context.expected_max_duration = calculate_expected_max(num_rounds)\n\n@then('delay between rounds is approximately 1.5-2 seconds')\ndef step_verify_timing(context):\n    assert context.expected_min_duration <= context.combat_duration <= context.expected_max_duration\n```\n\nValidation:\n- pytest tests/e2e/test_cli_combat.py -k \"timing\" -v\n- Test should PASS (delays already implemented in ConsoleOutput)\n",
+    "acceptance_criteria": [
+      "E2E test 3.3 enabled",
+      "Timing measurement in step definitions",
+      "Expected duration calculation",
+      "Test PASSES (timing already correct)"
+    ],
+    "estimated_hours": 0.5
+  },
+  "dependencies": {
+    "requires": [
+      "03-04"
+    ],
+    "blocking": [
+      "03-06"
+    ]
+  },
+  "state": {
+    "status": "TODO",
+    "assigned_to": null,
+    "started_at": null,
+    "completed_at": null,
+    "updated": "2026-01-10T12:41:07.248054+00:00"
+  }
+}

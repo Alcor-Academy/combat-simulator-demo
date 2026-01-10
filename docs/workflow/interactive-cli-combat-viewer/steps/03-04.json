@@ -1,0 +1,46 @@
+{
+  "task_id": "03-04",
+  "project_id": "interactive-cli-combat-viewer",
+  "execution_agent": "software-crafter",
+  "self_contained_context": {
+    "background": "Part of Phase 3: Visual Enhancement (Emoji, Colors, Pacing). HP tracking accuracy is critical for user trust. Test validates display matches domain logic.\n",
+    "prerequisites_completed": [
+      "03-03"
+    ],
+    "relevant_files": [
+      "tests/e2e/test_cli_combat.py (modify)"
+    ],
+    "technical_context": "Enable test for HP tracking accuracy throughout combat.\n\nTest: \"HP tracking accuracy throughout combat\"\n\nStep definitions:\n- @given('Hero starts with HP 50')\n- @when('Hero attacks and deals 14 damage')\n- @then('Villain HP changes from 40 to 26')\n- @then('display shows \"Villain: 40 HP → 26 HP\"')\n\nImplementation strategy:\n- Mock dice rolls for deterministic damage\n- Capture CLI output\n- Parse HP change lines\n- Verify exact HP values and format\n\nExample:\n```python\n@then('display shows \"Villain: 40 HP → 26 HP\"')\ndef step_verify_hp_display(context):\n    output = context.cli_output\n    assert \"Villain: 40 HP → 26 HP\" in output or \"Villain: 40 HP -> 26 HP\" in output\n```\n\nValidation:\n- pytest tests/e2e/test_cli_combat.py -k \"HP tracking\" -v\n- Test should PASS if CombatRenderer correctly displays HP changes\n",
+    "tdd_phase": "RED",
+    "active_e2e_test": "E2E Test 3.2 (HP Tracking Accuracy) - SHOULD FAIL (RED)",
+    "inactive_e2e_tests": "All E2E tests except the active one should remain disabled with @pytest.mark.skip or similar"
+  },
+  "task_specification": {
+    "name": "Enable E2E Test 3.2 (HP Tracking Accuracy)",
+    "description": "Enable test for HP tracking accuracy throughout combat.\n\nTest: \"HP tracking accuracy throughout combat\"\n\nStep definitions:\n- @given('Hero starts with HP 50')\n- @when('Hero attacks and deals 14 damage')\n- @then('Villain HP changes from 40 to 26')\n- @then('display shows \"Villain: 40 HP → 26 HP\"')\n\nImplementation strategy:\n- Mock dice rolls for deterministic damage\n- Capture CLI output\n- Parse HP change lines\n- Verify exact HP values and format\n\nExample:\n```python\n@then('display shows \"Villain: 40 HP → 26 HP\"')\ndef step_verify_hp_display(context):\n    output = context.cli_output\n    assert \"Villain: 40 HP → 26 HP\" in output or \"Villain: 40 HP -> 26 HP\" in output\n```\n\nValidation:\n- pytest tests/e2e/test_cli_combat.py -k \"HP tracking\" -v\n- Test should PASS if CombatRenderer correctly displays HP changes\n",
+    "motivation": "HP tracking accuracy is critical for user trust. Test validates display matches domain logic.\n",
+    "detailed_instructions": "Enable test for HP tracking accuracy throughout combat.\n\nTest: \"HP tracking accuracy throughout combat\"\n\nStep definitions:\n- @given('Hero starts with HP 50')\n- @when('Hero attacks and deals 14 damage')\n- @then('Villain HP changes from 40 to 26')\n- @then('display shows \"Villain: 40 HP → 26 HP\"')\n\nImplementation strategy:\n- Mock dice rolls for deterministic damage\n- Capture CLI output\n- Parse HP change lines\n- Verify exact HP values and format\n\nExample:\n```python\n@then('display shows \"Villain: 40 HP → 26 HP\"')\ndef step_verify_hp_display(context):\n    output = context.cli_output\n    assert \"Villain: 40 HP → 26 HP\" in output or \"Villain: 40 HP -> 26 HP\" in output\n```\n\nValidation:\n- pytest tests/e2e/test_cli_combat.py -k \"HP tracking\" -v\n- Test should PASS if CombatRenderer correctly displays HP changes\n",
+    "acceptance_criteria": [
+      "E2E test 3.2 enabled",
+      "Step definitions for HP verification",
+      "Output parsing strategy implemented",
+      "Test PASSES (emoji updates made display accurate)"
+    ],
+    "estimated_hours": 0.5
+  },
+  "dependencies": {
+    "requires": [
+      "03-03"
+    ],
+    "blocking": [
+      "03-05"
+    ]
+  },
+  "state": {
+    "status": "TODO",
+    "assigned_to": null,
+    "started_at": null,
+    "completed_at": null,
+    "updated": "2026-01-10T12:41:07.248054+00:00"
+  }
+}

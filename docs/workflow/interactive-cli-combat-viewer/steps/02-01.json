@@ -1,0 +1,48 @@
+{
+  "task_id": "02-01",
+  "project_id": "interactive-cli-combat-viewer",
+  "execution_agent": "software-crafter",
+  "self_contained_context": {
+    "background": "Part of Phase 2: Interactive Input with Validation. Outside-In TDD: E2E tests define interactive input behavior before implementation.\nEnsures we build exactly the validation logic users need.\n",
+    "prerequisites_completed": [
+      "01-06"
+    ],
+    "relevant_files": [
+      "tests/e2e/test_cli_combat.py (modify)",
+      "tests/e2e/features/cli_combat.feature (modify)"
+    ],
+    "technical_context": "Enable acceptance tests for character creation to drive Phase 2 implementation.\n\nTests to enable in tests/e2e/features/cli_combat.feature:\n1. \"User creates both characters with manual input\"\n2. \"User uses random defaults for character attributes\"\n3. \"Invalid HP input triggers validation error and re-prompt\"\n4. \"Invalid attack power input triggers validation error\"\n5. \"Empty name input triggers validation error\"\n\nStep definitions in tests/e2e/test_cli_combat.py:\n- @when('I enter \"{value}\" for character {num} name')\n- @when('I enter \"{value}\" for character {num} HP')\n- @when('I press INVIO for character {num} HP')\n- @then('validation error is displayed in red')\n- @then('error message contains \"{text}\"')\n- @then('I am re-prompted for character {num} {field}')\n- @then('character {num} has name \"{name}\", HP {hp}, attack power {attack}, agility {agility}')\n\nMock input strategy:\n- Use pytest-mock to mock Rich Prompt.ask() and IntPrompt.ask()\n- Provide input sequences including invalid values\n- Verify error messages displayed\n- Verify re-prompting occurs\n\nExample step implementation:\n```python\n@when('I enter \"{value}\" for character 1 HP')\ndef step_enter_hp(context, value, monkeypatch):\n    # Mock Rich IntPrompt to return value\n    inputs = [value]\n    input_iter = iter(inputs)\n    monkeypatch.setattr(\n        \"rich.prompt.IntPrompt.ask\",\n        lambda *args, **kwargs: int(next(input_iter))\n    )\n```\n\nValidation:\n- pytest tests/e2e/test_cli_combat.py -k \"character creation\" -v\n- Tests FAIL initially (CharacterCreator doesn't exist)\n",
+    "tdd_phase": "RED",
+    "active_e2e_test": "E2E Tests 2.1-2.3 (Character Creation) - SHOULD FAIL (RED)",
+    "inactive_e2e_tests": "All E2E tests except the active one should remain disabled with @pytest.mark.skip or similar"
+  },
+  "task_specification": {
+    "name": "Enable E2E Tests 2.1-2.3 (Character Creation)",
+    "description": "Enable acceptance tests for character creation to drive Phase 2 implementation.\n\nTests to enable in tests/e2e/features/cli_combat.feature:\n1. \"User creates both characters with manual input\"\n2. \"User uses random defaults for character attributes\"\n3. \"Invalid HP input triggers validation error and re-prompt\"\n4. \"Invalid attack power input triggers validation error\"\n5. \"Empty name input triggers validation error\"\n\nStep definitions in tests/e2e/test_cli_combat.py:\n- @when('I enter \"{value}\" for character {num} name')\n- @when('I enter \"{value}\" for character {num} HP')\n- @when('I press INVIO for character {num} HP')\n- @then('validation error is displayed in red')\n- @then('error message contains \"{text}\"')\n- @then('I am re-prompted for character {num} {field}')\n- @then('character {num} has name \"{name}\", HP {hp}, attack power {attack}, agility {agility}')\n\nMock input strategy:\n- Use pytest-mock to mock Rich Prompt.ask() and IntPrompt.ask()\n- Provide input sequences including invalid values\n- Verify error messages displayed\n- Verify re-prompting occurs\n\nExample step implementation:\n```python\n@when('I enter \"{value}\" for character 1 HP')\ndef step_enter_hp(context, value, monkeypatch):\n    # Mock Rich IntPrompt to return value\n    inputs = [value]\n    input_iter = iter(inputs)\n    monkeypatch.setattr(\n        \"rich.prompt.IntPrompt.ask\",\n        lambda *args, **kwargs: int(next(input_iter))\n    )\n```\n\nValidation:\n- pytest tests/e2e/test_cli_combat.py -k \"character creation\" -v\n- Tests FAIL initially (CharacterCreator doesn't exist)\n",
+    "motivation": "Outside-In TDD: E2E tests define interactive input behavior before implementation.\nEnsures we build exactly the validation logic users need.\n",
+    "detailed_instructions": "Enable acceptance tests for character creation to drive Phase 2 implementation.\n\nTests to enable in tests/e2e/features/cli_combat.feature:\n1. \"User creates both characters with manual input\"\n2. \"User uses random defaults for character attributes\"\n3. \"Invalid HP input triggers validation error and re-prompt\"\n4. \"Invalid attack power input triggers validation error\"\n5. \"Empty name input triggers validation error\"\n\nStep definitions in tests/e2e/test_cli_combat.py:\n- @when('I enter \"{value}\" for character {num} name')\n- @when('I enter \"{value}\" for character {num} HP')\n- @when('I press INVIO for character {num} HP')\n- @then('validation error is displayed in red')\n- @then('error message contains \"{text}\"')\n- @then('I am re-prompted for character {num} {field}')\n- @then('character {num} has name \"{name}\", HP {hp}, attack power {attack}, agility {agility}')\n\nMock input strategy:\n- Use pytest-mock to mock Rich Prompt.ask() and IntPrompt.ask()\n- Provide input sequences including invalid values\n- Verify error messages displayed\n- Verify re-prompting occurs\n\nExample step implementation:\n```python\n@when('I enter \"{value}\" for character 1 HP')\ndef step_enter_hp(context, value, monkeypatch):\n    # Mock Rich IntPrompt to return value\n    inputs = [value]\n    input_iter = iter(inputs)\n    monkeypatch.setattr(\n        \"rich.prompt.IntPrompt.ask\",\n        lambda *args, **kwargs: int(next(input_iter))\n    )\n```\n\nValidation:\n- pytest tests/e2e/test_cli_combat.py -k \"character creation\" -v\n- Tests FAIL initially (CharacterCreator doesn't exist)\n",
+    "acceptance_criteria": [
+      "5 E2E tests enabled in cli_combat.feature",
+      "Step definitions implemented for input and validation",
+      "Mock strategy for Rich Prompt defined",
+      "pytest runs tests and FAILS (red phase)",
+      "Error messages indicate missing CharacterCreator"
+    ],
+    "estimated_hours": 1.0
+  },
+  "dependencies": {
+    "requires": [
+      "01-06"
+    ],
+    "blocking": [
+      "02-02"
+    ]
+  },
+  "state": {
+    "status": "TODO",
+    "assigned_to": null,
+    "started_at": null,
+    "completed_at": null,
+    "updated": "2026-01-10T12:41:07.248054+00:00"
+  }
+}

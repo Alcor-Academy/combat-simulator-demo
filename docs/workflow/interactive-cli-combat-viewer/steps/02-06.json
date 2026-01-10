@@ -1,0 +1,48 @@
+{
+  "task_id": "02-06",
+  "project_id": "interactive-cli-combat-viewer",
+  "execution_agent": "software-crafter",
+  "self_contained_context": {
+    "background": "Part of Phase 2: Interactive Input with Validation. Validation checkpoint ensures Phase 2 quality. Commit captures interactive input milestone.\n",
+    "prerequisites_completed": [
+      "02-05"
+    ],
+    "relevant_files": [
+      "modules/infrastructure/cli/ (validate and refactor)",
+      "tests/ (validate)"
+    ],
+    "technical_context": "Validate Phase 2 deliverable and refactor.\n\nValidation checklist:\n- [ ] All Phase 2 E2E tests pass (tests 2.1-2.5)\n- [ ] All unit tests pass (character_creator tests)\n- [ ] Manual testing: Create 5 characters with various inputs\n- [ ] Manual testing: Trigger all validation errors\n- [ ] Manual testing: Use random defaults multiple times\n- [ ] Code coverage > 85% for CharacterCreator\n- [ ] No regressions (Phase 1 tests still pass)\n\nRefactoring:\n- Simplify _prompt_int_with_default() if overly complex\n- Extract validation error messages to constants\n- Improve docstrings for validation logic\n- Type hints complete\n\nQuality checks:\n- pytest --cov=modules/infrastructure/cli tests/\n- mypy modules/infrastructure/cli/\n\nCommit:\n- git add modules/infrastructure/cli/ tests/\n- git commit -m \"feat(cli): Phase 2 - Interactive character creation with validation\n\n- Implement CharacterCreator with Rich Prompts\n- Add validation for name, HP, attack power\n- Implement random defaults (INVIO behavior)\n- Display character confirmation cards\n- E2E Tests 2.1-2.5 passing\n\nPhase 2 delivers robust input handling with professional UX.\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\"\n",
+    "tdd_phase": "REFACTOR",
+    "active_e2e_test": "E2E Tests 2.4-2.5 (Edge Cases) - should PASS when complete",
+    "inactive_e2e_tests": "N/A - validation phase"
+  },
+  "task_specification": {
+    "name": "Phase 2 Validation and Refactoring",
+    "description": "Validate Phase 2 deliverable and refactor.\n\nValidation checklist:\n- [ ] All Phase 2 E2E tests pass (tests 2.1-2.5)\n- [ ] All unit tests pass (character_creator tests)\n- [ ] Manual testing: Create 5 characters with various inputs\n- [ ] Manual testing: Trigger all validation errors\n- [ ] Manual testing: Use random defaults multiple times\n- [ ] Code coverage > 85% for CharacterCreator\n- [ ] No regressions (Phase 1 tests still pass)\n\nRefactoring:\n- Simplify _prompt_int_with_default() if overly complex\n- Extract validation error messages to constants\n- Improve docstrings for validation logic\n- Type hints complete\n\nQuality checks:\n- pytest --cov=modules/infrastructure/cli tests/\n- mypy modules/infrastructure/cli/\n\nCommit:\n- git add modules/infrastructure/cli/ tests/\n- git commit -m \"feat(cli): Phase 2 - Interactive character creation with validation\n\n- Implement CharacterCreator with Rich Prompts\n- Add validation for name, HP, attack power\n- Implement random defaults (INVIO behavior)\n- Display character confirmation cards\n- E2E Tests 2.1-2.5 passing\n\nPhase 2 delivers robust input handling with professional UX.\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\"\n",
+    "motivation": "Validation checkpoint ensures Phase 2 quality. Commit captures interactive input milestone.\n",
+    "detailed_instructions": "Validate Phase 2 deliverable and refactor.\n\nValidation checklist:\n- [ ] All Phase 2 E2E tests pass (tests 2.1-2.5)\n- [ ] All unit tests pass (character_creator tests)\n- [ ] Manual testing: Create 5 characters with various inputs\n- [ ] Manual testing: Trigger all validation errors\n- [ ] Manual testing: Use random defaults multiple times\n- [ ] Code coverage > 85% for CharacterCreator\n- [ ] No regressions (Phase 1 tests still pass)\n\nRefactoring:\n- Simplify _prompt_int_with_default() if overly complex\n- Extract validation error messages to constants\n- Improve docstrings for validation logic\n- Type hints complete\n\nQuality checks:\n- pytest --cov=modules/infrastructure/cli tests/\n- mypy modules/infrastructure/cli/\n\nCommit:\n- git add modules/infrastructure/cli/ tests/\n- git commit -m \"feat(cli): Phase 2 - Interactive character creation with validation\n\n- Implement CharacterCreator with Rich Prompts\n- Add validation for name, HP, attack power\n- Implement random defaults (INVIO behavior)\n- Display character confirmation cards\n- E2E Tests 2.1-2.5 passing\n\nPhase 2 delivers robust input handling with professional UX.\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\"\n",
+    "acceptance_criteria": [
+      "All Phase 2 E2E tests pass",
+      "Code coverage > 85%",
+      "Manual testing complete",
+      "Refactoring done",
+      "Git commit created"
+    ],
+    "estimated_hours": 0.5
+  },
+  "dependencies": {
+    "requires": [
+      "02-05"
+    ],
+    "blocking": [
+      "03-01"
+    ]
+  },
+  "state": {
+    "status": "TODO",
+    "assigned_to": null,
+    "started_at": null,
+    "completed_at": null,
+    "updated": "2026-01-10T12:41:07.248054+00:00"
+  }
+}

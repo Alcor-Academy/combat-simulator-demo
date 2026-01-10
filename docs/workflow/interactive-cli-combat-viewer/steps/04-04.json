@@ -1,0 +1,48 @@
+{
+  "task_id": "04-04",
+  "project_id": "interactive-cli-combat-viewer",
+  "execution_agent": "software-crafter",
+  "self_contained_context": {
+    "background": "Part of Phase 4: Polish (Exit, Errors, Edge Cases). Tie-breaker transparency eliminates user confusion. Explains why one character won despite\nequal totals. Educational value for understanding combat mechanics.\n",
+    "prerequisites_completed": [
+      "04-03"
+    ],
+    "relevant_files": [
+      "tests/unit/infrastructure/cli/test_combat_renderer.py (modify)"
+    ],
+    "technical_context": "Enhance initiative display to explain tie-breaker rule when applicable.\n\nFile: modules/infrastructure/cli/combat_renderer.py (update)\n\nUpdate _render_initiative():\n```python\ndef _render_initiative(self, init_result) -> None:\n    \"\"\"Display initiative resolution with tie-breaker explanation.\"\"\"\n    dice_emoji = self._config.get_symbol('dice')\n    init_emoji = self._config.get_symbol('initiative')\n\n    self._console.print(f\"\\n{dice_emoji} Rolling Initiative...\", style=\"bold cyan\")\n    self._console.display_with_delay(\"\", self._config.initiative_roll_delay)\n\n    # Display rolls with agility\n    self._console.print(\n        f\"{init_result.attacker.name}: Base agility {init_result.attacker.agility} + {dice_emoji} {init_result.attacker_roll} = {init_result.attacker_total}\",\n        style=\"cyan\"\n    )\n    self._console.print(\n        f\"{init_result.defender.name}: Base agility {init_result.defender.agility} + {dice_emoji} {init_result.defender_roll} = {init_result.defender_total}\",\n        style=\"cyan\"\n    )\n\n    # Check for tie\n    if init_result.attacker_total == init_result.defender_total:\n        self._console.print(f\"\\nInitiative tied at {init_result.attacker_total}!\", style=\"yellow\")\n        if init_result.attacker.agility == init_result.defender.agility:\n            self._console.print(f\"{init_emoji} {init_result.attacker.name} wins by tie-breaker rule (first character).\", style=\"bold yellow\")\n        else:\n            self._console.print(f\"{init_emoji} {init_result.attacker.name} wins by tie-breaker rule (higher agility).\", style=\"bold yellow\")\n    else:\n        self._console.print(f\"\\n{init_emoji} {init_result.attacker.name} wins initiative and attacks first!\", style=\"bold yellow\")\n\n    self._console.display_with_delay(\"\", self._config.initiative_winner_delay)\n```\n\nUnit test:\n- Test: test_initiative_tie_displays_explanation()\n\nManual validation:\n- Create two characters with same agility (e.g., HP 30, Attack 10 both)\n- Mock dice rolls to return same value\n- Verify tie-breaker message displays\n\nAutomated validation:\n- pytest tests/e2e/test_cli_combat.py -k \"tie\" -v\n- Test should now PASS\n",
+    "tdd_phase": "GREEN",
+    "active_e2e_test": "E2E Tests 4.3-4.4 (Edge Cases) - should PASS when complete",
+    "inactive_e2e_tests": "All E2E tests except the active one should remain disabled with @pytest.mark.skip or similar"
+  },
+  "task_specification": {
+    "name": "Add Initiative Tie-Breaker Explanation",
+    "description": "Enhance initiative display to explain tie-breaker rule when applicable.\n\nFile: modules/infrastructure/cli/combat_renderer.py (update)\n\nUpdate _render_initiative():\n```python\ndef _render_initiative(self, init_result) -> None:\n    \"\"\"Display initiative resolution with tie-breaker explanation.\"\"\"\n    dice_emoji = self._config.get_symbol('dice')\n    init_emoji = self._config.get_symbol('initiative')\n\n    self._console.print(f\"\\n{dice_emoji} Rolling Initiative...\", style=\"bold cyan\")\n    self._console.display_with_delay(\"\", self._config.initiative_roll_delay)\n\n    # Display rolls with agility\n    self._console.print(\n        f\"{init_result.attacker.name}: Base agility {init_result.attacker.agility} + {dice_emoji} {init_result.attacker_roll} = {init_result.attacker_total}\",\n        style=\"cyan\"\n    )\n    self._console.print(\n        f\"{init_result.defender.name}: Base agility {init_result.defender.agility} + {dice_emoji} {init_result.defender_roll} = {init_result.defender_total}\",\n        style=\"cyan\"\n    )\n\n    # Check for tie\n    if init_result.attacker_total == init_result.defender_total:\n        self._console.print(f\"\\nInitiative tied at {init_result.attacker_total}!\", style=\"yellow\")\n        if init_result.attacker.agility == init_result.defender.agility:\n            self._console.print(f\"{init_emoji} {init_result.attacker.name} wins by tie-breaker rule (first character).\", style=\"bold yellow\")\n        else:\n            self._console.print(f\"{init_emoji} {init_result.attacker.name} wins by tie-breaker rule (higher agility).\", style=\"bold yellow\")\n    else:\n        self._console.print(f\"\\n{init_emoji} {init_result.attacker.name} wins initiative and attacks first!\", style=\"bold yellow\")\n\n    self._console.display_with_delay(\"\", self._config.initiative_winner_delay)\n```\n\nUnit test:\n- Test: test_initiative_tie_displays_explanation()\n\nManual validation:\n- Create two characters with same agility (e.g., HP 30, Attack 10 both)\n- Mock dice rolls to return same value\n- Verify tie-breaker message displays\n\nAutomated validation:\n- pytest tests/e2e/test_cli_combat.py -k \"tie\" -v\n- Test should now PASS\n",
+    "motivation": "Tie-breaker transparency eliminates user confusion. Explains why one character won despite\nequal totals. Educational value for understanding combat mechanics.\n",
+    "detailed_instructions": "Enhance initiative display to explain tie-breaker rule when applicable.\n\nFile: modules/infrastructure/cli/combat_renderer.py (update)\n\nUpdate _render_initiative():\n```python\ndef _render_initiative(self, init_result) -> None:\n    \"\"\"Display initiative resolution with tie-breaker explanation.\"\"\"\n    dice_emoji = self._config.get_symbol('dice')\n    init_emoji = self._config.get_symbol('initiative')\n\n    self._console.print(f\"\\n{dice_emoji} Rolling Initiative...\", style=\"bold cyan\")\n    self._console.display_with_delay(\"\", self._config.initiative_roll_delay)\n\n    # Display rolls with agility\n    self._console.print(\n        f\"{init_result.attacker.name}: Base agility {init_result.attacker.agility} + {dice_emoji} {init_result.attacker_roll} = {init_result.attacker_total}\",\n        style=\"cyan\"\n    )\n    self._console.print(\n        f\"{init_result.defender.name}: Base agility {init_result.defender.agility} + {dice_emoji} {init_result.defender_roll} = {init_result.defender_total}\",\n        style=\"cyan\"\n    )\n\n    # Check for tie\n    if init_result.attacker_total == init_result.defender_total:\n        self._console.print(f\"\\nInitiative tied at {init_result.attacker_total}!\", style=\"yellow\")\n        if init_result.attacker.agility == init_result.defender.agility:\n            self._console.print(f\"{init_emoji} {init_result.attacker.name} wins by tie-breaker rule (first character).\", style=\"bold yellow\")\n        else:\n            self._console.print(f\"{init_emoji} {init_result.attacker.name} wins by tie-breaker rule (higher agility).\", style=\"bold yellow\")\n    else:\n        self._console.print(f\"\\n{init_emoji} {init_result.attacker.name} wins initiative and attacks first!\", style=\"bold yellow\")\n\n    self._console.display_with_delay(\"\", self._config.initiative_winner_delay)\n```\n\nUnit test:\n- Test: test_initiative_tie_displays_explanation()\n\nManual validation:\n- Create two characters with same agility (e.g., HP 30, Attack 10 both)\n- Mock dice rolls to return same value\n- Verify tie-breaker message displays\n\nAutomated validation:\n- pytest tests/e2e/test_cli_combat.py -k \"tie\" -v\n- Test should now PASS\n",
+    "acceptance_criteria": [
+      "Initiative display shows agility values",
+      "Tie detection logic implemented",
+      "Tie-breaker rule explanation displayed",
+      "Different messages for agility tie vs dice tie",
+      "Unit test for tie-breaker",
+      "E2E Tests 4.3-4.4 PASS"
+    ],
+    "estimated_hours": 1.0
+  },
+  "dependencies": {
+    "requires": [
+      "04-03"
+    ],
+    "blocking": [
+      "04-05"
+    ]
+  },
+  "state": {
+    "status": "TODO",
+    "assigned_to": null,
+    "started_at": null,
+    "completed_at": null,
+    "updated": "2026-01-10T12:41:07.248054+00:00"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "task_id": "05-02",
+  "project_id": "interactive-cli-combat-viewer",
+  "execution_agent": "software-crafter",
+  "self_contained_context": {
+    "background": "Part of Phase 5: Cross-Platform Compatibility. Manual testing catches platform-specific issues automated tests miss. Emoji rendering\nplatform-dependent. Validates Rich library cross-platform capabilities.\n",
+    "prerequisites_completed": [
+      "05-01"
+    ],
+    "relevant_files": [
+      "modules/infrastructure/cli/config.py (modify)",
+      "tests/unit/infrastructure/cli/test_config.py (modify)"
+    ],
+    "technical_context": "Perform manual testing on Windows, macOS, Linux terminals.\n\nTesting platforms (if available):\n\n**Windows:**\n- Windows Terminal (recommended): Verify emoji display\n- PowerShell 7: Verify emoji display\n- CMD.exe: Verify fallback symbols work\n\n**macOS:**\n- Terminal.app: Verify emoji display\n- iTerm2: Verify emoji display\n\n**Linux:**\n- GNOME Terminal: Verify emoji display\n- Konsole (KDE): Verify emoji display\n\nTesting checklist per platform:\n- [ ] CLI launches without errors\n- [ ] Character creation prompts display correctly\n- [ ] Validation errors display in red\n- [ ] Combat visualization displays emoji OR fallbacks\n- [ ] Colors display appropriately (or degrade gracefully)\n- [ ] HP color gradient works\n- [ ] Victory banner displays correctly\n- [ ] Exit confirmation works\n- [ ] CTRL-C exits gracefully\n\nDocument results:\n- Create docs/testing/cross-platform-results.md\n- List tested platforms with status (PASS/FAIL)\n- Note any emoji display issues\n- Screenshot examples if possible\n\nFallback testing:\n- Force emoji_enabled=False in CLIConfig\n- Run CLI and verify fallback symbols used\n- Verify functionality preserved without emoji\n\nIf only one platform available:\n- Document limitation in roadmap notes\n- Test emoji fallback mode thoroughly\n- Note need for future multi-platform validation\n",
+    "tdd_phase": "GREEN",
+    "active_e2e_test": "E2E Tests 5.1-5.2 (Cross-Platform) - should PASS when complete",
+    "inactive_e2e_tests": "All E2E tests except the active one should remain disabled with @pytest.mark.skip or similar"
+  },
+  "task_specification": {
+    "name": "Manual Cross-Platform Testing",
+    "description": "Perform manual testing on Windows, macOS, Linux terminals.\n\nTesting platforms (if available):\n\n**Windows:**\n- Windows Terminal (recommended): Verify emoji display\n- PowerShell 7: Verify emoji display\n- CMD.exe: Verify fallback symbols work\n\n**macOS:**\n- Terminal.app: Verify emoji display\n- iTerm2: Verify emoji display\n\n**Linux:**\n- GNOME Terminal: Verify emoji display\n- Konsole (KDE): Verify emoji display\n\nTesting checklist per platform:\n- [ ] CLI launches without errors\n- [ ] Character creation prompts display correctly\n- [ ] Validation errors display in red\n- [ ] Combat visualization displays emoji OR fallbacks\n- [ ] Colors display appropriately (or degrade gracefully)\n- [ ] HP color gradient works\n- [ ] Victory banner displays correctly\n- [ ] Exit confirmation works\n- [ ] CTRL-C exits gracefully\n\nDocument results:\n- Create docs/testing/cross-platform-results.md\n- List tested platforms with status (PASS/FAIL)\n- Note any emoji display issues\n- Screenshot examples if possible\n\nFallback testing:\n- Force emoji_enabled=False in CLIConfig\n- Run CLI and verify fallback symbols used\n- Verify functionality preserved without emoji\n\nIf only one platform available:\n- Document limitation in roadmap notes\n- Test emoji fallback mode thoroughly\n- Note need for future multi-platform validation\n",
+    "motivation": "Manual testing catches platform-specific issues automated tests miss. Emoji rendering\nplatform-dependent. Validates Rich library cross-platform capabilities.\n",
+    "detailed_instructions": "Perform manual testing on Windows, macOS, Linux terminals.\n\nTesting platforms (if available):\n\n**Windows:**\n- Windows Terminal (recommended): Verify emoji display\n- PowerShell 7: Verify emoji display\n- CMD.exe: Verify fallback symbols work\n\n**macOS:**\n- Terminal.app: Verify emoji display\n- iTerm2: Verify emoji display\n\n**Linux:**\n- GNOME Terminal: Verify emoji display\n- Konsole (KDE): Verify emoji display\n\nTesting checklist per platform:\n- [ ] CLI launches without errors\n- [ ] Character creation prompts display correctly\n- [ ] Validation errors display in red\n- [ ] Combat visualization displays emoji OR fallbacks\n- [ ] Colors display appropriately (or degrade gracefully)\n- [ ] HP color gradient works\n- [ ] Victory banner displays correctly\n- [ ] Exit confirmation works\n- [ ] CTRL-C exits gracefully\n\nDocument results:\n- Create docs/testing/cross-platform-results.md\n- List tested platforms with status (PASS/FAIL)\n- Note any emoji display issues\n- Screenshot examples if possible\n\nFallback testing:\n- Force emoji_enabled=False in CLIConfig\n- Run CLI and verify fallback symbols used\n- Verify functionality preserved without emoji\n\nIf only one platform available:\n- Document limitation in roadmap notes\n- Test emoji fallback mode thoroughly\n- Note need for future multi-platform validation\n",
+    "acceptance_criteria": [
+      "Manual testing on at least one platform",
+      "Emoji display or fallback validated",
+      "Color display validated",
+      "All functionality works cross-platform",
+      "Testing results documented",
+      "Fallback mode tested explicitly"
+    ],
+    "estimated_hours": 2.0
+  },
+  "dependencies": {
+    "requires": [
+      "05-01"
+    ],
+    "blocking": [
+      "05-03"
+    ]
+  },
+  "state": {
+    "status": "TODO",
+    "assigned_to": null,
+    "started_at": null,
+    "completed_at": null,
+    "updated": "2026-01-10T12:41:07.248054+00:00"
+  }
+}

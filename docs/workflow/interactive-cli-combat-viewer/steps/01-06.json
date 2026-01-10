@@ -1,0 +1,51 @@
+{
+  "task_id": "01-06",
+  "project_id": "interactive-cli-combat-viewer",
+  "execution_agent": "software-crafter",
+  "self_contained_context": {
+    "background": "Part of Phase 1: Baseline - Minimum Viable CLI. Validation checkpoint ensures Phase 1 quality before proceeding. Refactoring prevents\ntechnical debt accumulation. Commit captures working baseline for rollback if needed.\n",
+    "prerequisites_completed": [
+      "01-05"
+    ],
+    "relevant_files": [
+      "modules/infrastructure/cli/ (validate and refactor all files)",
+      "tests/unit/infrastructure/cli/ (validate all test files)",
+      "tests/e2e/test_cli_combat.py (validate)"
+    ],
+    "technical_context": "Validate Phase 1 deliverable and refactor if needed.\n\nValidation checklist:\n- [ ] E2E Test 1.1 passes consistently (run 5 times)\n- [ ] All unit tests pass (console_output, combat_renderer)\n- [ ] Manual testing on local machine works\n- [ ] Code coverage > 80% for new CLI components\n- [ ] No regressions in existing tests (9 E2E domain tests, 34 unit tests)\n\nRefactoring opportunities:\n- Extract magic strings to constants (e.g., \"=== COMBAT SIMULATOR ===\")\n- Simplify render methods if overly complex\n- Add docstrings to all public methods\n- Type hints for all function signatures\n\nQuality checks:\n- Run pytest --cov=modules/infrastructure/cli tests/\n- Run mypy modules/infrastructure/cli/ (type checking)\n- Run pre-commit hooks (if configured)\n\nDocumentation:\n- Add inline comments for non-obvious logic\n- Document hardcoded character limitation (Phase 1 only)\n\nCommit:\n- git add modules/infrastructure/cli/ tests/unit/infrastructure/cli/ tests/e2e/\n- git add cli.py\n- git commit -m \"feat(cli): Phase 1 - Baseline CLI with hardcoded characters\n\n- Implement ConsoleOutput (Rich wrapper with timing control)\n- Implement CombatRenderer (plain text visualization)\n- Wire CLI Main with dependency injection\n- E2E Test 1.1 passing (baseline combat)\n\nPhase 1 delivers working CLI demonstrating hexagonal architecture integration.\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\"\n",
+    "tdd_phase": "REFACTOR",
+    "active_e2e_test": "E2E Test 1.1 (Baseline Combat) - should PASS when complete",
+    "inactive_e2e_tests": "N/A - validation phase"
+  },
+  "task_specification": {
+    "name": "Phase 1 Validation and Refactoring",
+    "description": "Validate Phase 1 deliverable and refactor if needed.\n\nValidation checklist:\n- [ ] E2E Test 1.1 passes consistently (run 5 times)\n- [ ] All unit tests pass (console_output, combat_renderer)\n- [ ] Manual testing on local machine works\n- [ ] Code coverage > 80% for new CLI components\n- [ ] No regressions in existing tests (9 E2E domain tests, 34 unit tests)\n\nRefactoring opportunities:\n- Extract magic strings to constants (e.g., \"=== COMBAT SIMULATOR ===\")\n- Simplify render methods if overly complex\n- Add docstrings to all public methods\n- Type hints for all function signatures\n\nQuality checks:\n- Run pytest --cov=modules/infrastructure/cli tests/\n- Run mypy modules/infrastructure/cli/ (type checking)\n- Run pre-commit hooks (if configured)\n\nDocumentation:\n- Add inline comments for non-obvious logic\n- Document hardcoded character limitation (Phase 1 only)\n\nCommit:\n- git add modules/infrastructure/cli/ tests/unit/infrastructure/cli/ tests/e2e/\n- git add cli.py\n- git commit -m \"feat(cli): Phase 1 - Baseline CLI with hardcoded characters\n\n- Implement ConsoleOutput (Rich wrapper with timing control)\n- Implement CombatRenderer (plain text visualization)\n- Wire CLI Main with dependency injection\n- E2E Test 1.1 passing (baseline combat)\n\nPhase 1 delivers working CLI demonstrating hexagonal architecture integration.\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\"\n",
+    "motivation": "Validation checkpoint ensures Phase 1 quality before proceeding. Refactoring prevents\ntechnical debt accumulation. Commit captures working baseline for rollback if needed.\n",
+    "detailed_instructions": "Validate Phase 1 deliverable and refactor if needed.\n\nValidation checklist:\n- [ ] E2E Test 1.1 passes consistently (run 5 times)\n- [ ] All unit tests pass (console_output, combat_renderer)\n- [ ] Manual testing on local machine works\n- [ ] Code coverage > 80% for new CLI components\n- [ ] No regressions in existing tests (9 E2E domain tests, 34 unit tests)\n\nRefactoring opportunities:\n- Extract magic strings to constants (e.g., \"=== COMBAT SIMULATOR ===\")\n- Simplify render methods if overly complex\n- Add docstrings to all public methods\n- Type hints for all function signatures\n\nQuality checks:\n- Run pytest --cov=modules/infrastructure/cli tests/\n- Run mypy modules/infrastructure/cli/ (type checking)\n- Run pre-commit hooks (if configured)\n\nDocumentation:\n- Add inline comments for non-obvious logic\n- Document hardcoded character limitation (Phase 1 only)\n\nCommit:\n- git add modules/infrastructure/cli/ tests/unit/infrastructure/cli/ tests/e2e/\n- git add cli.py\n- git commit -m \"feat(cli): Phase 1 - Baseline CLI with hardcoded characters\n\n- Implement ConsoleOutput (Rich wrapper with timing control)\n- Implement CombatRenderer (plain text visualization)\n- Wire CLI Main with dependency injection\n- E2E Test 1.1 passing (baseline combat)\n\nPhase 1 delivers working CLI demonstrating hexagonal architecture integration.\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\"\n",
+    "acceptance_criteria": [
+      "E2E Test 1.1 passes 5 consecutive runs",
+      "All unit tests pass (10+ tests)",
+      "Code coverage > 80% for CLI components",
+      "No regressions in existing tests",
+      "Code quality checks pass (mypy, linting)",
+      "Refactoring complete (docstrings, type hints)",
+      "Git commit created with detailed message"
+    ],
+    "estimated_hours": 0.5
+  },
+  "dependencies": {
+    "requires": [
+      "01-05"
+    ],
+    "blocking": [
+      "02-01"
+    ]
+  },
+  "state": {
+    "status": "TODO",
+    "assigned_to": null,
+    "started_at": null,
+    "completed_at": null,
+    "updated": "2026-01-10T12:41:07.248054+00:00"
+  }
+}

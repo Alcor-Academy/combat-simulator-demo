@@ -1,0 +1,52 @@
+{
+  "task_id": "01-02",
+  "project_id": "interactive-cli-combat-viewer",
+  "execution_agent": "software-crafter",
+  "self_contained_context": {
+    "background": "Part of Phase 1: Baseline - Minimum Viable CLI. Infrastructure skeleton enables incremental development. CLIConfig with test_mode()\nis critical for fast E2E tests (zero delays). Validates basic module structure works.\n",
+    "prerequisites_completed": [
+      "01-01"
+    ],
+    "relevant_files": [
+      "modules/infrastructure/cli/__init__.py (create)",
+      "modules/infrastructure/cli/main.py (create)",
+      "modules/infrastructure/cli/config.py (create)",
+      "cli.py (create)"
+    ],
+    "technical_context": "Create directory structure and package initialization for CLI components.\n\nCreate directories:\n- modules/infrastructure/cli/\n\nCreate files:\n- modules/infrastructure/cli/__init__.py (empty for now)\n- modules/infrastructure/cli/main.py (stub with run_cli function)\n- modules/infrastructure/cli/config.py (CLIConfig dataclass)\n\nCLIConfig implementation:\n```python\nfrom dataclasses import dataclass, field\n\n@dataclass(frozen=True)\nclass CLIConfig:\n    # Timing delays (seconds)\n    initiative_roll_delay: float = 1.0\n    initiative_winner_delay: float = 1.5\n    round_header_delay: float = 0.5\n    attack_delay: float = 1.5\n    death_delay: float = 2.0\n    round_separator_delay: float = 0.5\n    exit_delay: float = 2.0\n\n    # Display settings\n    emoji_enabled: bool = True\n    colors_enabled: bool = True\n\n    @staticmethod\n    def test_mode() -> \"CLIConfig\":\n        \"\"\"Zero delays for testing.\"\"\"\n        return CLIConfig(\n            initiative_roll_delay=0.0,\n            initiative_winner_delay=0.0,\n            round_header_delay=0.0,\n            attack_delay=0.0,\n            death_delay=0.0,\n            round_separator_delay=0.0,\n            exit_delay=0.0,\n        )\n```\n\nCLI Main stub:\n```python\ndef run_cli() -> None:\n    \"\"\"CLI entry point - stub implementation.\"\"\"\n    print(\"CLI starting... (placeholder)\")\n    # TODO: Implement character creation, combat, visualization\n```\n\nTop-level convenience script:\n- Create cli.py in project root\n- Import and call run_cli()\n\nValidation:\n- python -m modules.infrastructure.cli.main (runs without error)\n- python cli.py (runs without error)\n- pytest tests/e2e/test_cli_combat.py::test_baseline -v\n- Test still FAILS but error changes (CLI exists but doesn't create characters)\n",
+    "tdd_phase": "GREEN",
+    "active_e2e_test": "E2E Test 1.1 (Baseline Combat) - should PASS when complete",
+    "inactive_e2e_tests": "All E2E tests except the active one should remain disabled with @pytest.mark.skip or similar"
+  },
+  "task_specification": {
+    "name": "Create CLI Package Structure",
+    "description": "Create directory structure and package initialization for CLI components.\n\nCreate directories:\n- modules/infrastructure/cli/\n\nCreate files:\n- modules/infrastructure/cli/__init__.py (empty for now)\n- modules/infrastructure/cli/main.py (stub with run_cli function)\n- modules/infrastructure/cli/config.py (CLIConfig dataclass)\n\nCLIConfig implementation:\n```python\nfrom dataclasses import dataclass, field\n\n@dataclass(frozen=True)\nclass CLIConfig:\n    # Timing delays (seconds)\n    initiative_roll_delay: float = 1.0\n    initiative_winner_delay: float = 1.5\n    round_header_delay: float = 0.5\n    attack_delay: float = 1.5\n    death_delay: float = 2.0\n    round_separator_delay: float = 0.5\n    exit_delay: float = 2.0\n\n    # Display settings\n    emoji_enabled: bool = True\n    colors_enabled: bool = True\n\n    @staticmethod\n    def test_mode() -> \"CLIConfig\":\n        \"\"\"Zero delays for testing.\"\"\"\n        return CLIConfig(\n            initiative_roll_delay=0.0,\n            initiative_winner_delay=0.0,\n            round_header_delay=0.0,\n            attack_delay=0.0,\n            death_delay=0.0,\n            round_separator_delay=0.0,\n            exit_delay=0.0,\n        )\n```\n\nCLI Main stub:\n```python\ndef run_cli() -> None:\n    \"\"\"CLI entry point - stub implementation.\"\"\"\n    print(\"CLI starting... (placeholder)\")\n    # TODO: Implement character creation, combat, visualization\n```\n\nTop-level convenience script:\n- Create cli.py in project root\n- Import and call run_cli()\n\nValidation:\n- python -m modules.infrastructure.cli.main (runs without error)\n- python cli.py (runs without error)\n- pytest tests/e2e/test_cli_combat.py::test_baseline -v\n- Test still FAILS but error changes (CLI exists but doesn't create characters)\n",
+    "motivation": "Infrastructure skeleton enables incremental development. CLIConfig with test_mode()\nis critical for fast E2E tests (zero delays). Validates basic module structure works.\n",
+    "detailed_instructions": "Create directory structure and package initialization for CLI components.\n\nCreate directories:\n- modules/infrastructure/cli/\n\nCreate files:\n- modules/infrastructure/cli/__init__.py (empty for now)\n- modules/infrastructure/cli/main.py (stub with run_cli function)\n- modules/infrastructure/cli/config.py (CLIConfig dataclass)\n\nCLIConfig implementation:\n```python\nfrom dataclasses import dataclass, field\n\n@dataclass(frozen=True)\nclass CLIConfig:\n    # Timing delays (seconds)\n    initiative_roll_delay: float = 1.0\n    initiative_winner_delay: float = 1.5\n    round_header_delay: float = 0.5\n    attack_delay: float = 1.5\n    death_delay: float = 2.0\n    round_separator_delay: float = 0.5\n    exit_delay: float = 2.0\n\n    # Display settings\n    emoji_enabled: bool = True\n    colors_enabled: bool = True\n\n    @staticmethod\n    def test_mode() -> \"CLIConfig\":\n        \"\"\"Zero delays for testing.\"\"\"\n        return CLIConfig(\n            initiative_roll_delay=0.0,\n            initiative_winner_delay=0.0,\n            round_header_delay=0.0,\n            attack_delay=0.0,\n            death_delay=0.0,\n            round_separator_delay=0.0,\n            exit_delay=0.0,\n        )\n```\n\nCLI Main stub:\n```python\ndef run_cli() -> None:\n    \"\"\"CLI entry point - stub implementation.\"\"\"\n    print(\"CLI starting... (placeholder)\")\n    # TODO: Implement character creation, combat, visualization\n```\n\nTop-level convenience script:\n- Create cli.py in project root\n- Import and call run_cli()\n\nValidation:\n- python -m modules.infrastructure.cli.main (runs without error)\n- python cli.py (runs without error)\n- pytest tests/e2e/test_cli_combat.py::test_baseline -v\n- Test still FAILS but error changes (CLI exists but doesn't create characters)\n",
+    "acceptance_criteria": [
+      "Directory modules/infrastructure/cli/ exists",
+      "CLIConfig dataclass defined with all timing constants",
+      "CLIConfig.test_mode() returns zero delays",
+      "run_cli() function exists in main.py",
+      "Top-level cli.py script works",
+      "python -m modules.infrastructure.cli.main runs without import errors",
+      "E2E test error changes (CLI exists but incomplete)"
+    ],
+    "estimated_hours": 0.5
+  },
+  "dependencies": {
+    "requires": [
+      "01-01"
+    ],
+    "blocking": [
+      "01-03"
+    ]
+  },
+  "state": {
+    "status": "TODO",
+    "assigned_to": null,
+    "started_at": null,
+    "completed_at": null,
+    "updated": "2026-01-10T12:41:07.248054+00:00"
+  }
+}

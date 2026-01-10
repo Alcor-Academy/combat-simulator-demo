@@ -1,0 +1,50 @@
+{
+  "task_id": "04-05",
+  "project_id": "interactive-cli-combat-viewer",
+  "execution_agent": "software-crafter",
+  "self_contained_context": {
+    "background": "Part of Phase 4: Polish (Exit, Errors, Edge Cases). Final validation ensures production readiness. All edge cases handled. Professional polish complete.\n",
+    "prerequisites_completed": [
+      "04-04"
+    ],
+    "relevant_files": [
+      "modules/infrastructure/cli/ (validate and refactor)",
+      "tests/ (validate)"
+    ],
+    "technical_context": "Validate Phase 4 deliverable and final polish.\n\nValidation checklist:\n- [ ] All Phase 4 E2E tests pass (4.1-4.4)\n- [ ] All error handling scenarios tested manually\n- [ ] Exit codes verified (0, 1, 130)\n- [ ] Extended combat (10+ rounds) displays correctly\n- [ ] Tie-breaker explanation clear and accurate\n- [ ] Code coverage > 85% overall\n- [ ] All phases (1-4) regression test pass\n\nManual testing scenarios:\n1. Normal completion: Create characters → watch combat → press ENTER → exit 0\n2. CTRL-C during character 1 creation → exit 130\n3. CTRL-C during combat round 2 → exit 130\n4. CTRL-C at exit confirmation → exit 130\n5. Create characters with identical agility → verify tie-breaker message\n6. Create very strong character vs weak → verify 1-round combat displays correctly\n7. Create balanced characters → verify 10+ round combat displays fully\n\nFinal refactoring:\n- Code review: Look for duplication in CombatRenderer\n- Extract magic strings to constants\n- Ensure all error messages consistent\n- Verify all docstrings complete\n- Type hints comprehensive\n\nQuality checks:\n- pytest --cov=modules/infrastructure/cli tests/ --cov-report=term-missing\n- mypy modules/infrastructure/cli/\n- Check for any TODO comments\n\nCommit:\n- git add modules/infrastructure/cli/ tests/\n- git commit -m \"feat(cli): Phase 4 - Polish with exit handling and edge cases\n\n- Add comprehensive error handling with proper exit codes\n- Enhance initiative display with tie-breaker explanation\n- Validate extended combat display (no truncation)\n- Validate defender death prevents counter-attack display\n- E2E Tests 4.1-4.4 passing\n\nPhase 4 completes production-ready CLI with professional error handling.\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\"\n",
+    "tdd_phase": "REFACTOR",
+    "active_e2e_test": "E2E Tests 4.3-4.4 (Edge Cases) - should PASS when complete",
+    "inactive_e2e_tests": "N/A - validation phase"
+  },
+  "task_specification": {
+    "name": "Phase 4 Validation and Refactoring",
+    "description": "Validate Phase 4 deliverable and final polish.\n\nValidation checklist:\n- [ ] All Phase 4 E2E tests pass (4.1-4.4)\n- [ ] All error handling scenarios tested manually\n- [ ] Exit codes verified (0, 1, 130)\n- [ ] Extended combat (10+ rounds) displays correctly\n- [ ] Tie-breaker explanation clear and accurate\n- [ ] Code coverage > 85% overall\n- [ ] All phases (1-4) regression test pass\n\nManual testing scenarios:\n1. Normal completion: Create characters → watch combat → press ENTER → exit 0\n2. CTRL-C during character 1 creation → exit 130\n3. CTRL-C during combat round 2 → exit 130\n4. CTRL-C at exit confirmation → exit 130\n5. Create characters with identical agility → verify tie-breaker message\n6. Create very strong character vs weak → verify 1-round combat displays correctly\n7. Create balanced characters → verify 10+ round combat displays fully\n\nFinal refactoring:\n- Code review: Look for duplication in CombatRenderer\n- Extract magic strings to constants\n- Ensure all error messages consistent\n- Verify all docstrings complete\n- Type hints comprehensive\n\nQuality checks:\n- pytest --cov=modules/infrastructure/cli tests/ --cov-report=term-missing\n- mypy modules/infrastructure/cli/\n- Check for any TODO comments\n\nCommit:\n- git add modules/infrastructure/cli/ tests/\n- git commit -m \"feat(cli): Phase 4 - Polish with exit handling and edge cases\n\n- Add comprehensive error handling with proper exit codes\n- Enhance initiative display with tie-breaker explanation\n- Validate extended combat display (no truncation)\n- Validate defender death prevents counter-attack display\n- E2E Tests 4.1-4.4 passing\n\nPhase 4 completes production-ready CLI with professional error handling.\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\"\n",
+    "motivation": "Final validation ensures production readiness. All edge cases handled. Professional polish complete.\n",
+    "detailed_instructions": "Validate Phase 4 deliverable and final polish.\n\nValidation checklist:\n- [ ] All Phase 4 E2E tests pass (4.1-4.4)\n- [ ] All error handling scenarios tested manually\n- [ ] Exit codes verified (0, 1, 130)\n- [ ] Extended combat (10+ rounds) displays correctly\n- [ ] Tie-breaker explanation clear and accurate\n- [ ] Code coverage > 85% overall\n- [ ] All phases (1-4) regression test pass\n\nManual testing scenarios:\n1. Normal completion: Create characters → watch combat → press ENTER → exit 0\n2. CTRL-C during character 1 creation → exit 130\n3. CTRL-C during combat round 2 → exit 130\n4. CTRL-C at exit confirmation → exit 130\n5. Create characters with identical agility → verify tie-breaker message\n6. Create very strong character vs weak → verify 1-round combat displays correctly\n7. Create balanced characters → verify 10+ round combat displays fully\n\nFinal refactoring:\n- Code review: Look for duplication in CombatRenderer\n- Extract magic strings to constants\n- Ensure all error messages consistent\n- Verify all docstrings complete\n- Type hints comprehensive\n\nQuality checks:\n- pytest --cov=modules/infrastructure/cli tests/ --cov-report=term-missing\n- mypy modules/infrastructure/cli/\n- Check for any TODO comments\n\nCommit:\n- git add modules/infrastructure/cli/ tests/\n- git commit -m \"feat(cli): Phase 4 - Polish with exit handling and edge cases\n\n- Add comprehensive error handling with proper exit codes\n- Enhance initiative display with tie-breaker explanation\n- Validate extended combat display (no truncation)\n- Validate defender death prevents counter-attack display\n- E2E Tests 4.1-4.4 passing\n\nPhase 4 completes production-ready CLI with professional error handling.\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\"\n",
+    "acceptance_criteria": [
+      "All Phase 4 E2E tests pass",
+      "Manual testing scenarios complete",
+      "Exit codes verified",
+      "Code coverage > 85%",
+      "No regressions",
+      "Final refactoring done",
+      "Git commit created"
+    ],
+    "estimated_hours": 1.0
+  },
+  "dependencies": {
+    "requires": [
+      "04-04"
+    ],
+    "blocking": [
+      "05-01"
+    ]
+  },
+  "state": {
+    "status": "TODO",
+    "assigned_to": null,
+    "started_at": null,
+    "completed_at": null,
+    "updated": "2026-01-10T12:41:07.248054+00:00"
+  }
+}

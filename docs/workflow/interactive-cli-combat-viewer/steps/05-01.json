@@ -1,0 +1,46 @@
+{
+  "task_id": "05-01",
+  "project_id": "interactive-cli-combat-viewer",
+  "execution_agent": "software-crafter",
+  "self_contained_context": {
+    "background": "Part of Phase 5: Cross-Platform Compatibility. Cross-platform tests validate emoji fallback strategy. Ensures CLI works on all major platforms.\n",
+    "prerequisites_completed": [
+      "04-05"
+    ],
+    "relevant_files": [
+      "tests/e2e/test_cli_combat.py (modify)"
+    ],
+    "technical_context": "Enable tests for cross-platform emoji and color support.\n\nTests:\n1. \"Emoji display correctly on Unicode-capable terminals\"\n2. \"Graceful degradation for terminals without emoji support\"\n3. \"Cross-platform emoji fallback mapping\"\n\nStep definitions:\n- @given('terminal supports Unicode emoji')\n- @then('emoji are rendered correctly: ⚔️ 💥 ❤️ 🎲 🏆 ☠️ 🛡️')\n- @given('terminal does not support emoji')\n- @then('emoji fallback to text equivalents')\n- @then('⚔️ displays as \"[ATK]\"')\n- @then('💥 displays as \"[DMG]\"')\n\nEmoji detection strategy:\n```python\n@given('terminal supports Unicode emoji')\ndef step_unicode_terminal(context):\n    # Run CLI with emoji enabled\n    context.config = CLIConfig(emoji_enabled=True)\n\n@given('terminal does not support emoji')\ndef step_no_emoji_terminal(context):\n    # Run CLI with emoji disabled\n    context.config = CLIConfig(emoji_enabled=False)\n```\n\nValidation:\n- pytest tests/e2e/test_cli_combat.py -k \"cross-platform\" -v\n- Tests should PASS (emoji support already implemented)\n",
+    "tdd_phase": "RED",
+    "active_e2e_test": "E2E Tests 5.1-5.2 (Cross-Platform) - SHOULD FAIL (RED)",
+    "inactive_e2e_tests": "All E2E tests except the active one should remain disabled with @pytest.mark.skip or similar"
+  },
+  "task_specification": {
+    "name": "Enable E2E Tests 5.1-5.2 (Cross-Platform)",
+    "description": "Enable tests for cross-platform emoji and color support.\n\nTests:\n1. \"Emoji display correctly on Unicode-capable terminals\"\n2. \"Graceful degradation for terminals without emoji support\"\n3. \"Cross-platform emoji fallback mapping\"\n\nStep definitions:\n- @given('terminal supports Unicode emoji')\n- @then('emoji are rendered correctly: ⚔️ 💥 ❤️ 🎲 🏆 ☠️ 🛡️')\n- @given('terminal does not support emoji')\n- @then('emoji fallback to text equivalents')\n- @then('⚔️ displays as \"[ATK]\"')\n- @then('💥 displays as \"[DMG]\"')\n\nEmoji detection strategy:\n```python\n@given('terminal supports Unicode emoji')\ndef step_unicode_terminal(context):\n    # Run CLI with emoji enabled\n    context.config = CLIConfig(emoji_enabled=True)\n\n@given('terminal does not support emoji')\ndef step_no_emoji_terminal(context):\n    # Run CLI with emoji disabled\n    context.config = CLIConfig(emoji_enabled=False)\n```\n\nValidation:\n- pytest tests/e2e/test_cli_combat.py -k \"cross-platform\" -v\n- Tests should PASS (emoji support already implemented)\n",
+    "motivation": "Cross-platform tests validate emoji fallback strategy. Ensures CLI works on all major platforms.\n",
+    "detailed_instructions": "Enable tests for cross-platform emoji and color support.\n\nTests:\n1. \"Emoji display correctly on Unicode-capable terminals\"\n2. \"Graceful degradation for terminals without emoji support\"\n3. \"Cross-platform emoji fallback mapping\"\n\nStep definitions:\n- @given('terminal supports Unicode emoji')\n- @then('emoji are rendered correctly: ⚔️ 💥 ❤️ 🎲 🏆 ☠️ 🛡️')\n- @given('terminal does not support emoji')\n- @then('emoji fallback to text equivalents')\n- @then('⚔️ displays as \"[ATK]\"')\n- @then('💥 displays as \"[DMG]\"')\n\nEmoji detection strategy:\n```python\n@given('terminal supports Unicode emoji')\ndef step_unicode_terminal(context):\n    # Run CLI with emoji enabled\n    context.config = CLIConfig(emoji_enabled=True)\n\n@given('terminal does not support emoji')\ndef step_no_emoji_terminal(context):\n    # Run CLI with emoji disabled\n    context.config = CLIConfig(emoji_enabled=False)\n```\n\nValidation:\n- pytest tests/e2e/test_cli_combat.py -k \"cross-platform\" -v\n- Tests should PASS (emoji support already implemented)\n",
+    "acceptance_criteria": [
+      "3 E2E tests enabled for cross-platform",
+      "Step definitions for emoji detection",
+      "Fallback validation implemented",
+      "Tests PASS (emoji logic already works)"
+    ],
+    "estimated_hours": 0.5
+  },
+  "dependencies": {
+    "requires": [
+      "04-05"
+    ],
+    "blocking": [
+      "05-02"
+    ]
+  },
+  "state": {
+    "status": "TODO",
+    "assigned_to": null,
+    "started_at": null,
+    "completed_at": null,
+    "updated": "2026-01-10T12:41:07.248054+00:00"
+  }
+}

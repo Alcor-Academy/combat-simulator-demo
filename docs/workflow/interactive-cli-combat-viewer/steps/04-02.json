@@ -1,0 +1,50 @@
+{
+  "task_id": "04-02",
+  "project_id": "interactive-cli-combat-viewer",
+  "execution_agent": "software-crafter",
+  "self_contained_context": {
+    "background": "Part of Phase 4: Polish (Exit, Errors, Edge Cases). Proper exit code conventions enable scripting and automation. Comprehensive error handling\nprevents stack trace leakage to users. Defensive programming for production.\n",
+    "prerequisites_completed": [
+      "04-01"
+    ],
+    "relevant_files": [
+      "modules/infrastructure/cli/main.py (modify)",
+      "modules/infrastructure/cli/character_creator.py (modify)",
+      "modules/infrastructure/cli/combat_renderer.py (modify)"
+    ],
+    "technical_context": "Improve error handling and exit code management.\n\nFile: modules/infrastructure/cli/main.py (update)\n\nEnhancements:\n```python\nimport sys\n\ndef run_cli() -> None:\n    \"\"\"Main CLI entry point with comprehensive error handling.\"\"\"\n    try:\n        # ... (existing setup and character creation) ...\n\n        # Run combat\n        result = combat_simulator.run_combat(char1, char2)\n\n        # Display combat\n        renderer.render_combat(result)\n\n        # Normal exit (after ENTER pressed in prompt_continue)\n        sys.exit(0)\n\n    except KeyboardInterrupt:\n        # User pressed CTRL-C\n        console.print(\"\\n⚠️  Combat interrupted by user. Exiting...\", style=\"yellow\")\n        sys.exit(130)  # Unix convention for SIGINT\n\n    except ValueError as e:\n        # Domain validation error (should be caught by CharacterCreator, but defensive)\n        console.print(f\"\\n❌ Invalid input: {e}\", style=\"red\")\n        console.print(\"Please try again.\", style=\"dim\")\n        sys.exit(1)\n\n    except Exception as e:\n        # Unexpected error\n        console.print(f\"\\n❌ Unexpected error occurred: {e}\", style=\"red\")\n        console.print(\"Please report this issue.\", style=\"dim\")\n        # In debug mode, print stack trace\n        import traceback\n        traceback.print_exc()\n        sys.exit(1)\n```\n\nUpdate KeyboardInterrupt handling in CharacterCreator:\n```python\ndef create_character(self, character_number: int) -> Character:\n    \"\"\"Create character - propagates KeyboardInterrupt.\"\"\"\n    try:\n        # ... (existing prompts) ...\n        return character\n    except KeyboardInterrupt:\n        # Propagate to CLI Main for consistent handling\n        raise\n```\n\nIMPORTANT - CombatRenderer._render_victory() KeyboardInterrupt:\n```python\ndef _render_victory(self, result: CombatResult) -> None:\n    \"\"\"Display victory announcement.\"\"\"\n    # ... (display winner, stats) ...\n\n    # Wrap prompt_continue to ensure CTRL-C propagates with exit code 130\n    try:\n        self._console.prompt_continue(\"\\nPremi INVIO per uscire (o CTRL-C per terminare)\")\n    except KeyboardInterrupt:\n        # Re-raise to propagate to CLI Main for consistent exit code handling\n        raise\n```\n\nManual validation:\n- python cli.py\n- Press CTRL-C during character creation → exits with code 130\n- Press CTRL-C during combat → exits with code 130\n- Complete combat and press ENTER → exits with code 0\n- Verify exit codes: echo $? (Unix) or echo %ERRORLEVEL% (Windows)\n\nAutomated validation:\n- pytest tests/e2e/test_cli_combat.py -k \"interrupt\" -v\n",
+    "tdd_phase": "GREEN",
+    "active_e2e_test": "E2E Tests 4.1-4.2 (Victory and Exit) - should PASS when complete",
+    "inactive_e2e_tests": "All E2E tests except the active one should remain disabled with @pytest.mark.skip or similar"
+  },
+  "task_specification": {
+    "name": "Enhance Error Handling in CLI Main",
+    "description": "Improve error handling and exit code management.\n\nFile: modules/infrastructure/cli/main.py (update)\n\nEnhancements:\n```python\nimport sys\n\ndef run_cli() -> None:\n    \"\"\"Main CLI entry point with comprehensive error handling.\"\"\"\n    try:\n        # ... (existing setup and character creation) ...\n\n        # Run combat\n        result = combat_simulator.run_combat(char1, char2)\n\n        # Display combat\n        renderer.render_combat(result)\n\n        # Normal exit (after ENTER pressed in prompt_continue)\n        sys.exit(0)\n\n    except KeyboardInterrupt:\n        # User pressed CTRL-C\n        console.print(\"\\n⚠️  Combat interrupted by user. Exiting...\", style=\"yellow\")\n        sys.exit(130)  # Unix convention for SIGINT\n\n    except ValueError as e:\n        # Domain validation error (should be caught by CharacterCreator, but defensive)\n        console.print(f\"\\n❌ Invalid input: {e}\", style=\"red\")\n        console.print(\"Please try again.\", style=\"dim\")\n        sys.exit(1)\n\n    except Exception as e:\n        # Unexpected error\n        console.print(f\"\\n❌ Unexpected error occurred: {e}\", style=\"red\")\n        console.print(\"Please report this issue.\", style=\"dim\")\n        # In debug mode, print stack trace\n        import traceback\n        traceback.print_exc()\n        sys.exit(1)\n```\n\nUpdate KeyboardInterrupt handling in CharacterCreator:\n```python\ndef create_character(self, character_number: int) -> Character:\n    \"\"\"Create character - propagates KeyboardInterrupt.\"\"\"\n    try:\n        # ... (existing prompts) ...\n        return character\n    except KeyboardInterrupt:\n        # Propagate to CLI Main for consistent handling\n        raise\n```\n\nIMPORTANT - CombatRenderer._render_victory() KeyboardInterrupt:\n```python\ndef _render_victory(self, result: CombatResult) -> None:\n    \"\"\"Display victory announcement.\"\"\"\n    # ... (display winner, stats) ...\n\n    # Wrap prompt_continue to ensure CTRL-C propagates with exit code 130\n    try:\n        self._console.prompt_continue(\"\\nPremi INVIO per uscire (o CTRL-C per terminare)\")\n    except KeyboardInterrupt:\n        # Re-raise to propagate to CLI Main for consistent exit code handling\n        raise\n```\n\nManual validation:\n- python cli.py\n- Press CTRL-C during character creation → exits with code 130\n- Press CTRL-C during combat → exits with code 130\n- Complete combat and press ENTER → exits with code 0\n- Verify exit codes: echo $? (Unix) or echo %ERRORLEVEL% (Windows)\n\nAutomated validation:\n- pytest tests/e2e/test_cli_combat.py -k \"interrupt\" -v\n",
+    "motivation": "Proper exit code conventions enable scripting and automation. Comprehensive error handling\nprevents stack trace leakage to users. Defensive programming for production.\n",
+    "detailed_instructions": "Improve error handling and exit code management.\n\nFile: modules/infrastructure/cli/main.py (update)\n\nEnhancements:\n```python\nimport sys\n\ndef run_cli() -> None:\n    \"\"\"Main CLI entry point with comprehensive error handling.\"\"\"\n    try:\n        # ... (existing setup and character creation) ...\n\n        # Run combat\n        result = combat_simulator.run_combat(char1, char2)\n\n        # Display combat\n        renderer.render_combat(result)\n\n        # Normal exit (after ENTER pressed in prompt_continue)\n        sys.exit(0)\n\n    except KeyboardInterrupt:\n        # User pressed CTRL-C\n        console.print(\"\\n⚠️  Combat interrupted by user. Exiting...\", style=\"yellow\")\n        sys.exit(130)  # Unix convention for SIGINT\n\n    except ValueError as e:\n        # Domain validation error (should be caught by CharacterCreator, but defensive)\n        console.print(f\"\\n❌ Invalid input: {e}\", style=\"red\")\n        console.print(\"Please try again.\", style=\"dim\")\n        sys.exit(1)\n\n    except Exception as e:\n        # Unexpected error\n        console.print(f\"\\n❌ Unexpected error occurred: {e}\", style=\"red\")\n        console.print(\"Please report this issue.\", style=\"dim\")\n        # In debug mode, print stack trace\n        import traceback\n        traceback.print_exc()\n        sys.exit(1)\n```\n\nUpdate KeyboardInterrupt handling in CharacterCreator:\n```python\ndef create_character(self, character_number: int) -> Character:\n    \"\"\"Create character - propagates KeyboardInterrupt.\"\"\"\n    try:\n        # ... (existing prompts) ...\n        return character\n    except KeyboardInterrupt:\n        # Propagate to CLI Main for consistent handling\n        raise\n```\n\nIMPORTANT - CombatRenderer._render_victory() KeyboardInterrupt:\n```python\ndef _render_victory(self, result: CombatResult) -> None:\n    \"\"\"Display victory announcement.\"\"\"\n    # ... (display winner, stats) ...\n\n    # Wrap prompt_continue to ensure CTRL-C propagates with exit code 130\n    try:\n        self._console.prompt_continue(\"\\nPremi INVIO per uscire (o CTRL-C per terminare)\")\n    except KeyboardInterrupt:\n        # Re-raise to propagate to CLI Main for consistent exit code handling\n        raise\n```\n\nManual validation:\n- python cli.py\n- Press CTRL-C during character creation → exits with code 130\n- Press CTRL-C during combat → exits with code 130\n- Complete combat and press ENTER → exits with code 0\n- Verify exit codes: echo $? (Unix) or echo %ERRORLEVEL% (Windows)\n\nAutomated validation:\n- pytest tests/e2e/test_cli_combat.py -k \"interrupt\" -v\n",
+    "acceptance_criteria": [
+      "sys.exit(0) after normal completion",
+      "sys.exit(130) after CTRL-C",
+      "sys.exit(1) after unexpected errors",
+      "KeyboardInterrupt propagates from CharacterCreator",
+      "Manual test: All exit codes correct",
+      "E2E Tests 4.1-4.2 PASS"
+    ],
+    "estimated_hours": 1.0
+  },
+  "dependencies": {
+    "requires": [
+      "04-01"
+    ],
+    "blocking": [
+      "04-03"
+    ]
+  },
+  "state": {
+    "status": "TODO",
+    "assigned_to": null,
+    "started_at": null,
+    "completed_at": null,
+    "updated": "2026-01-10T12:41:07.248054+00:00"
+  }
+}

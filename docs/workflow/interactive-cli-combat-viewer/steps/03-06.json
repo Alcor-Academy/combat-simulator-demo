@@ -1,0 +1,49 @@
+{
+  "task_id": "03-06",
+  "project_id": "interactive-cli-combat-viewer",
+  "execution_agent": "software-crafter",
+  "self_contained_context": {
+    "background": "Part of Phase 3: Visual Enhancement (Emoji, Colors, Pacing). Validation ensures visual quality meets UX requirements. Cross-platform testing critical\nfor emoji fallback strategy validation.\n",
+    "prerequisites_completed": [
+      "03-05"
+    ],
+    "relevant_files": [
+      "modules/infrastructure/cli/ (validate and refactor)",
+      "tests/ (validate)"
+    ],
+    "technical_context": "Validate Phase 3 deliverable and refactor.\n\nValidation checklist:\n- [ ] All Phase 3 E2E tests pass (3.1-3.3)\n- [ ] Manual testing: Emoji display on local terminal\n- [ ] Manual testing: Colors display correctly\n- [ ] Manual testing: HP color gradient intuitive\n- [ ] Manual testing: Timing feels natural (1.5-2s delays)\n- [ ] Code coverage > 85% for CLI components (LINE coverage - default pytest metric)\n- [ ] For critical rendering paths: prioritize branch coverage and mutation testing >75%\n- [ ] No regressions (Phase 1-2 tests pass)\n\nCross-platform manual testing:\n- Windows Terminal (or CMD): Verify emoji or fallbacks\n- macOS Terminal: Verify emoji display\n- Linux (if available): Verify emoji display\n\nRefactoring:\n- Extract emoji formatting to helper methods\n- Simplify color logic if repetitive\n- Improve docstrings for visual methods\n\nQuality checks:\n- pytest --cov=modules/infrastructure/cli tests/\n- mypy modules/infrastructure/cli/\n\nCommit:\n- git add modules/infrastructure/cli/ tests/\n- git commit -m \"feat(cli): Phase 3 - Visual enhancement with emoji and colors\n\n- Add emoji mapping to CLIConfig with fallbacks\n- Enhance CombatRenderer with emoji and color styling\n- Implement HP color gradient (green→yellow→orange→red)\n- Add decorative borders to victory banner\n- E2E Tests 3.1-3.3 passing\n\nPhase 3 delivers professional combat visualization with engaging visuals.\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\"\n",
+    "tdd_phase": "REFACTOR",
+    "active_e2e_test": "All Phase 3 E2E Tests - should PASS",
+    "inactive_e2e_tests": "N/A - validation phase"
+  },
+  "task_specification": {
+    "name": "Phase 3 Validation and Refactoring",
+    "description": "Validate Phase 3 deliverable and refactor.\n\nValidation checklist:\n- [ ] All Phase 3 E2E tests pass (3.1-3.3)\n- [ ] Manual testing: Emoji display on local terminal\n- [ ] Manual testing: Colors display correctly\n- [ ] Manual testing: HP color gradient intuitive\n- [ ] Manual testing: Timing feels natural (1.5-2s delays)\n- [ ] Code coverage > 85% for CLI components (LINE coverage - default pytest metric)\n- [ ] For critical rendering paths: prioritize branch coverage and mutation testing >75%\n- [ ] No regressions (Phase 1-2 tests pass)\n\nCross-platform manual testing:\n- Windows Terminal (or CMD): Verify emoji or fallbacks\n- macOS Terminal: Verify emoji display\n- Linux (if available): Verify emoji display\n\nRefactoring:\n- Extract emoji formatting to helper methods\n- Simplify color logic if repetitive\n- Improve docstrings for visual methods\n\nQuality checks:\n- pytest --cov=modules/infrastructure/cli tests/\n- mypy modules/infrastructure/cli/\n\nCommit:\n- git add modules/infrastructure/cli/ tests/\n- git commit -m \"feat(cli): Phase 3 - Visual enhancement with emoji and colors\n\n- Add emoji mapping to CLIConfig with fallbacks\n- Enhance CombatRenderer with emoji and color styling\n- Implement HP color gradient (green→yellow→orange→red)\n- Add decorative borders to victory banner\n- E2E Tests 3.1-3.3 passing\n\nPhase 3 delivers professional combat visualization with engaging visuals.\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\"\n",
+    "motivation": "Validation ensures visual quality meets UX requirements. Cross-platform testing critical\nfor emoji fallback strategy validation.\n",
+    "detailed_instructions": "Validate Phase 3 deliverable and refactor.\n\nValidation checklist:\n- [ ] All Phase 3 E2E tests pass (3.1-3.3)\n- [ ] Manual testing: Emoji display on local terminal\n- [ ] Manual testing: Colors display correctly\n- [ ] Manual testing: HP color gradient intuitive\n- [ ] Manual testing: Timing feels natural (1.5-2s delays)\n- [ ] Code coverage > 85% for CLI components (LINE coverage - default pytest metric)\n- [ ] For critical rendering paths: prioritize branch coverage and mutation testing >75%\n- [ ] No regressions (Phase 1-2 tests pass)\n\nCross-platform manual testing:\n- Windows Terminal (or CMD): Verify emoji or fallbacks\n- macOS Terminal: Verify emoji display\n- Linux (if available): Verify emoji display\n\nRefactoring:\n- Extract emoji formatting to helper methods\n- Simplify color logic if repetitive\n- Improve docstrings for visual methods\n\nQuality checks:\n- pytest --cov=modules/infrastructure/cli tests/\n- mypy modules/infrastructure/cli/\n\nCommit:\n- git add modules/infrastructure/cli/ tests/\n- git commit -m \"feat(cli): Phase 3 - Visual enhancement with emoji and colors\n\n- Add emoji mapping to CLIConfig with fallbacks\n- Enhance CombatRenderer with emoji and color styling\n- Implement HP color gradient (green→yellow→orange→red)\n- Add decorative borders to victory banner\n- E2E Tests 3.1-3.3 passing\n\nPhase 3 delivers professional combat visualization with engaging visuals.\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\"\n",
+    "acceptance_criteria": [
+      "All Phase 3 E2E tests pass",
+      "Manual cross-platform testing complete",
+      "Emoji display validated (or fallbacks work)",
+      "Colors display validated",
+      "Refactoring done",
+      "Git commit created"
+    ],
+    "estimated_hours": 1.0
+  },
+  "dependencies": {
+    "requires": [
+      "03-05"
+    ],
+    "blocking": [
+      "04-01"
+    ]
+  },
+  "state": {
+    "status": "TODO",
+    "assigned_to": null,
+    "started_at": null,
+    "completed_at": null,
+    "updated": "2026-01-10T12:41:07.248054+00:00"
+  }
+}

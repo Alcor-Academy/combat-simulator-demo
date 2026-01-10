@@ -1,0 +1,50 @@
+{
+  "task_id": "01-03",
+  "project_id": "interactive-cli-combat-viewer",
+  "execution_agent": "software-crafter",
+  "self_contained_context": {
+    "background": "Part of Phase 1: Baseline - Minimum Viable CLI. ConsoleOutput abstracts Rich Console for testability. CLIConfig integration enables\nzero-delay test mode (critical for fast CI/CD). This component used by all other CLI parts.\n",
+    "prerequisites_completed": [
+      "01-02"
+    ],
+    "relevant_files": [
+      "modules/infrastructure/cli/console_output.py (create)",
+      "tests/unit/infrastructure/cli/test_console_output.py (create)"
+    ],
+    "technical_context": "Create thin wrapper around Rich Console for output with timing control.\n\nFile: modules/infrastructure/cli/console_output.py\n\nImplementation:\n```python\nfrom rich.console import Console\nfrom modules.infrastructure.cli.config import CLIConfig\nimport time\n\nclass ConsoleOutput:\n    \"\"\"Wraps Rich Console with timing control.\"\"\"\n\n    def __init__(self, console: Console, config: CLIConfig):\n        self._console = console\n        self._config = config\n\n    def print(self, text: str, style: str = \"\", end: str = \"\\n\") -> None:\n        \"\"\"Print text with optional styling.\"\"\"\n        if style:\n            self._console.print(text, style=style, end=end)\n        else:\n            self._console.print(text, end=end)\n\n    def display_with_delay(self, message: str, delay: float) -> None:\n        \"\"\"Display message and pause.\"\"\"\n        self._console.print(message)\n        if delay > 0:\n            time.sleep(delay)\n\n    def prompt_continue(self, message: str) -> None:\n        \"\"\"Block until user presses ENTER.\"\"\"\n        self._console.input(message)\n```\n\nUnit tests:\n- File: tests/unit/infrastructure/cli/test_console_output.py\n- Test: test_print_without_style()\n- Test: test_print_with_style()\n- Test: test_display_with_delay_respects_duration()\n- Test: test_display_with_delay_zero_in_test_mode()\n- Test: test_prompt_continue_blocks()\n\nTest implementation pattern:\n```python\ndef test_display_with_delay_zero_in_test_mode():\n    mock_console = Mock(spec=Console)\n    config = CLIConfig.test_mode()\n    output = ConsoleOutput(mock_console, config)\n\n    start = time.time()\n    output.display_with_delay(\"Test message\", 0.0)\n    elapsed = time.time() - start\n\n    assert elapsed < 0.01  # No delay\n    mock_console.print.assert_called_once()\n```\n\nValidation:\n- pytest tests/unit/infrastructure/cli/test_console_output.py -v\n- All unit tests PASS (5/5)\n- Code coverage > 90% for console_output.py\n",
+    "tdd_phase": "GREEN",
+    "active_e2e_test": "E2E Test 1.1 (Baseline Combat) - should PASS when complete",
+    "inactive_e2e_tests": "All E2E tests except the active one should remain disabled with @pytest.mark.skip or similar"
+  },
+  "task_specification": {
+    "name": "Implement ConsoleOutput (Rich Wrapper)",
+    "description": "Create thin wrapper around Rich Console for output with timing control.\n\nFile: modules/infrastructure/cli/console_output.py\n\nImplementation:\n```python\nfrom rich.console import Console\nfrom modules.infrastructure.cli.config import CLIConfig\nimport time\n\nclass ConsoleOutput:\n    \"\"\"Wraps Rich Console with timing control.\"\"\"\n\n    def __init__(self, console: Console, config: CLIConfig):\n        self._console = console\n        self._config = config\n\n    def print(self, text: str, style: str = \"\", end: str = \"\\n\") -> None:\n        \"\"\"Print text with optional styling.\"\"\"\n        if style:\n            self._console.print(text, style=style, end=end)\n        else:\n            self._console.print(text, end=end)\n\n    def display_with_delay(self, message: str, delay: float) -> None:\n        \"\"\"Display message and pause.\"\"\"\n        self._console.print(message)\n        if delay > 0:\n            time.sleep(delay)\n\n    def prompt_continue(self, message: str) -> None:\n        \"\"\"Block until user presses ENTER.\"\"\"\n        self._console.input(message)\n```\n\nUnit tests:\n- File: tests/unit/infrastructure/cli/test_console_output.py\n- Test: test_print_without_style()\n- Test: test_print_with_style()\n- Test: test_display_with_delay_respects_duration()\n- Test: test_display_with_delay_zero_in_test_mode()\n- Test: test_prompt_continue_blocks()\n\nTest implementation pattern:\n```python\ndef test_display_with_delay_zero_in_test_mode():\n    mock_console = Mock(spec=Console)\n    config = CLIConfig.test_mode()\n    output = ConsoleOutput(mock_console, config)\n\n    start = time.time()\n    output.display_with_delay(\"Test message\", 0.0)\n    elapsed = time.time() - start\n\n    assert elapsed < 0.01  # No delay\n    mock_console.print.assert_called_once()\n```\n\nValidation:\n- pytest tests/unit/infrastructure/cli/test_console_output.py -v\n- All unit tests PASS (5/5)\n- Code coverage > 90% for console_output.py\n",
+    "motivation": "ConsoleOutput abstracts Rich Console for testability. CLIConfig integration enables\nzero-delay test mode (critical for fast CI/CD). This component used by all other CLI parts.\n",
+    "detailed_instructions": "Create thin wrapper around Rich Console for output with timing control.\n\nFile: modules/infrastructure/cli/console_output.py\n\nImplementation:\n```python\nfrom rich.console import Console\nfrom modules.infrastructure.cli.config import CLIConfig\nimport time\n\nclass ConsoleOutput:\n    \"\"\"Wraps Rich Console with timing control.\"\"\"\n\n    def __init__(self, console: Console, config: CLIConfig):\n        self._console = console\n        self._config = config\n\n    def print(self, text: str, style: str = \"\", end: str = \"\\n\") -> None:\n        \"\"\"Print text with optional styling.\"\"\"\n        if style:\n            self._console.print(text, style=style, end=end)\n        else:\n            self._console.print(text, end=end)\n\n    def display_with_delay(self, message: str, delay: float) -> None:\n        \"\"\"Display message and pause.\"\"\"\n        self._console.print(message)\n        if delay > 0:\n            time.sleep(delay)\n\n    def prompt_continue(self, message: str) -> None:\n        \"\"\"Block until user presses ENTER.\"\"\"\n        self._console.input(message)\n```\n\nUnit tests:\n- File: tests/unit/infrastructure/cli/test_console_output.py\n- Test: test_print_without_style()\n- Test: test_print_with_style()\n- Test: test_display_with_delay_respects_duration()\n- Test: test_display_with_delay_zero_in_test_mode()\n- Test: test_prompt_continue_blocks()\n\nTest implementation pattern:\n```python\ndef test_display_with_delay_zero_in_test_mode():\n    mock_console = Mock(spec=Console)\n    config = CLIConfig.test_mode()\n    output = ConsoleOutput(mock_console, config)\n\n    start = time.time()\n    output.display_with_delay(\"Test message\", 0.0)\n    elapsed = time.time() - start\n\n    assert elapsed < 0.01  # No delay\n    mock_console.print.assert_called_once()\n```\n\nValidation:\n- pytest tests/unit/infrastructure/cli/test_console_output.py -v\n- All unit tests PASS (5/5)\n- Code coverage > 90% for console_output.py\n",
+    "acceptance_criteria": [
+      "ConsoleOutput class exists in console_output.py",
+      "print() method wraps Rich Console.print()",
+      "display_with_delay() respects config timing",
+      "prompt_continue() blocks on Console.input()",
+      "Unit tests pass (5 tests minimum)",
+      "Test mode validation: zero delays confirmed",
+      "Code coverage > 90%"
+    ],
+    "estimated_hours": 1.5
+  },
+  "dependencies": {
+    "requires": [
+      "01-02"
+    ],
+    "blocking": [
+      "01-04"
+    ]
+  },
+  "state": {
+    "status": "TODO",
+    "assigned_to": null,
+    "started_at": null,
+    "completed_at": null,
+    "updated": "2026-01-10T12:41:07.248054+00:00"
+  }
+}

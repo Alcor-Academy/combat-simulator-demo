@@ -1,0 +1,47 @@
+{
+  "task_id": "03-01",
+  "project_id": "interactive-cli-combat-viewer",
+  "execution_agent": "software-crafter",
+  "self_contained_context": {
+    "background": "Part of Phase 3: Visual Enhancement (Emoji, Colors, Pacing). E2E test defines visual requirements. Emoji fallback strategy ensures cross-platform compatibility.\n",
+    "prerequisites_completed": [
+      "02-06"
+    ],
+    "relevant_files": [
+      "tests/e2e/test_cli_combat.py (modify)",
+      "tests/e2e/features/cli_combat.feature (modify)"
+    ],
+    "technical_context": "Enable acceptance test for combat visualization with emoji.\n\nTest: \"Combat round displays all event details with emoji\"\n\nStep definitions needed:\n- @then('each combat round displays round number')\n- @then('attacker action shows ⚔️ emoji')\n- @then('attack details show dice roll with 🎲 emoji')\n- @then('attack details show total damage with 💥 emoji')\n- @then('HP change shows old HP → new HP with ❤️ emoji')\n- @then('defender counter-attack shows 🛡️ emoji if defender survives')\n- @then('death announcement shows ☠️ emoji when character dies')\n\nEmoji detection strategy:\n- Check if output contains emoji Unicode characters\n- OR check for fallback text ([ATK], [DMG], etc.)\n- Both considered valid (platform-dependent)\n- Test accepts EITHER emoji OR fallback as valid (doesn't enforce emoji availability)\n- Only requires that ONE of the pair appears (cross-platform compatibility)\n\nExample step:\n```python\n@then('attacker action shows ⚔️ emoji')\ndef step_verify_attack_emoji(context):\n    output = context.cli_output\n    # Check for emoji or fallback\n    assert '⚔️' in output or '[ATK]' in output\n```\n\nValidation:\n- pytest tests/e2e/test_cli_combat.py -k \"emoji\" -v\n- Test FAILS (emoji not implemented yet)\n",
+    "tdd_phase": "RED",
+    "active_e2e_test": "E2E Test 3.1 (Combat Visualization with Emoji) - SHOULD FAIL (RED)",
+    "inactive_e2e_tests": "All E2E tests except the active one should remain disabled with @pytest.mark.skip or similar"
+  },
+  "task_specification": {
+    "name": "Enable E2E Test 3.1 (Combat Visualization with Emoji)",
+    "description": "Enable acceptance test for combat visualization with emoji.\n\nTest: \"Combat round displays all event details with emoji\"\n\nStep definitions needed:\n- @then('each combat round displays round number')\n- @then('attacker action shows ⚔️ emoji')\n- @then('attack details show dice roll with 🎲 emoji')\n- @then('attack details show total damage with 💥 emoji')\n- @then('HP change shows old HP → new HP with ❤️ emoji')\n- @then('defender counter-attack shows 🛡️ emoji if defender survives')\n- @then('death announcement shows ☠️ emoji when character dies')\n\nEmoji detection strategy:\n- Check if output contains emoji Unicode characters\n- OR check for fallback text ([ATK], [DMG], etc.)\n- Both considered valid (platform-dependent)\n- Test accepts EITHER emoji OR fallback as valid (doesn't enforce emoji availability)\n- Only requires that ONE of the pair appears (cross-platform compatibility)\n\nExample step:\n```python\n@then('attacker action shows ⚔️ emoji')\ndef step_verify_attack_emoji(context):\n    output = context.cli_output\n    # Check for emoji or fallback\n    assert '⚔️' in output or '[ATK]' in output\n```\n\nValidation:\n- pytest tests/e2e/test_cli_combat.py -k \"emoji\" -v\n- Test FAILS (emoji not implemented yet)\n",
+    "motivation": "E2E test defines visual requirements. Emoji fallback strategy ensures cross-platform compatibility.\n",
+    "detailed_instructions": "Enable acceptance test for combat visualization with emoji.\n\nTest: \"Combat round displays all event details with emoji\"\n\nStep definitions needed:\n- @then('each combat round displays round number')\n- @then('attacker action shows ⚔️ emoji')\n- @then('attack details show dice roll with 🎲 emoji')\n- @then('attack details show total damage with 💥 emoji')\n- @then('HP change shows old HP → new HP with ❤️ emoji')\n- @then('defender counter-attack shows 🛡️ emoji if defender survives')\n- @then('death announcement shows ☠️ emoji when character dies')\n\nEmoji detection strategy:\n- Check if output contains emoji Unicode characters\n- OR check for fallback text ([ATK], [DMG], etc.)\n- Both considered valid (platform-dependent)\n- Test accepts EITHER emoji OR fallback as valid (doesn't enforce emoji availability)\n- Only requires that ONE of the pair appears (cross-platform compatibility)\n\nExample step:\n```python\n@then('attacker action shows ⚔️ emoji')\ndef step_verify_attack_emoji(context):\n    output = context.cli_output\n    # Check for emoji or fallback\n    assert '⚔️' in output or '[ATK]' in output\n```\n\nValidation:\n- pytest tests/e2e/test_cli_combat.py -k \"emoji\" -v\n- Test FAILS (emoji not implemented yet)\n",
+    "acceptance_criteria": [
+      "E2E test 3.1 enabled",
+      "Step definitions for emoji verification",
+      "Fallback detection strategy implemented",
+      "Test FAILS (red phase)"
+    ],
+    "estimated_hours": 0.5
+  },
+  "dependencies": {
+    "requires": [
+      "02-06"
+    ],
+    "blocking": [
+      "03-02"
+    ]
+  },
+  "state": {
+    "status": "TODO",
+    "assigned_to": null,
+    "started_at": null,
+    "completed_at": null,
+    "updated": "2026-01-10T12:41:07.248054+00:00"
+  }
+}

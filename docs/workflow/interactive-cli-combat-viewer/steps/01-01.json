@@ -1,0 +1,44 @@
+{
+  "task_id": "01-01",
+  "project_id": "interactive-cli-combat-viewer",
+  "execution_agent": "software-crafter",
+  "self_contained_context": {
+    "background": "Part of Phase 1: Baseline - Minimum Viable CLI. Outside-In TDD starts with failing E2E test. This test defines what \"working CLI\" means\nbefore writing any implementation. Ensures we build exactly what's needed, no more.\n",
+    "prerequisites_completed": [],
+    "relevant_files": [
+      "tests/e2e/test_cli_combat.py (create)",
+      "tests/e2e/features/cli_combat.feature (create)"
+    ],
+    "technical_context": "Enable first acceptance test to drive development.\n\nTest file: tests/e2e/test_cli_combat.py\nFeature: tests/e2e/features/cli_combat.feature\n\nEnable test scenario:\n- Scenario: \"User creates both characters with manual input\" (first test, adapted for baseline)\n- OR create temporary baseline scenario: \"Baseline CLI runs hardcoded combat\"\n\nTest structure:\n- Given: CLI launches with hardcoded characters (Hero 50/10, Villain 40/8)\n- When: Combat executes\n- Then: Winner displayed, program exits successfully\n\nImplementation:\n- Mark test with @pytest.mark.wip (work in progress)\n- Write step definitions in test_cli_combat.py\n- Step: launch_cli_with_hardcoded_characters()\n- Step: verify_winner_displayed()\n- Step: verify_exit_code_0()\n\nValidation:\n- pytest tests/e2e/test_cli_combat.py::test_baseline -v\n- Test FAILS initially (red phase - CLI doesn't exist)\n- Expected error: ModuleNotFoundError or ImportError (modules.infrastructure.cli not found)\n",
+    "tdd_phase": "RED",
+    "active_e2e_test": "E2E Test 1.1 (Baseline Combat) - SHOULD FAIL (RED)",
+    "inactive_e2e_tests": "All E2E tests except the active one should remain disabled with @pytest.mark.skip or similar"
+  },
+  "task_specification": {
+    "name": "Enable E2E Test 1.1 (Baseline Combat)",
+    "description": "Enable first acceptance test to drive development.\n\nTest file: tests/e2e/test_cli_combat.py\nFeature: tests/e2e/features/cli_combat.feature\n\nEnable test scenario:\n- Scenario: \"User creates both characters with manual input\" (first test, adapted for baseline)\n- OR create temporary baseline scenario: \"Baseline CLI runs hardcoded combat\"\n\nTest structure:\n- Given: CLI launches with hardcoded characters (Hero 50/10, Villain 40/8)\n- When: Combat executes\n- Then: Winner displayed, program exits successfully\n\nImplementation:\n- Mark test with @pytest.mark.wip (work in progress)\n- Write step definitions in test_cli_combat.py\n- Step: launch_cli_with_hardcoded_characters()\n- Step: verify_winner_displayed()\n- Step: verify_exit_code_0()\n\nValidation:\n- pytest tests/e2e/test_cli_combat.py::test_baseline -v\n- Test FAILS initially (red phase - CLI doesn't exist)\n- Expected error: ModuleNotFoundError or ImportError (modules.infrastructure.cli not found)\n",
+    "motivation": "Outside-In TDD starts with failing E2E test. This test defines what \"working CLI\" means\nbefore writing any implementation. Ensures we build exactly what's needed, no more.\n",
+    "detailed_instructions": "Enable first acceptance test to drive development.\n\nTest file: tests/e2e/test_cli_combat.py\nFeature: tests/e2e/features/cli_combat.feature\n\nEnable test scenario:\n- Scenario: \"User creates both characters with manual input\" (first test, adapted for baseline)\n- OR create temporary baseline scenario: \"Baseline CLI runs hardcoded combat\"\n\nTest structure:\n- Given: CLI launches with hardcoded characters (Hero 50/10, Villain 40/8)\n- When: Combat executes\n- Then: Winner displayed, program exits successfully\n\nImplementation:\n- Mark test with @pytest.mark.wip (work in progress)\n- Write step definitions in test_cli_combat.py\n- Step: launch_cli_with_hardcoded_characters()\n- Step: verify_winner_displayed()\n- Step: verify_exit_code_0()\n\nValidation:\n- pytest tests/e2e/test_cli_combat.py::test_baseline -v\n- Test FAILS initially (red phase - CLI doesn't exist)\n- Expected error: ModuleNotFoundError or ImportError (modules.infrastructure.cli not found)\n",
+    "acceptance_criteria": [
+      "Test file exists: tests/e2e/test_cli_combat.py",
+      "Baseline scenario defined in cli_combat.feature",
+      "Step definitions created (launch, verify winner, verify exit)",
+      "pytest runs test and FAILS (red phase) with clear error",
+      "Error message indicates missing CLI entry point"
+    ],
+    "estimated_hours": 0.5
+  },
+  "dependencies": {
+    "requires": [],
+    "blocking": [
+      "01-02"
+    ]
+  },
+  "state": {
+    "status": "TODO",
+    "assigned_to": null,
+    "started_at": null,
+    "completed_at": null,
+    "updated": "2026-01-10T12:41:07.248054+00:00"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "task_id": "04-01",
+  "project_id": "interactive-cli-combat-viewer",
+  "execution_agent": "software-crafter",
+  "self_contained_context": {
+    "background": "Part of Phase 4: Polish (Exit, Errors, Edge Cases). Exit confirmation prevents abrupt termination. CTRL-C handling ensures graceful interruption.\nTests validate professional CLI behavior.\n",
+    "prerequisites_completed": [
+      "03-06"
+    ],
+    "relevant_files": [
+      "tests/e2e/test_cli_combat.py (modify)"
+    ],
+    "technical_context": "Enable tests for victory celebration and exit confirmation.\n\nTests:\n1. \"Victory celebration shows all required information\"\n2. \"Exit confirmation waits for user keypress\"\n3. \"CTRL-C during exit confirmation terminates program\"\n\nStep definitions:\n- @then('victory banner includes winner name \"{name}\"')\n- @then('victory banner includes 🏆 emoji')\n- @then('combat statistics show \"{rounds} rounds\"')\n- @then('program shows exit prompt \"Premi INVIO per uscire (o CTRL-C per terminare)\"')\n- @then('program waits for user keypress')\n- @when('I press INVIO')\n- @then('program exits with code 0')\n- @when('I press CTRL-C')\n- @then('program exits immediately')\n- @then('exit code is 130')\n\nExit code validation:\n```python\n@then('program exits with code 0')\ndef step_verify_exit_code_0(context):\n    assert context.exit_code == 0\n\n@then('exit code is 130')\ndef step_verify_exit_code_130(context):\n    assert context.exit_code == 130  # Unix convention for SIGINT\n```\n\nValidation:\n- pytest tests/e2e/test_cli_combat.py -k \"exit\" -v\n- Tests should mostly PASS (victory display implemented, exit confirmation exists)\n",
+    "tdd_phase": "RED",
+    "active_e2e_test": "E2E Tests 4.1-4.2 (Victory and Exit) - SHOULD FAIL (RED)",
+    "inactive_e2e_tests": "All E2E tests except the active one should remain disabled with @pytest.mark.skip or similar"
+  },
+  "task_specification": {
+    "name": "Enable E2E Tests 4.1-4.2 (Victory and Exit)",
+    "description": "Enable tests for victory celebration and exit confirmation.\n\nTests:\n1. \"Victory celebration shows all required information\"\n2. \"Exit confirmation waits for user keypress\"\n3. \"CTRL-C during exit confirmation terminates program\"\n\nStep definitions:\n- @then('victory banner includes winner name \"{name}\"')\n- @then('victory banner includes 🏆 emoji')\n- @then('combat statistics show \"{rounds} rounds\"')\n- @then('program shows exit prompt \"Premi INVIO per uscire (o CTRL-C per terminare)\"')\n- @then('program waits for user keypress')\n- @when('I press INVIO')\n- @then('program exits with code 0')\n- @when('I press CTRL-C')\n- @then('program exits immediately')\n- @then('exit code is 130')\n\nExit code validation:\n```python\n@then('program exits with code 0')\ndef step_verify_exit_code_0(context):\n    assert context.exit_code == 0\n\n@then('exit code is 130')\ndef step_verify_exit_code_130(context):\n    assert context.exit_code == 130  # Unix convention for SIGINT\n```\n\nValidation:\n- pytest tests/e2e/test_cli_combat.py -k \"exit\" -v\n- Tests should mostly PASS (victory display implemented, exit confirmation exists)\n",
+    "motivation": "Exit confirmation prevents abrupt termination. CTRL-C handling ensures graceful interruption.\nTests validate professional CLI behavior.\n",
+    "detailed_instructions": "Enable tests for victory celebration and exit confirmation.\n\nTests:\n1. \"Victory celebration shows all required information\"\n2. \"Exit confirmation waits for user keypress\"\n3. \"CTRL-C during exit confirmation terminates program\"\n\nStep definitions:\n- @then('victory banner includes winner name \"{name}\"')\n- @then('victory banner includes 🏆 emoji')\n- @then('combat statistics show \"{rounds} rounds\"')\n- @then('program shows exit prompt \"Premi INVIO per uscire (o CTRL-C per terminare)\"')\n- @then('program waits for user keypress')\n- @when('I press INVIO')\n- @then('program exits with code 0')\n- @when('I press CTRL-C')\n- @then('program exits immediately')\n- @then('exit code is 130')\n\nExit code validation:\n```python\n@then('program exits with code 0')\ndef step_verify_exit_code_0(context):\n    assert context.exit_code == 0\n\n@then('exit code is 130')\ndef step_verify_exit_code_130(context):\n    assert context.exit_code == 130  # Unix convention for SIGINT\n```\n\nValidation:\n- pytest tests/e2e/test_cli_combat.py -k \"exit\" -v\n- Tests should mostly PASS (victory display implemented, exit confirmation exists)\n",
+    "acceptance_criteria": [
+      "3 E2E tests enabled for victory and exit",
+      "Step definitions for exit code validation",
+      "Tests PASS or FAIL with clear diagnostics"
+    ],
+    "estimated_hours": 0.5
+  },
+  "dependencies": {
+    "requires": [
+      "03-06"
+    ],
+    "blocking": [
+      "04-02"
+    ]
+  },
+  "state": {
+    "status": "TODO",
+    "assigned_to": null,
+    "started_at": null,
+    "completed_at": null,
+    "updated": "2026-01-10T12:41:07.248054+00:00"
+  }
+}
