@@ -35,6 +35,19 @@ repos:
         exclude: ^tests/
 
   # =============================================================================
+  # TEST EXECUTION (runs ALL tests - commit blocked if any fail)
+  # =============================================================================
+  - repo: local
+    hooks:
+      - id: pytest
+        name: pytest (run all tests)
+        entry: pipenv run pytest
+        language: system
+        types: [python]
+        pass_filenames: false
+        always_run: true
+
+  # =============================================================================
   # SECURITY SCANNING
   # =============================================================================
   - repo: local

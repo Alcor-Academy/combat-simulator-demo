@@ -69,7 +69,7 @@ def _verify_cli_execution_success(exit_code: int, output: str) -> None:
 
 
 @pytest.mark.wip
-def test_baseline_cli_runs_hardcoded_combat():
+def test_baseline_cli_runs_hardcoded_combat(capsys):
     """
     Baseline: CLI runs hardcoded combat and displays winner.
 
@@ -90,7 +90,8 @@ def test_baseline_cli_runs_hardcoded_combat():
     """
     try:
         cli_exit_code = _attempt_cli_import_and_execution()
-        _verify_cli_execution_success(cli_exit_code, "")
+        captured = capsys.readouterr()
+        _verify_cli_execution_success(cli_exit_code, captured.out)
 
     except (ModuleNotFoundError, ImportError) as module_error:
         _fail_with_red_phase_explanation(module_error)

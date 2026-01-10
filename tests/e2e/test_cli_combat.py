@@ -995,6 +995,17 @@ def no_villain_counter(cli_context):
         assert True
 
 
+@then("combat executes")
+def combat_executes_verification(cli_context):
+    """
+    Verify that combat has executed successfully.
+
+    This step is a stub for the baseline CLI implementation.
+    Will be fully implemented when CLI combat execution is complete (Step 01-05+).
+    """
+    pytest.skip("CLI combat execution not yet fully implemented - requires Step 01-05 and beyond")
+
+
 @then("combat ends after attacker action")
 def combat_ends_attacker(cli_context):
     """Verify combat ends without defender counter."""

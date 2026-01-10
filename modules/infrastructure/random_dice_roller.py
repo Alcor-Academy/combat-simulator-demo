@@ -13,9 +13,18 @@ class RandomDiceRoller:
     Implements DiceRoller port interface with random number generation.
     Returns uniformly distributed random integers in range [1, 6].
 
-    Note: Uses random.randint which is deterministic given seed,
-    but not explicitly seeded for production use.
+    Can be seeded for deterministic testing or left unseeded for production use.
     """
+
+    def __init__(self, seed: int | None = None) -> None:
+        """Initialize dice roller with optional seed.
+
+        Args:
+            seed: Optional seed for deterministic testing.
+                  If None, uses default random state.
+        """
+        if seed is not None:
+            random.seed(seed)
 
     def roll(self) -> int:
         """Roll D6 and return random result.
