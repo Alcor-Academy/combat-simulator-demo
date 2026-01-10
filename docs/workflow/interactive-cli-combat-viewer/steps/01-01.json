@@ -35,10 +35,40 @@
     ]
   },
   "state": {
-    "status": "TODO",
-    "assigned_to": null,
-    "started_at": null,
-    "completed_at": null,
-    "updated": "2026-01-10T12:41:07.248054+00:00"
+    "status": "DONE",
+    "assigned_to": "software-crafter",
+    "started_at": "2026-01-10T14:30:00.000000+00:00",
+    "completed_at": "2026-01-10T14:45:00.000000+00:00",
+    "updated": "2026-01-10T14:45:00.000000+00:00"
+  },
+  "execution_result": {
+    "success": true,
+    "files_created": [
+      "tests/e2e/test_cli_baseline.py"
+    ],
+    "files_modified": [
+      "tests/e2e/features/cli_combat.feature"
+    ],
+    "test_results": {
+      "test_baseline_cli_runs_hardcoded_combat": {
+        "status": "FAILED (expected in RED phase)",
+        "error": "ModuleNotFoundError: No module named 'modules.infrastructure.cli'",
+        "message": "CLI entry point not implemented yet (expected in RED phase)"
+      },
+      "test_baseline_cli_command_line_execution": {
+        "status": "FAILED (expected in RED phase)",
+        "error": "ModuleNotFoundError: No module named 'modules.infrastructure.cli'",
+        "message": "CLI module not implemented yet (expected in RED phase)"
+      }
+    },
+    "acceptance_criteria_validation": {
+      "test_file_exists": true,
+      "baseline_scenario_defined": true,
+      "step_definitions_created": true,
+      "pytest_fails_with_clear_error": true,
+      "error_indicates_missing_cli": true
+    },
+    "notes": "Created focused baseline tests in test_cli_baseline.py that fail with expected ModuleNotFoundError. Added @wip baseline scenario to cli_combat.feature and marked all other scenarios with @skip. Tests correctly fail in RED phase, driving implementation of modules.infrastructure.cli.main entry point.",
+    "next_steps": "Implement modules/infrastructure/cli/main.py with run_cli() function that executes hardcoded combat (Hero 50/10 vs Villain 40/8) and displays winner. This will move tests from RED to GREEN phase."
   }
 }
