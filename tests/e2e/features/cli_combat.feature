@@ -11,7 +11,6 @@ Feature: Interactive CLI Combat Viewer
   # BASELINE: Minimum Viable CLI (Phase 1)
   # ============================================================================
 
-  @wip
   Scenario: Baseline CLI runs hardcoded combat
     Given two characters are created: Hero (HP 50, attack 10) and Villain (HP 40, attack 8)
     When combat starts

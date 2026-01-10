@@ -1000,10 +1000,16 @@ def combat_executes_verification(cli_context):
     """
     Verify that combat has executed successfully.
 
-    This step is a stub for the baseline CLI implementation.
-    Will be fully implemented when CLI combat execution is complete (Step 01-05+).
+    Validates that combat_result exists and has the expected structure.
     """
-    pytest.skip("CLI combat execution not yet fully implemented - requires Step 01-05 and beyond")
+    # Verify combat result exists
+    assert cli_context.get("combat_result") is not None, "Combat result should exist"
+
+    # Verify combat completed
+    combat_result = cli_context["combat_result"]
+    assert combat_result.winner is not None, "Combat should have a winner"
+    assert combat_result.loser is not None, "Combat should have a loser"
+    assert len(combat_result.rounds) > 0, "Combat should have at least one round"
 
 
 @then("combat ends after attacker action")

@@ -89,4 +89,6 @@ class CombatRenderer:
         self._console.print(f"Combat lasted {result.total_rounds} rounds")
         self._console.print(f"{result.winner.name}: {result.winner.hp} HP remaining")
         self._console.print(f"{result.loser.name}: 0 HP (defeated)")
-        self._console.prompt_continue("\nPress ENTER to exit...")
+
+        if self._config.prompt_for_exit:
+            self._console.prompt_continue("\nPress ENTER to exit...")

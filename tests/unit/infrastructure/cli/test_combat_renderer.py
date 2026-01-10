@@ -225,8 +225,8 @@ def test_render_victory_displays_winner(renderer, mock_console, hero, villain):
     assert any("50 HP remaining" in str(call) for call in calls)
     assert any("0 HP (defeated)" in str(call) for call in calls)
 
-    # Verify prompt_continue was called
-    mock_console.prompt_continue.assert_called_once()
+    # Verify prompt_continue was NOT called (test mode has prompt_for_exit=False)
+    mock_console.prompt_continue.assert_not_called()
 
 
 def test_render_combat_orchestrates_full_visualization(renderer, mock_console, hero, villain):

@@ -28,6 +28,7 @@ class CLIConfig:
     # Display settings
     emoji_enabled: bool = True
     colors_enabled: bool = True
+    prompt_for_exit: bool = True
 
     @staticmethod
     def test_mode() -> "CLIConfig":
@@ -40,4 +41,5 @@ class CLIConfig:
             death_delay=0.0,
             round_separator_delay=0.0,
             exit_delay=0.0,
+            prompt_for_exit=False,  # Don't wait for input in tests
         )
