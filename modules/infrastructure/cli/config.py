@@ -3,7 +3,18 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class CLIConfig:
-    """Configuration for CLI timing and display settings."""
+    """Configuration for CLI timing and display settings.
+
+    Use production defaults for interactive CLI experience with delays.
+    Use test_mode() for E2E/integration tests requiring zero delays.
+
+    Example:
+        # Production CLI with delays
+        config = CLIConfig()
+
+        # Fast E2E testing without delays
+        config = CLIConfig.test_mode()
+    """
 
     # Timing delays (seconds)
     initiative_roll_delay: float = 1.0
