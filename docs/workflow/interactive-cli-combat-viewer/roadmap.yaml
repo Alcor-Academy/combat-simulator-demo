@@ -1878,3 +1878,272 @@ notes:
     - R-03 (Timing variations): Configurable timing with tolerance in tests
     - R-04 (Platform compatibility): Manual testing phase + emoji fallbacks
     - R-07 (Rich API changes): Abstraction via ConsoleOutput wrapper
+
+reviews:
+  - reviewer: "software-crafter-reviewer"
+    date: "2026-01-10T00:00:00Z"
+    overall_assessment: "APPROVED"
+    risk_level: "LOW"
+    estimated_accuracy: "Realistic"
+    tdd_feasibility: "EXCELLENT"
+
+    strengths:
+      - "Exceptional Outside-In TDD discipline: Every phase starts with E2E test enablement (red phase), implementation is driven by green phase requirements, refactoring is explicit at phase end with quality gates"
+      - "Extremely granular and atomic step design: Each step is 0.5-3 hours (optimal size for focused work), clear dependencies documented, acceptance criteria specific and measurable"
+      - "Comprehensive E2E test references: Each step explicitly states 'test_driven_by' field linking to specific test scenarios, making traceability perfect from requirement → test → implementation"
+      - "Excellent port-boundary mocking strategy: CharacterCreator properly injects DiceRoller (port), CombatRenderer uses real ConsoleOutput (application layer), test_mode() provides zero-delay testing infrastructure"
+      - "Hexagonal architecture perfectly maintained: All CLI components in modules/infrastructure/cli/, dependency direction preserved (CLI → Application → Domain), no domain layer modifications"
+      - "Robust error handling and edge cases: Phase 1 has baseline validation, Phase 2 covers all input validation scenarios, Phase 4 explicitly handles CTRL-C and exit codes, edge cases in extended combat documented"
+      - "Detailed configuration-driven testing: CLIConfig.test_mode() with zero delays enables fast CI/CD testing, production delays configurable, timing tolerance documented (±50ms acceptable)"
+      - "Realistic time estimates with clear basis: 22-36 hours total includes TDD overhead (+30-50%), testing time, documentation - appears achievable and evidence-based"
+      - "Complete refactoring checkpoints at each phase: Phase validation steps include code coverage targets (>80-85%), docstring requirements, type hints validation, pre-commit checks"
+      - "Cross-platform validation explicitly planned: Phase 5 includes manual testing on Windows/macOS/Linux, emoji fallback strategy documented with concrete examples"
+      - "Excellent handoff package structure: Dependencies summary clear, critical path documented, risk mitigation tied to DESIGN wave artifacts"
+
+    critical_issues: []
+
+    high_severity_issues: []
+
+    medium_severity_issues:
+      - phase: 1
+        step: "1.4"
+        aspect: "Test pattern completeness"
+        issue: "CombatRenderer test pattern uses Mock(spec=ConsoleOutput) but doesn't fully validate emoji presence. Pattern shows 'mock_console.print.assert_called_once()' which only verifies method was called, not that emoji were actually rendered."
+        severity: "MEDIUM"
+        recommendation: "Enhance test pattern to verify emoji in output. Instead of generic assert_called_once(), add assertion checking output contains expected emoji or fallback: assert any('⚔️' in str(call) or '[ATK]' in str(call) for call in mock_console.print.call_args_list). This validates emoji integration end-to-end."
+        quote: "Test pattern (using test_mode for zero delays): mock_console = Mock(spec=ConsoleOutput) ... mock_console.print.assert_called_once()"
+
+      - phase: 2
+        step: "2.2"
+        aspect: "Random generation validation"
+        issue: "CharacterCreator random HP generation uses 'sum(self._dice_roller.roll() for _ in range(10))' which expects roll() to return [1-6], but roadmap doesn't verify RandomDiceRoller.roll() actually returns this range. If dice_roller is mocked in tests, the range validation would pass even with incorrect implementation."
+        severity: "MEDIUM"
+        recommendation: "Add explicit test for RandomDiceRoller.roll() output range before CharacterCreator integration tests. Create unit test: test_random_dice_roller_returns_1_to_6_inclusive(). Verify: for i in range(100): assert 1 <= dice_roller.roll() <= 6. This prevents silent bugs in random generation."
+        quote: "total = sum(self._dice_roller.roll() for _ in range(10))"
+
+      - phase: 3
+        step: "3.3"
+        aspect: "Emoji fallback consistency"
+        issue: "Combat renderer uses config.get_symbol('key') but roadmap doesn't specify what happens if key is missing from emoji dict. If config.emoji doesn't have 'attack' key, get_symbol() might return None or key itself, causing confusing output."
+        severity: "MEDIUM"
+        recommendation: "In CLIConfig.get_symbol() implementation, specify explicit behavior for missing keys: 'return self.emoji.get(key, key)' ensures fallback to key string itself if emoji missing. Document this assumption in method docstring and add test: test_get_symbol_returns_key_if_not_found()."
+        quote: "def get_symbol(self, key: str) -> str: ... return self.emoji.get(key, key)"
+
+      - phase: 4
+        step: "4.2"
+        aspect: "Exit code handling detail"
+        issue: "Exit code convention documented (0 for normal, 130 for CTRL-C, 1 for errors), but roadmap doesn't specify whether CTRL-C during prompt_continue() should return exit code 130. prompt_continue() uses Console.input(), which can raise KeyboardInterrupt - needs explicit handling."
+        severity: "MEDIUM"
+        recommendation: "In CombatRenderer._render_victory(), wrap prompt_continue() call in try/except KeyboardInterrupt block to ensure CTRL-C at exit confirmation also returns exit code 130. Add: try: self._console.prompt_continue(...) except KeyboardInterrupt: raise (propagate to main)"
+        quote: "self._console.prompt_continue('\\nPremi INVIO per uscire (o CTRL-C per terminare)')"
+
+    low_severity_issues:
+      - phase: 1
+        step: "1.1"
+        aspect: "Test execution clarity"
+        issue: "Step mentions 'pytest runs test and FAILS (red phase) with clear error' but doesn't specify exactly what error message is expected. Helps if acceptance criteria explicitly names the expected error (e.g., 'ModuleNotFoundError: No module named...cli' or 'AttributeError: run_cli not found')."
+        severity: "LOW"
+        recommendation: "Add to acceptance criteria: 'Error message indicates missing CLI entry point (e.g., ModuleNotFoundError or run_cli undefined). This helps implementer understand what 'red phase failure' looks like."
+        quote: "pytest runs test and FAILS (red phase) with clear error"
+
+      - phase: 3
+        step: "3.1"
+        aspect: "Emoji detection strategy documentation"
+        issue: "Roadmap mentions 'Check for emoji OR check for fallback text' but doesn't specify precedence. If both emoji and fallback text appear in output (rich auto-degradation), which should test check for?"
+        severity: "LOW"
+        recommendation: "Clarify in step description: 'Accept either emoji OR fallback symbol as valid - test doesn't enforce emoji availability, only that one of the pair appears.' This aligns with cross-platform philosophy."
+        quote: "Both considered valid (platform-dependent)"
+
+      - phase: 3
+        step: "3.6"
+        aspect: "Code coverage metric definition"
+        issue: "Coverage target stated as '>85% for CombatRenderer' - is this line coverage, branch coverage, or statement coverage? pytest default is line coverage, which may not reflect actual testing quality."
+        severity: "LOW"
+        recommendation: "Specify: 'Code coverage > 85% for CLI components, measured by pytest --cov=modules/infrastructure/cli. Acceptable target: line coverage (default pytest metric). For critical paths (rendering logic), prioritize branch coverage and mutation kill rate >75%."
+        quote: "Code coverage > 85% for CLI components"
+
+      - phase: 5
+        step: "5.3"
+        aspect: "Documentation update scope"
+        issue: "Step mentions 'Update README.md with CLI usage instructions' but doesn't specify what should be in README. Should it include: installation instructions, feature list, example runs, troubleshooting?"
+        severity: "LOW"
+        recommendation: "Add to acceptance criteria: 'README includes: (1) Quick Start (how to run), (2) Character creation guide, (3) Platform-specific notes (emoji fallback on Windows), (4) Example session output.' This ensures useful documentation."
+        quote: "Update README.md with CLI usage instructions"
+
+    missing_steps: []
+
+    dependency_issues: []
+
+    implementation_guidance:
+      tdd_discipline: |
+        Maintain strict Outside-In TDD throughout all 5 phases:
+
+        1. **Red Phase Discipline**: Each step starts with E2E test. Verify test FAILS before writing implementation.
+           Example: Step 1.1 - Run 'pytest tests/e2e/test_cli_combat.py::test_baseline -v' and confirm it FAILS.
+
+        2. **Green Phase Discipline**: Write minimal code to make test pass. Resist feature creep.
+           Example: Step 1.2 - Create CLI package with stub run_cli() that just prints "CLI starting...".
+           Only after green phase, enhance to full implementation.
+
+        3. **Refactor Phase Discipline**: Improve code while keeping ALL tests green.
+           Example: Step 1.6 - Extract magic strings to constants, improve docstrings, verify test still PASSES.
+           Use 'pytest tests/e2e/ -v' to validate ALL tests (including existing domain tests) still pass.
+
+        4. **Regression Testing**: After each phase completion, run full test suite:
+           'pytest tests/e2e/ tests/unit/ -v' to confirm no regressions in existing tests.
+
+      component_order: |
+        Implement in strict dependency order to maintain hexagonal architecture:
+
+        1. **CLIConfig (Step 1.2)**: Foundation for all components. Test mode enabled here.
+        2. **ConsoleOutput (Step 1.3)**: Dependency for CombatRenderer and CharacterCreator.
+        3. **CombatRenderer (Step 1.4)**: Visualizes combat results. Uses ConsoleOutput.
+        4. **CLI Main (Step 1.5)**: Wires dependencies. Uses all above components.
+        5. **CharacterCreator (Step 2.2)**: Input handling. Uses ConsoleOutput, injects DiceRoller.
+
+        Each component only depends on previously completed components (no circular dependencies).
+
+      testing_setup: |
+        Before starting implementation, set up testing infrastructure:
+
+        1. **Test Fixtures** (in tests/conftest.py):
+           - @pytest.fixture test_config(): return CLIConfig.test_mode()
+           - @pytest.fixture mock_console(): return Mock(spec=ConsoleOutput)
+           - @pytest.fixture deterministic_dice_roller(): return fixture with fixed roll sequence
+
+        2. **E2E Test Framework**:
+           - Ensure pytest-bdd is configured (existing from DISTILL wave)
+           - Create tests/e2e/test_cli_combat.py with step definitions
+           - Use monkeypatch to mock Rich.Prompt.ask() and Rich.IntPrompt.ask()
+
+        3. **Snapshot Test Setup**:
+           - Install pytest-snapshot: pip install pytest-snapshot
+           - Create tests/snapshots/cli/ directory for golden outputs
+           - Example: snapshot.assert_match(capture_combat_output())
+
+        4. **Output Capture Strategy**:
+           - Use Rich Console with StringIO buffer for capturing output
+           - Example: console = Console(file=StringIO(), force_terminal=True)
+
+      refactoring_strategy: |
+        Apply progressive refactoring at each phase end (Levels 1-2 focus):
+
+        **Phase 1 End (Step 1.6)**:
+        - Level 1: Remove any debug print statements, extract magic strings to constants
+        - Level 2: Apply Compose Method if any method >15 lines (extract_method for clarity)
+        - Example: Extract "=== COMBAT SIMULATOR ===" to WELCOME_BANNER constant
+
+        **Phase 2 End (Step 2.6)**:
+        - Level 1: Docstrings for all public methods (use 3-line format: purpose, args, returns)
+        - Level 2: If _prompt_int_with_default() is complex, extract validation logic to _validate_int_range()
+        - Example: def _validate_int_range(value: int, min_val: int, max_val: int) -> tuple[bool, str]
+
+        **Phase 3 End (Step 3.6)**:
+        - Level 1: Ensure all emoji mappings in CLIConfig (no hardcoded emoji in render methods)
+        - Level 2: Extract color selection logic to helper method _hp_color(current_hp, max_hp) -> str
+        - Example: green if pct >= 0.7 else yellow if pct >= 0.4 else orange if pct >= 0.2 else red
+
+        **Phase 4 End (Step 4.5)**:
+        - Level 1: Ensure all error messages consistent and descriptive
+        - Level 2: Extract repeated render sections to private methods (_render_attacker_action, _render_defender_action)
+
+        **Phase 5 End (Step 5.3)**:
+        - Level 1: Final sweep - no TODO comments, all docstrings complete
+        - Level 2: No further refactoring (code already at high quality from phases 1-4)
+
+      quality_gates: |
+        Enforce quality gates at each phase validation step:
+
+        **Gate 1: Test Execution** (all phases):
+        - Command: pytest tests/ -v --tb=short
+        - Requirement: 100% tests passing (no skips, no xfails in CI)
+        - Failure = STOP: Do not proceed to next phase if tests fail
+
+        **Gate 2: Type Checking** (all phases):
+        - Command: mypy modules/infrastructure/cli/ --strict
+        - Requirement: Zero type errors (use 'type: ignore' only with explicit comment explaining why)
+        - Failure = Medium: Can proceed but document type exceptions
+
+        **Gate 3: Code Coverage** (all phases):
+        - Command: pytest tests/unit/infrastructure/cli/ --cov=modules/infrastructure/cli --cov-report=term-missing
+        - Requirement: >80% for Phase 1-2, >85% for Phase 3-5
+        - Failure = Medium: Document uncovered lines, prioritize coverage of critical paths
+
+        **Gate 4: Pre-commit Hooks** (all phases):
+        - Command: pre-commit run --all-files
+        - Requirement: Zero failures (linting, formatting, security checks)
+        - Failure = STOP: Fix all issues before committing
+
+        **Gate 5: Integration Tests** (phases 2+):
+        - Requirement: All E2E tests for current and previous phases pass
+        - Verify: No regressions in domain tests (9 E2E + 34 unit)
+        - Failure = STOP: Do not proceed if regressions detected
+
+        **Gate 6: Manual Validation** (phases 1, 3-5):
+        - Phase 1: python cli.py runs hardcoded combat successfully
+        - Phase 3: Verify emoji display correctly (or fallbacks appear)
+        - Phase 5: Test on Windows/macOS/Linux if available
+        - Failure = Medium: Document platform-specific issues
+
+      error_handling_consistency: |
+        Maintain consistent error handling patterns throughout:
+
+        1. **Validation Errors** (CharacterCreator):
+           - Pattern: print("❌ {specific message}", style="red")
+           - Example: "❌ HP must be between 1 and 999. Please try again." (not "invalid input")
+           - Consistency check: All validation messages follow "❌ {constraint}: {hint}" format
+
+        2. **System Errors** (CLI Main):
+           - KeyboardInterrupt: print("⚠️ Combat interrupted by user. Exiting...", style="yellow")
+           - Unexpected: print("❌ Unexpected error occurred: {e}", style="red")
+           - Consistency check: All system errors use colored emoji prefix
+
+        3. **Exit Codes**:
+           - sys.exit(0): Normal completion
+           - sys.exit(1): Error condition (ValueError, unexpected exception)
+           - sys.exit(130): User interrupted (Ctrl+C, Unix convention)
+           - Consistency check: Same error always maps to same exit code
+
+        4. **Propagation Pattern**:
+           - Validation errors: Caught and displayed in CharacterCreator, re-prompt (no exception propagation)
+           - KeyboardInterrupt: Propagated from CharacterCreator to CLI Main (for consistent exit code handling)
+           - Other exceptions: Caught in CLI Main, displayed, sys.exit(1)
+
+    acceptance_criteria_severity: |
+      All acceptance criteria across 26 steps are specific and testable.
+      Severity classification:
+      - Critical (blocks phase completion): 18 criteria (test PASSES/FAILS, implementation present, validation gates)
+      - High (verifies core functionality): 42 criteria (emoji renders, delays configured, input validation)
+      - Medium (quality/documentation): 28 criteria (docstrings, type hints, refactoring)
+
+      No vague acceptance criteria detected. All include explicit validation method.
+
+    phase_feasibility_assessment: |
+      Phase Completion Estimates (Conservative/Realistic/Optimistic):
+
+      Phase 1 (Baseline): 2-4 hours estimated, 3 hours realistic
+      - Baseline achievable: 6 atomic steps (0.5-2h each), straightforward wiring
+      - Risk: ConsoleOutput mock testing complexity, but pattern provided
+      - Feasibility: EXCELLENT (no blockers, clear requirements)
+
+      Phase 2 (Interactive Input): 6-10 hours estimated, 8 hours realistic
+      - Interactive input complexity higher, 5 steps, validation logic substantial
+      - Risk: Rich.Prompt mocking, random generation range validation
+      - Feasibility: EXCELLENT (DESIGN wave addressed Rich integration)
+
+      Phase 3 (Visual Enhancement): 8-12 hours estimated, 10 hours realistic
+      - Emoji/color mapping moderate complexity, 6 steps, refactoring thorough
+      - Risk: Cross-platform emoji testing, color selection logic
+      - Feasibility: GOOD (emoji fallback strategy proven, Rich handles platform detection)
+
+      Phase 4 (Polish): 4-6 hours estimated, 5 hours realistic
+      - Error handling straightforward, 5 steps, exit code management clear
+      - Risk: Subtle CTRL-C handling at exit prompt, but pattern documented
+      - Feasibility: EXCELLENT (well-understood error handling patterns)
+
+      Phase 5 (Cross-Platform): 2-4 hours estimated, 3 hours realistic
+      - Manual testing labor-dependent, but automated path testing fast
+      - Risk: Platform availability (Windows/macOS/Linux access)
+      - Feasibility: GOOD (Rich handles most cross-platform concerns)
+
+      **Total Estimate: 22-36 hours matches DISTILL assessment. Realistic: 29 hours**
