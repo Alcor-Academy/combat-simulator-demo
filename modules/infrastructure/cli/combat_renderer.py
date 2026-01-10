@@ -1,5 +1,6 @@
 """Combat renderer for formatting combat events for display."""
 
+from modules.domain.model.attack_result import AttackResult
 from modules.domain.model.combat_result import CombatResult
 from modules.domain.model.initiative_result import InitiativeResult
 from modules.domain.model.round_result import RoundResult
@@ -55,22 +56,28 @@ class CombatRenderer:
         self._console.display_with_delay("", self._config.round_header_delay)
 
         # Attacker action
-        action = round_result.attacker_action
-        self._console.print(f"{action.attacker_name} attacks!")
-        self._console.print(f"  Damage: {action.total_damage}")
-        self._console.print(f"  {action.defender_name}: {action.defender_old_hp} HP -> {action.defender_new_hp} HP")
-        self._console.display_with_delay("", self._config.attack_delay)
+        self._render_attack_action(round_result.attacker_action, is_counter=False)
 
         # Defender counter-attack (if alive)
         if round_result.defender_action:
-            action = round_result.defender_action
-            self._console.print(f"{action.attacker_name} counter-attacks!")
-            self._console.print(f"  Damage: {action.total_damage}")
-            self._console.print(f"  {action.defender_name}: {action.defender_old_hp} HP -> {action.defender_new_hp} HP")
-            self._console.display_with_delay("", self._config.attack_delay)
+            self._render_attack_action(round_result.defender_action, is_counter=True)
         else:
-            self._console.print(f"{round_result.attacker_action.defender_name} has been defeated!")
+            defender_name = round_result.attacker_action.defender_name
+            self._console.print(f"{defender_name} has been defeated!")
             self._console.display_with_delay("", self._config.death_delay)
+
+    def _render_attack_action(self, action: AttackResult, is_counter: bool) -> None:
+        """Display attack action details.
+
+        Args:
+            action: AttackResult containing attack details
+            is_counter: Whether this is a counter-attack
+        """
+        attack_verb = "counter-attacks" if is_counter else "attacks"
+        self._console.print(f"{action.attacker_name} {attack_verb}!")
+        self._console.print(f"  Damage: {action.total_damage}")
+        self._console.print(f"  {action.defender_name}: {action.defender_old_hp} HP -> {action.defender_new_hp} HP")
+        self._console.display_with_delay("", self._config.attack_delay)
 
     def _render_victory(self, result: CombatResult) -> None:
         """Display victory announcement.
