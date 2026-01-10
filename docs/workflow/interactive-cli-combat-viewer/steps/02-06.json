@@ -3,30 +3,31 @@
   "project_id": "interactive-cli-combat-viewer",
   "execution_agent": "software-crafter",
   "self_contained_context": {
-    "background": "Part of Phase 2: Interactive Input with Validation. Validation checkpoint ensures Phase 2 quality. Commit captures interactive input milestone.\n",
+    "background": "Part of Phase 2: Interactive Input with Validation. ATDD REFACTOR Phase for Test #2.\n",
     "prerequisites_completed": [
       "02-05"
     ],
     "relevant_files": [
-      "modules/infrastructure/cli/ (validate and refactor)",
-      "tests/ (validate)"
+      "modules/infrastructure/cli/character_creator.py (modify)",
+      "tests/unit/infrastructure/cli/test_character_creator.py (modify)",
+      "tests/e2e/test_cli_combat.py (modify)",
+      "tests/e2e/features/cli_combat.feature (modify)"
     ],
-    "technical_context": "Validate Phase 2 deliverable and refactor.\n\nValidation checklist:\n- [ ] All Phase 2 E2E tests pass (tests 2.1-2.5)\n- [ ] All unit tests pass (character_creator tests)\n- [ ] Manual testing: Create 5 characters with various inputs\n- [ ] Manual testing: Trigger all validation errors\n- [ ] Manual testing: Use random defaults multiple times\n- [ ] Code coverage > 85% for CharacterCreator\n- [ ] No regressions (Phase 1 tests still pass)\n\nRefactoring:\n- Simplify _prompt_int_with_default() if overly complex\n- Extract validation error messages to constants\n- Improve docstrings for validation logic\n- Type hints complete\n\nQuality checks:\n- pytest --cov=modules/infrastructure/cli tests/\n- mypy modules/infrastructure/cli/\n\nCommit:\n- git add modules/infrastructure/cli/ tests/\n- git commit -m \"feat(cli): Phase 2 - Interactive character creation with validation\n\n- Implement CharacterCreator with Rich Prompts\n- Add validation for name, HP, attack power\n- Implement random defaults (INVIO behavior)\n- Display character confirmation cards\n- E2E Tests 2.1-2.5 passing\n\nPhase 2 delivers robust input handling with professional UX.\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\"\n",
+    "technical_context": "ATDD REFACTOR Phase for Test #2.\n\nKey activities:\n- Review random generation logic\n- Verify dice_roller integration correct\n- Run statistical tests (100 iterations, ranges valid)\n- Commit when E2E Test #2 passes",
     "tdd_phase": "REFACTOR",
-    "active_e2e_test": "E2E Tests 2.4-2.5 (Edge Cases) - should PASS when complete",
-    "inactive_e2e_tests": "N/A - validation phase"
+    "active_e2e_test": "E2E Test #2: Random Defaults - must PASS before commit",
+    "inactive_e2e_tests": "Tests not yet enabled remain disabled with @skip"
   },
   "task_specification": {
-    "name": "Phase 2 Validation and Refactoring",
-    "description": "Validate Phase 2 deliverable and refactor.\n\nValidation checklist:\n- [ ] All Phase 2 E2E tests pass (tests 2.1-2.5)\n- [ ] All unit tests pass (character_creator tests)\n- [ ] Manual testing: Create 5 characters with various inputs\n- [ ] Manual testing: Trigger all validation errors\n- [ ] Manual testing: Use random defaults multiple times\n- [ ] Code coverage > 85% for CharacterCreator\n- [ ] No regressions (Phase 1 tests still pass)\n\nRefactoring:\n- Simplify _prompt_int_with_default() if overly complex\n- Extract validation error messages to constants\n- Improve docstrings for validation logic\n- Type hints complete\n\nQuality checks:\n- pytest --cov=modules/infrastructure/cli tests/\n- mypy modules/infrastructure/cli/\n\nCommit:\n- git add modules/infrastructure/cli/ tests/\n- git commit -m \"feat(cli): Phase 2 - Interactive character creation with validation\n\n- Implement CharacterCreator with Rich Prompts\n- Add validation for name, HP, attack power\n- Implement random defaults (INVIO behavior)\n- Display character confirmation cards\n- E2E Tests 2.1-2.5 passing\n\nPhase 2 delivers robust input handling with professional UX.\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\"\n",
-    "motivation": "Validation checkpoint ensures Phase 2 quality. Commit captures interactive input milestone.\n",
-    "detailed_instructions": "Validate Phase 2 deliverable and refactor.\n\nValidation checklist:\n- [ ] All Phase 2 E2E tests pass (tests 2.1-2.5)\n- [ ] All unit tests pass (character_creator tests)\n- [ ] Manual testing: Create 5 characters with various inputs\n- [ ] Manual testing: Trigger all validation errors\n- [ ] Manual testing: Use random defaults multiple times\n- [ ] Code coverage > 85% for CharacterCreator\n- [ ] No regressions (Phase 1 tests still pass)\n\nRefactoring:\n- Simplify _prompt_int_with_default() if overly complex\n- Extract validation error messages to constants\n- Improve docstrings for validation logic\n- Type hints complete\n\nQuality checks:\n- pytest --cov=modules/infrastructure/cli tests/\n- mypy modules/infrastructure/cli/\n\nCommit:\n- git add modules/infrastructure/cli/ tests/\n- git commit -m \"feat(cli): Phase 2 - Interactive character creation with validation\n\n- Implement CharacterCreator with Rich Prompts\n- Add validation for name, HP, attack power\n- Implement random defaults (INVIO behavior)\n- Display character confirmation cards\n- E2E Tests 2.1-2.5 passing\n\nPhase 2 delivers robust input handling with professional UX.\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\"\n",
+    "name": "Review + Refactor + Commit (Test #2)",
+    "description": "ATDD REFACTOR Phase for Test #2",
+    "motivation": "REFACTOR phase of ATDD cycle. ATDD REFACTOR Phase for Test #2.",
+    "detailed_instructions": "Follow ATDD discipline:\n\n1. Review random generation logic\n2. Verify dice_roller integration correct\n3. Run statistical tests (100 iterations, ranges valid)\n4. Commit when E2E Test #2 passes",
     "acceptance_criteria": [
-      "All Phase 2 E2E tests pass",
-      "Code coverage > 85%",
-      "Manual testing complete",
-      "Refactoring done",
-      "Git commit created"
+      "Review random generation logic",
+      "Verify dice_roller integration correct",
+      "Run statistical tests (100 iterations, ranges valid)",
+      "Commit when E2E Test #2 passes"
     ],
     "estimated_hours": 0.5
   },
@@ -35,7 +36,7 @@
       "02-05"
     ],
     "blocking": [
-      "03-01"
+      "02-07"
     ]
   },
   "state": {
@@ -43,6 +44,6 @@
     "assigned_to": null,
     "started_at": null,
     "completed_at": null,
-    "updated": "2026-01-10T12:41:07.248054+00:00"
+    "updated": "2026-01-10T17:38:05.323304+00:00"
   }
 }

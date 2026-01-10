@@ -1,0 +1,51 @@
+{
+  "task_id": "02-07",
+  "project_id": "interactive-cli-combat-viewer",
+  "execution_agent": "software-crafter",
+  "self_contained_context": {
+    "background": "Part of Phase 2: Interactive Input with Validation. ATDD RED Phase for Tests #3-5 (logical group).\n",
+    "prerequisites_completed": [
+      "02-06"
+    ],
+    "relevant_files": [
+      "modules/infrastructure/cli/character_creator.py (modify)",
+      "tests/unit/infrastructure/cli/test_character_creator.py (modify)",
+      "tests/e2e/test_cli_combat.py (modify)",
+      "tests/e2e/features/cli_combat.feature (modify)"
+    ],
+    "technical_context": "ATDD RED Phase for Tests #3-5 (logical group).\n\nKey activities:\n- Enable test: 'Invalid HP input triggers validation error'\n- Enable test: 'Invalid attack power input triggers validation error'\n- Enable test: 'Empty name input triggers validation error'\n- Implement step definitions for error verification\n- Run tests - should mostly PASS (validation already implemented in 02-02)\n- Verify error messages displayed correctly in red",
+    "tdd_phase": "RED",
+    "active_e2e_test": "E2E Tests #3-5: Validation Errors - SHOULD FAIL (RED)",
+    "inactive_e2e_tests": "Tests not yet enabled remain disabled with @skip"
+  },
+  "task_specification": {
+    "name": "Enable E2E Tests #3-5: Validation Errors (RED)",
+    "description": "ATDD RED Phase for Tests #3-5 (logical group)",
+    "motivation": "RED phase of ATDD cycle. ATDD RED Phase for Tests #3-5 (logical group).",
+    "detailed_instructions": "Follow ATDD discipline:\n\n1. Enable test: 'Invalid HP input triggers validation error'\n2. Enable test: 'Invalid attack power input triggers validation error'\n3. Enable test: 'Empty name input triggers validation error'\n4. Implement step definitions for error verification\n5. Run tests - should mostly PASS (validation already implemented in 02-02)\n6. Verify error messages displayed correctly in red",
+    "acceptance_criteria": [
+      "Enable test: 'Invalid HP input triggers validation error'",
+      "Enable test: 'Invalid attack power input triggers validation error'",
+      "Enable test: 'Empty name input triggers validation error'",
+      "Implement step definitions for error verification",
+      "Run tests - should mostly PASS (validation already implemented in 02-02)",
+      "Verify error messages displayed correctly in red"
+    ],
+    "estimated_hours": 0.5
+  },
+  "dependencies": {
+    "requires": [
+      "02-06"
+    ],
+    "blocking": [
+      "02-08"
+    ]
+  },
+  "state": {
+    "status": "TODO",
+    "assigned_to": null,
+    "started_at": null,
+    "completed_at": null,
+    "updated": "2026-01-10T17:38:05.323559+00:00"
+  }
+}

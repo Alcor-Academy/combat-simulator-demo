@@ -22,7 +22,6 @@ Feature: Interactive CLI Combat Viewer
   # US-01: Interactive Character Creation
   # ============================================================================
 
-  @skip
   Scenario: User creates both characters with manual input
     When I enter "Hero" for character 1 name
     And I enter "50" for character 1 HP

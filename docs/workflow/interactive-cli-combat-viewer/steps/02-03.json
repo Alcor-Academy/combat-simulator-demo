@@ -3,31 +3,32 @@
   "project_id": "interactive-cli-combat-viewer",
   "execution_agent": "software-crafter",
   "self_contained_context": {
-    "background": "Part of Phase 2: Interactive Input with Validation. Integration proves CharacterCreator works in real CLI context. E2E tests passing validate\ninteractive input flow including validation and random defaults.\n",
+    "background": "Part of Phase 2: Interactive Input with Validation. ATDD REFACTOR Phase for Test #1.\n",
     "prerequisites_completed": [
       "02-02"
     ],
     "relevant_files": [
-      "modules/infrastructure/cli/main.py (modify)"
+      "modules/infrastructure/cli/character_creator.py (modify)",
+      "tests/unit/infrastructure/cli/test_character_creator.py (modify)",
+      "tests/e2e/test_cli_combat.py (modify)",
+      "tests/e2e/features/cli_combat.feature (modify)"
     ],
-    "technical_context": "Replace hardcoded characters with CharacterCreator in main.py.\n\nFile: modules/infrastructure/cli/main.py (update)\n\nChanges:\n```python\nfrom modules.infrastructure.cli.character_creator import CharacterCreator\n\ndef run_cli() -> None:\n    # ... (existing setup) ...\n\n    # CLI components\n    renderer = CombatRenderer(console, config)\n    character_creator = CharacterCreator(console, dice_roller)\n\n    # Welcome\n    console.print(\"\\n⚔️  COMBAT SIMULATOR  ⚔️\\n\")\n    console.print(\"Create two characters and watch them battle!\\n\")\n\n    # Interactive character creation (Phase 2)\n    char1 = character_creator.create_character(1)\n    char2 = character_creator.create_character(2)\n\n    console.print(\"\\n--- Combat Starting ---\\n\")\n\n    # Run combat\n    result = combat_simulator.run_combat(char1, char2)\n\n    # Display combat\n    renderer.render_combat(result)\n\n    # ... (existing error handling) ...\n```\n\nManual validation:\n- python cli.py\n- Create characters manually (enter name, HP, attack)\n- Create characters with random defaults (press INVIO for HP/attack)\n- Test validation errors (enter 150 for HP, see error, enter 50)\n- Verify combat runs and displays winner\n\nAutomated validation:\n- pytest tests/e2e/test_cli_combat.py -k \"character creation\" -v\n- E2E tests 2.1-2.3 should now PASS (green phase)\n",
-    "tdd_phase": "GREEN",
-    "active_e2e_test": "E2E Tests 2.1-2.3 (Character Creation) - should PASS when complete",
-    "inactive_e2e_tests": "All E2E tests except the active one should remain disabled with @pytest.mark.skip or similar"
+    "technical_context": "ATDD REFACTOR Phase for Test #1.\n\nKey activities:\n- Code review (no duplication, clear logic, type hints)\n- Refactor if needed (extract common patterns)\n- Integrate CharacterCreator into main.py\n- Run full test suite (unit + E2E)\n- Commit when E2E Test #1 passes",
+    "tdd_phase": "REFACTOR",
+    "active_e2e_test": "E2E Test #1: Manual Character Creation - must PASS before commit",
+    "inactive_e2e_tests": "Tests not yet enabled remain disabled with @skip"
   },
   "task_specification": {
-    "name": "Integrate CharacterCreator into CLI Main",
-    "description": "Replace hardcoded characters with CharacterCreator in main.py.\n\nFile: modules/infrastructure/cli/main.py (update)\n\nChanges:\n```python\nfrom modules.infrastructure.cli.character_creator import CharacterCreator\n\ndef run_cli() -> None:\n    # ... (existing setup) ...\n\n    # CLI components\n    renderer = CombatRenderer(console, config)\n    character_creator = CharacterCreator(console, dice_roller)\n\n    # Welcome\n    console.print(\"\\n⚔️  COMBAT SIMULATOR  ⚔️\\n\")\n    console.print(\"Create two characters and watch them battle!\\n\")\n\n    # Interactive character creation (Phase 2)\n    char1 = character_creator.create_character(1)\n    char2 = character_creator.create_character(2)\n\n    console.print(\"\\n--- Combat Starting ---\\n\")\n\n    # Run combat\n    result = combat_simulator.run_combat(char1, char2)\n\n    # Display combat\n    renderer.render_combat(result)\n\n    # ... (existing error handling) ...\n```\n\nManual validation:\n- python cli.py\n- Create characters manually (enter name, HP, attack)\n- Create characters with random defaults (press INVIO for HP/attack)\n- Test validation errors (enter 150 for HP, see error, enter 50)\n- Verify combat runs and displays winner\n\nAutomated validation:\n- pytest tests/e2e/test_cli_combat.py -k \"character creation\" -v\n- E2E tests 2.1-2.3 should now PASS (green phase)\n",
-    "motivation": "Integration proves CharacterCreator works in real CLI context. E2E tests passing validate\ninteractive input flow including validation and random defaults.\n",
-    "detailed_instructions": "Replace hardcoded characters with CharacterCreator in main.py.\n\nFile: modules/infrastructure/cli/main.py (update)\n\nChanges:\n```python\nfrom modules.infrastructure.cli.character_creator import CharacterCreator\n\ndef run_cli() -> None:\n    # ... (existing setup) ...\n\n    # CLI components\n    renderer = CombatRenderer(console, config)\n    character_creator = CharacterCreator(console, dice_roller)\n\n    # Welcome\n    console.print(\"\\n⚔️  COMBAT SIMULATOR  ⚔️\\n\")\n    console.print(\"Create two characters and watch them battle!\\n\")\n\n    # Interactive character creation (Phase 2)\n    char1 = character_creator.create_character(1)\n    char2 = character_creator.create_character(2)\n\n    console.print(\"\\n--- Combat Starting ---\\n\")\n\n    # Run combat\n    result = combat_simulator.run_combat(char1, char2)\n\n    # Display combat\n    renderer.render_combat(result)\n\n    # ... (existing error handling) ...\n```\n\nManual validation:\n- python cli.py\n- Create characters manually (enter name, HP, attack)\n- Create characters with random defaults (press INVIO for HP/attack)\n- Test validation errors (enter 150 for HP, see error, enter 50)\n- Verify combat runs and displays winner\n\nAutomated validation:\n- pytest tests/e2e/test_cli_combat.py -k \"character creation\" -v\n- E2E tests 2.1-2.3 should now PASS (green phase)\n",
+    "name": "Review + Refactor + Integrate + Commit (Test #1)",
+    "description": "ATDD REFACTOR Phase for Test #1",
+    "motivation": "REFACTOR phase of ATDD cycle. ATDD REFACTOR Phase for Test #1.",
+    "detailed_instructions": "Follow ATDD discipline:\n\n1. Code review (no duplication, clear logic, type hints)\n2. Refactor if needed (extract common patterns)\n3. Integrate CharacterCreator into main.py\n4. Run full test suite (unit + E2E)\n5. Commit when E2E Test #1 passes",
     "acceptance_criteria": [
-      "CLI Main calls character_creator.create_character() twice",
-      "Hardcoded characters removed",
-      "Welcome message includes instructions",
-      "Manual test: Create characters interactively",
-      "Manual test: Validation errors display and re-prompt",
-      "Manual test: Random defaults work (INVIO)",
-      "E2E Tests 2.1-2.3 PASS"
+      "Code review (no duplication, clear logic, type hints)",
+      "Refactor if needed (extract common patterns)",
+      "Integrate CharacterCreator into main.py",
+      "Run full test suite (unit + E2E)",
+      "Commit when E2E Test #1 passes"
     ],
     "estimated_hours": 0.5
   },
@@ -44,6 +45,6 @@
     "assigned_to": null,
     "started_at": null,
     "completed_at": null,
-    "updated": "2026-01-10T12:41:07.248054+00:00"
+    "updated": "2026-01-10T17:38:05.322269+00:00"
   }
 }

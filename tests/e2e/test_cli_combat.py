@@ -12,6 +12,7 @@ CRITICAL PRODUCTION SERVICE INTEGRATION REQUIREMENT:
 Architecture: Tests through CLI → Application → Domain (full stack)
 """
 
+import importlib.util
 import time
 from unittest.mock import Mock
 
@@ -401,25 +402,73 @@ def combat_runs_for_rounds(cli_context, production_services, rounds):
 
 @when(parsers.parse('I enter "{input_value}" for character {char_num:d} {field}'))
 def user_enters_input(cli_context, input_value, char_num, field):
-    """Simulate user input for character creation."""
+    """
+    Simulate user input for character creation.
+
+    Stores input sequence to be used when CharacterCreator is invoked.
+    This drives Outside-In TDD - we're defining the interface we want.
+    """
+    # Store input in sequence
+    if "input_sequence" not in cli_context:
+        cli_context["input_sequence"] = []
+
     cli_context["input_sequence"].append({"char_num": char_num, "field": field, "value": input_value})
+
+    # RED phase: CharacterCreator doesn't exist yet - will be implemented in 02-02
+    # When implemented, CharacterCreator will process this input sequence
+    cli_context["creation_error"] = "CharacterCreator not implemented"
 
 
 @when(parsers.parse("I press INVIO for character {char_num:d} {field}"))
 def user_presses_invio(cli_context, char_num, field):
-    """Simulate user pressing INVIO for random default."""
+    """
+    Simulate user pressing INVIO for random default.
+
+    Empty input triggers random value generation.
+    """
+    if "input_sequence" not in cli_context:
+        cli_context["input_sequence"] = []
+
     cli_context["input_sequence"].append(
         {
             "char_num": char_num,
             "field": field,
-            "value": "",  # Empty string = INVIO = random
+            "value": "",  # Empty string = INVIO = random default
         }
     )
+
+    # RED phase: CharacterCreator doesn't exist yet - will be implemented in 02-02
+    cli_context["creation_error"] = "CharacterCreator not implemented"
+
+
+@when(parsers.re(r'I enter "(?P<input_value>.*)" for character (?P<char_num>\d+) name'))
+def user_enters_name(cli_context, input_value, char_num):
+    """
+    Simulate user input for character name (handles empty strings).
+
+    Empty string tests validation logic.
+    Uses regex to properly capture empty strings.
+    """
+    if "input_sequence" not in cli_context:
+        cli_context["input_sequence"] = []
+
+    cli_context["input_sequence"].append(
+        {
+            "char_num": int(char_num),  # Convert from regex string capture
+            "field": "name",
+            "value": input_value,  # Can be empty string for validation test
+        }
+    )
+
+    # RED phase: CharacterCreator doesn't exist yet - will be implemented in 02-02
+    cli_context["creation_error"] = "CharacterCreator not implemented"
 
 
 @when(parsers.parse('I enter "{input_value}" for {field}'))
 def user_enters_value_for_field(cli_context, input_value, field):
     """Simulate user input for specific field."""
+    if "input_sequence" not in cli_context:
+        cli_context["input_sequence"] = []
     cli_context["input_sequence"].append({"field": field, "value": input_value})
 
 
@@ -516,9 +565,23 @@ def cli_runs(cli_context):
 
 @then("both characters are created successfully")
 def both_characters_created(cli_context):
-    """Verify both Character objects exist."""
-    assert len(cli_context["characters"]) == 2
-    assert all(isinstance(c, Character) for c in cli_context["characters"])
+    """
+    Verify both Character objects created via CharacterCreator.
+
+    CRITICAL: This calls production CharacterCreator (when it exists).
+    RED phase: Will fail because CharacterCreator doesn't exist yet.
+    """
+    # Check if CharacterCreator module exists (using importlib per ruff recommendation)
+    character_creator_spec = importlib.util.find_spec("modules.infrastructure.cli.character_creator")
+
+    if character_creator_spec is None:
+        # Expected failure in RED phase - module doesn't exist
+        pytest.fail("CharacterCreator not implemented - expected RED phase failure")
+
+    # If module exists, verify it created characters
+    assert "characters" in cli_context, "Characters should be created"
+    assert len(cli_context["characters"]) == 2, "Should have 2 characters"
+    assert all(isinstance(c, Character) for c in cli_context["characters"]), "Should be Character objects"
 
 
 @then(

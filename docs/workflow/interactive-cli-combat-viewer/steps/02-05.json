@@ -3,33 +3,35 @@
   "project_id": "interactive-cli-combat-viewer",
   "execution_agent": "software-crafter",
   "self_contained_context": {
-    "background": "Part of Phase 2: Interactive Input with Validation. Edge case handling ensures production robustness. Assertions catch dice_roller bugs early.\n100-iteration tests validate statistical distribution.\n",
+    "background": "Part of Phase 2: Interactive Input with Validation. ATDD GREEN Phase for Test #2.\n",
     "prerequisites_completed": [
       "02-04"
     ],
     "relevant_files": [
       "modules/infrastructure/cli/character_creator.py (modify)",
-      "tests/unit/infrastructure/cli/test_character_creator.py (modify)"
+      "tests/unit/infrastructure/cli/test_character_creator.py (modify)",
+      "tests/e2e/test_cli_combat.py (modify)",
+      "tests/e2e/features/cli_combat.feature (modify)"
     ],
-    "technical_context": "Ensure CharacterCreator handles all edge cases from tests.\n\nEnhancements needed (if not already present):\n\n1. Non-numeric input handling:\n- Already implemented in _prompt_int_with_default() try/except ValueError\n\n2. Random generation range validation:\n- Add assertions in _random_hp() and _random_attack()\n- Ensure dice_roller consistently produces [1-6] values\n\nUpdated methods:\n```python\ndef _random_hp(self) -> int:\n    \"\"\"Generate random HP [20-80].\"\"\"\n    total = sum(self._dice_roller.roll() for _ in range(10))\n    hp = 20 + total\n    assert 20 <= hp <= 80, f\"Random HP {hp} outside expected range\"\n    return hp\n\ndef _random_attack(self) -> int:\n    \"\"\"Generate random attack [5-15].\"\"\"\n    total = sum(self._dice_roller.roll() for _ in range(2))\n    attack = 4 + total\n    assert 5 <= attack <= 15, f\"Random attack {attack} outside expected range\"\n    return attack\n```\n\nAdditional unit tests:\n- Test: test_non_numeric_hp_handled()\n- Test: test_random_hp_100_iterations()\n- Test: test_random_attack_100_iterations()\n\nValidation:\n- pytest tests/unit/infrastructure/cli/test_character_creator.py -v\n- pytest tests/e2e/test_cli_combat.py -k \"random\" -v\n- All tests PASS\n",
+    "technical_context": "ATDD GREEN Phase for Test #2.\n\nKey activities:\n- Add unit tests for random HP generation [20-80]\n- Add unit tests for random attack generation [5-15]\n- Implement _random_hp() using dice_roller\n- Implement _random_attack() using dice_roller\n- Update _prompt_int_with_default() to accept empty input\n- E2E Test #2 passes",
     "tdd_phase": "GREEN",
-    "active_e2e_test": "E2E Tests 2.4-2.5 (Edge Cases) - should PASS when complete",
-    "inactive_e2e_tests": "All E2E tests except the active one should remain disabled with @pytest.mark.skip or similar"
+    "active_e2e_test": "E2E Test #2: Random Defaults - should PASS when complete",
+    "inactive_e2e_tests": "Tests not yet enabled remain disabled with @skip"
   },
   "task_specification": {
-    "name": "Enhance CharacterCreator for Edge Cases",
-    "description": "Ensure CharacterCreator handles all edge cases from tests.\n\nEnhancements needed (if not already present):\n\n1. Non-numeric input handling:\n- Already implemented in _prompt_int_with_default() try/except ValueError\n\n2. Random generation range validation:\n- Add assertions in _random_hp() and _random_attack()\n- Ensure dice_roller consistently produces [1-6] values\n\nUpdated methods:\n```python\ndef _random_hp(self) -> int:\n    \"\"\"Generate random HP [20-80].\"\"\"\n    total = sum(self._dice_roller.roll() for _ in range(10))\n    hp = 20 + total\n    assert 20 <= hp <= 80, f\"Random HP {hp} outside expected range\"\n    return hp\n\ndef _random_attack(self) -> int:\n    \"\"\"Generate random attack [5-15].\"\"\"\n    total = sum(self._dice_roller.roll() for _ in range(2))\n    attack = 4 + total\n    assert 5 <= attack <= 15, f\"Random attack {attack} outside expected range\"\n    return attack\n```\n\nAdditional unit tests:\n- Test: test_non_numeric_hp_handled()\n- Test: test_random_hp_100_iterations()\n- Test: test_random_attack_100_iterations()\n\nValidation:\n- pytest tests/unit/infrastructure/cli/test_character_creator.py -v\n- pytest tests/e2e/test_cli_combat.py -k \"random\" -v\n- All tests PASS\n",
-    "motivation": "Edge case handling ensures production robustness. Assertions catch dice_roller bugs early.\n100-iteration tests validate statistical distribution.\n",
-    "detailed_instructions": "Ensure CharacterCreator handles all edge cases from tests.\n\nEnhancements needed (if not already present):\n\n1. Non-numeric input handling:\n- Already implemented in _prompt_int_with_default() try/except ValueError\n\n2. Random generation range validation:\n- Add assertions in _random_hp() and _random_attack()\n- Ensure dice_roller consistently produces [1-6] values\n\nUpdated methods:\n```python\ndef _random_hp(self) -> int:\n    \"\"\"Generate random HP [20-80].\"\"\"\n    total = sum(self._dice_roller.roll() for _ in range(10))\n    hp = 20 + total\n    assert 20 <= hp <= 80, f\"Random HP {hp} outside expected range\"\n    return hp\n\ndef _random_attack(self) -> int:\n    \"\"\"Generate random attack [5-15].\"\"\"\n    total = sum(self._dice_roller.roll() for _ in range(2))\n    attack = 4 + total\n    assert 5 <= attack <= 15, f\"Random attack {attack} outside expected range\"\n    return attack\n```\n\nAdditional unit tests:\n- Test: test_non_numeric_hp_handled()\n- Test: test_random_hp_100_iterations()\n- Test: test_random_attack_100_iterations()\n\nValidation:\n- pytest tests/unit/infrastructure/cli/test_character_creator.py -v\n- pytest tests/e2e/test_cli_combat.py -k \"random\" -v\n- All tests PASS\n",
+    "name": "Implement Random Defaults via Unit TDD (GREEN)",
+    "description": "ATDD GREEN Phase for Test #2",
+    "motivation": "GREEN phase of ATDD cycle. ATDD GREEN Phase for Test #2.",
+    "detailed_instructions": "Follow ATDD discipline:\n\n1. Add unit tests for random HP generation [20-80]\n2. Add unit tests for random attack generation [5-15]\n3. Implement _random_hp() using dice_roller\n4. Implement _random_attack() using dice_roller\n5. Update _prompt_int_with_default() to accept empty input\n6. E2E Test #2 passes",
     "acceptance_criteria": [
-      "Non-numeric input handled gracefully",
-      "Random HP assertions added",
-      "Random attack assertions added",
-      "100-iteration tests validate ranges",
-      "All unit tests pass",
-      "E2E Tests 2.4-2.5 PASS"
+      "Add unit tests for random HP generation [20-80]",
+      "Add unit tests for random attack generation [5-15]",
+      "Implement _random_hp() using dice_roller",
+      "Implement _random_attack() using dice_roller",
+      "Update _prompt_int_with_default() to accept empty input",
+      "E2E Test #2 passes"
     ],
-    "estimated_hours": 1.0
+    "estimated_hours": 1.5
   },
   "dependencies": {
     "requires": [
@@ -44,6 +46,6 @@
     "assigned_to": null,
     "started_at": null,
     "completed_at": null,
-    "updated": "2026-01-10T12:41:07.248054+00:00"
+    "updated": "2026-01-10T17:38:05.323065+00:00"
   }
 }

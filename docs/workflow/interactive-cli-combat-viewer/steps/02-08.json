@@ -1,0 +1,49 @@
+{
+  "task_id": "02-08",
+  "project_id": "interactive-cli-combat-viewer",
+  "execution_agent": "software-crafter",
+  "self_contained_context": {
+    "background": "Part of Phase 2: Interactive Input with Validation. ATDD GREEN Phase for Tests #3-5.\n",
+    "prerequisites_completed": [
+      "02-07"
+    ],
+    "relevant_files": [
+      "modules/infrastructure/cli/character_creator.py (modify)",
+      "tests/unit/infrastructure/cli/test_character_creator.py (modify)",
+      "tests/e2e/test_cli_combat.py (modify)",
+      "tests/e2e/features/cli_combat.feature (modify)"
+    ],
+    "technical_context": "ATDD GREEN Phase for Tests #3-5.\n\nKey activities:\n- Verify all validation tests pass\n- Add unit tests for edge cases if missing\n- Enhance error messages if needed for clarity\n- All E2E Tests #3-5 pass",
+    "tdd_phase": "GREEN",
+    "active_e2e_test": "E2E Tests #3-5: Validation Errors - should PASS when complete",
+    "inactive_e2e_tests": "Tests not yet enabled remain disabled with @skip"
+  },
+  "task_specification": {
+    "name": "Enhance Validation Logic if Needed (GREEN)",
+    "description": "ATDD GREEN Phase for Tests #3-5",
+    "motivation": "GREEN phase of ATDD cycle. ATDD GREEN Phase for Tests #3-5.",
+    "detailed_instructions": "Follow ATDD discipline:\n\n1. Verify all validation tests pass\n2. Add unit tests for edge cases if missing\n3. Enhance error messages if needed for clarity\n4. All E2E Tests #3-5 pass",
+    "acceptance_criteria": [
+      "Verify all validation tests pass",
+      "Add unit tests for edge cases if missing",
+      "Enhance error messages if needed for clarity",
+      "All E2E Tests #3-5 pass"
+    ],
+    "estimated_hours": 0.5
+  },
+  "dependencies": {
+    "requires": [
+      "02-07"
+    ],
+    "blocking": [
+      "02-09"
+    ]
+  },
+  "state": {
+    "status": "TODO",
+    "assigned_to": null,
+    "started_at": null,
+    "completed_at": null,
+    "updated": "2026-01-10T17:38:05.323878+00:00"
+  }
+}
