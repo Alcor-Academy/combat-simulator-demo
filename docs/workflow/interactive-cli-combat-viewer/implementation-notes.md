@@ -41,3 +41,26 @@
 - `1fefd0e` - docs(step-01-01): Complete with review metadata
 
 **Next**: Step 01-02 - Implement CLI entry point (GREEN phase)
+
+---
+
+### ✅ Step 01-02: Create CLI Package Structure - COMPLETED
+
+**Status**: DONE
+**Agent**: software-crafter
+**Review**: APPROVED (2 LOW severity issues, fixed)
+**Refactoring**: No changes needed (code already exceeds Level 2)
+
+**Deliverables**:
+
+- CLI package infrastructure created
+- CLIConfig dataclass with timing constants and test_mode()
+- run_cli() stub implementation
+- Top-level cli.py convenience script
+
+**Commits**:
+
+- `896f221` - feat(cli): Create CLI package structure
+- `b1d8f83` - docs(step-01-02): Complete with review and fixes
+
+**Next**: Step 01-03 - CharacterCreator implementation
