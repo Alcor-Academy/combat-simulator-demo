@@ -1,9 +1,8 @@
 from dataclasses import dataclass, field
-from typing import Dict
 
 
 # Default emoji symbols for combat events
-DEFAULT_EMOJI: Dict[str, str] = {
+DEFAULT_EMOJI: dict[str, str] = {
     "attack": "\u2694\ufe0f",  # Crossed swords
     "damage": "\U0001F4A5",  # Collision/explosion
     "hp": "\u2764\ufe0f",  # Red heart
@@ -16,7 +15,7 @@ DEFAULT_EMOJI: Dict[str, str] = {
 }
 
 # Fallback text symbols for terminals without emoji support
-DEFAULT_FALLBACK: Dict[str, str] = {
+DEFAULT_FALLBACK: dict[str, str] = {
     "attack": "[ATK]",
     "damage": "[DMG]",
     "hp": "[HP]",
@@ -62,8 +61,8 @@ class CLIConfig:
     prompt_for_exit: bool = True
 
     # Emoji configuration
-    emoji: Dict[str, str] = field(default_factory=lambda: DEFAULT_EMOJI.copy())
-    fallback: Dict[str, str] = field(default_factory=lambda: DEFAULT_FALLBACK.copy())
+    emoji: dict[str, str] = field(default_factory=lambda: DEFAULT_EMOJI.copy())
+    fallback: dict[str, str] = field(default_factory=lambda: DEFAULT_FALLBACK.copy())
 
     def get_symbol(self, key: str) -> str:
         """Get emoji or fallback symbol for a combat event.
