@@ -672,22 +672,58 @@ def verify_agility_calculation(cli_context, char_num):
 
 @then("validation error is displayed in red")
 def validation_error_displayed_red(cli_context):
-    """Verify error message displayed with red styling."""
-    assert any("error" in str(output).lower() for output in cli_context.get("output", []))
+    """
+    Verify error message displayed with red styling.
+
+    Checks console output buffer for error messages with red color codes.
+    Rich console uses ANSI escape codes or Rich markup for red text.
+    """
+    output = cli_context.get("output", [])
+    # RED phase: This will fail until ConsoleOutput properly captures errors
+    # Expected: Error messages should contain red color codes or "red" in Rich markup
+    has_error = any("error" in str(o).lower() for o in output)
+    has_red_styling = any("[red]" in str(o) or "\x1b[31m" in str(o) for o in output)
+
+    assert has_error, f"Expected error message in output, got: {output}"
+    assert has_red_styling, f"Expected red styling in error output, got: {output}"
 
 
 @then(parsers.parse('error message contains "{text}"'))
 def error_contains_text(cli_context, text):
-    """Verify error message contains specific text."""
-    error_outputs = [o for o in cli_context.get("output", []) if "error" in str(o).lower()]
-    assert any(text in str(o) for o in error_outputs), f"Expected error containing '{text}', got: {error_outputs}"
+    """
+    Verify error message contains specific text.
+
+    Searches console output for error messages containing expected validation text.
+    """
+    output = cli_context.get("output", [])
+    error_outputs = [o for o in output if "error" in str(o).lower()]
+
+    # RED phase: This will fail until validation errors are properly captured
+    # Expected: Validation error messages should contain specific validation text
+    assert len(error_outputs) > 0, f"Expected error messages in output, got: {output}"
+    assert any(text in str(o) for o in error_outputs), (
+        f"Expected error containing '{text}', got: {error_outputs}"
+    )
 
 
 @then(parsers.parse("I am re-prompted for character {char_num:d} {field}"))
 def reprompted_for_field(cli_context, char_num, field):
-    """Verify re-prompt occurs after validation error."""
-    # Check that prompt state indicates re-prompting
-    assert cli_context.get("reprompt", False) or True  # Placeholder
+    """
+    Verify re-prompt occurs after validation error.
+
+    Checks that the prompt appears multiple times (initial + retry after validation error).
+    """
+    output = cli_context.get("output", [])
+    output_str = " ".join(str(o) for o in output)
+
+    # RED phase: This will fail until re-prompting is properly tracked
+    # Expected: Prompt text should appear at least twice (initial + retry)
+    prompt_text = f"character {char_num} {field}"
+    prompt_count = output_str.lower().count(prompt_text.lower())
+
+    assert prompt_count >= 2, (
+        f"Expected re-prompt for {prompt_text} (should appear 2+ times), found {prompt_count} times in: {output_str}"
+    )
 
 
 @then("character creation continues successfully")
@@ -698,20 +734,58 @@ def character_creation_continues(cli_context):
 
 @then("validation error is displayed")
 def validation_error_displayed(cli_context):
-    """Verify validation error shown."""
-    assert cli_context.get("error_displayed", True)  # Placeholder
+    """
+    Verify validation error shown (without color requirement).
+
+    Checks console output for error messages.
+    """
+    output = cli_context.get("output", [])
+
+    # RED phase: This will fail until error messages are properly captured
+    # Expected: Output should contain error message
+    has_error = any("error" in str(o).lower() for o in output)
+
+    assert has_error, f"Expected error message in output, got: {output}"
 
 
 @then(parsers.parse("I am re-prompted for character {char_num:d} name"))
 def reprompted_for_name(cli_context, char_num):
-    """Verify re-prompt for name field."""
-    assert cli_context.get("reprompt_name", True)  # Placeholder
+    """
+    Verify re-prompt for name field.
+
+    Checks that name prompt appears multiple times after validation error.
+    """
+    output = cli_context.get("output", [])
+    output_str = " ".join(str(o) for o in output)
+
+    # RED phase: This will fail until re-prompting is properly tracked
+    # Expected: Name prompt should appear at least twice
+    prompt_text = f"character {char_num} name"
+    prompt_count = output_str.lower().count(prompt_text.lower())
+
+    assert prompt_count >= 2, (
+        f"Expected re-prompt for {prompt_text} (should appear 2+ times), found {prompt_count} times in: {output_str}"
+    )
 
 
 @then(parsers.parse("I am re-prompted for character {char_num:d} HP"))
 def reprompted_for_hp(cli_context, char_num):
-    """Verify re-prompt for HP field."""
-    assert cli_context.get("reprompt_hp", True)  # Placeholder
+    """
+    Verify re-prompt for HP field.
+
+    Checks that HP prompt appears multiple times after validation error.
+    """
+    output = cli_context.get("output", [])
+    output_str = " ".join(str(o) for o in output)
+
+    # RED phase: This will fail until re-prompting is properly tracked
+    # Expected: HP prompt should appear at least twice
+    prompt_text = f"character {char_num} HP"
+    prompt_count = output_str.lower().count(prompt_text.lower()) or output_str.lower().count("hp")
+
+    assert prompt_count >= 2, (
+        f"Expected re-prompt for HP (should appear 2+ times), found {prompt_count} times in: {output_str}"
+    )
 
 
 @then(parsers.parse("all random HP values are in range [{min_val:d}-{max_val:d}]"))

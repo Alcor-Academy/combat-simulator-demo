@@ -43,7 +43,6 @@ Feature: Interactive CLI Combat Viewer
     And character 1 attack power is randomly generated in range [5-15]
     And character 1 agility is calculated as HP plus attack power
 
-  @skip
   Scenario: Invalid HP input triggers validation error and re-prompt
     When I enter "Hero" for character 1 name
     And I enter "150" for character 1 HP
@@ -53,7 +52,6 @@ Feature: Interactive CLI Combat Viewer
     When I enter "50" for character 1 HP
     Then character creation continues successfully
 
-  @skip
   Scenario: Invalid attack power input triggers validation error
     When I enter "Hero" for character 1 name
     And I enter "50" for character 1 HP
@@ -64,7 +62,6 @@ Feature: Interactive CLI Combat Viewer
     When I enter "10" for character 1 attack power
     Then character creation continues successfully
 
-  @skip
   Scenario: Empty name input triggers validation error
     When I enter "" for character 1 name
     Then validation error is displayed
