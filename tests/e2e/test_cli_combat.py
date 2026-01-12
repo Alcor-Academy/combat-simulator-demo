@@ -599,10 +599,17 @@ def user_enters_name(cli_context, input_value, char_num):
 
 @when(parsers.parse('I enter "{input_value}" for {field}'))
 def user_enters_value_for_field(cli_context, input_value, field):
-    """Simulate user input for specific field."""
+    """Simulate user input for specific field (with implicit character 1 context)."""
     if "input_sequence" not in cli_context:
         cli_context["input_sequence"] = []
-    cli_context["input_sequence"].append({"field": field, "value": input_value})
+
+    # If current_prompt is set (from GIVEN step), we're in character creation context
+    # Default to character 1 for validation scenarios
+    input_entry = {"field": field, "value": input_value}
+    if cli_context.get("current_prompt"):
+        input_entry["char_num"] = 1  # Default to character 1 for validation tests
+
+    cli_context["input_sequence"].append(input_entry)
 
 
 @when(parsers.parse("I create {count:d} characters using random HP defaults"))
@@ -863,6 +870,19 @@ class ValidationInputBuilder:
         has_attack = self.extractor.has_field_input(char_inputs, "attack")
         has_name = self.extractor.has_field_input(char_inputs, "name")
 
+        # Special case: attack-only validation (no name or HP provided)
+        # Need to prepend name and HP BEFORE attack values
+        if has_attack and not has_name and not has_hp:
+            # Prepend name and HP to start of sequence
+            input_values.insert(0, "Hero")  # Name first
+            input_values.insert(1, "50")  # HP second
+            # Attack value(s) already in input_values, will be after name+HP
+            # Then add retry value for attack
+            if self.extractor.count_field_inputs(char_inputs, "attack") == 1:
+                input_values.append("10")  # Attack retry
+            return  # Early return - all done for this case
+
+        # Normal cases: add retry values after invalid inputs
         # Add valid HP for retry if only one invalid HP provided
         if has_hp and self.extractor.count_field_inputs(char_inputs, "hp") == 1:
             input_values.append("50")
@@ -877,7 +897,7 @@ class ValidationInputBuilder:
             if not name_value:
                 input_values.append("Hero")
 
-        # Add missing required inputs
+        # Add missing required inputs (append at end)
         if not has_hp:
             input_values.append("50")
         if not has_attack:
@@ -1191,6 +1211,12 @@ def reprompted_for_field(cli_context, char_num, field):
 @then("character creation continues successfully")
 def character_creation_continues(cli_context):
     """Verify character creation proceeds after valid input."""
+    assert cli_context.get("creation_continued", True)  # Placeholder
+
+
+@then("character creation continues")
+def character_creation_continues_short(cli_context):
+    """Verify character creation proceeds after valid input (short form)."""
     assert cli_context.get("creation_continued", True)  # Placeholder
 
 

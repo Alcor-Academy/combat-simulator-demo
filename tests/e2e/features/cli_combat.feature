@@ -195,7 +195,6 @@ Feature: Interactive CLI Combat Viewer
     Then HP input is accepted
     And character creation continues successfully
 
-  @skip
   Scenario: User recovers from out-of-range attack power input
     Given CLI is prompting for attack power
     When I enter "100" for attack power
