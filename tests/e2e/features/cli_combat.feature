@@ -185,16 +185,15 @@ Feature: Interactive CLI Combat Viewer
   # US-04: Clear Error Recovery
   # ============================================================================
 
-  @skip
   Scenario: User recovers from out-of-range HP input
-    Given CLI is prompting for HP
-    When I enter "999999" for HP
+    When I enter "Hero" for character 1 name
+    And I enter "999999" for character 1 HP
     Then validation error message is displayed
     And error specifies valid HP range [1-999]
     And I am re-prompted for HP
-    When I enter "50" for HP
+    When I enter "50" for character 1 HP
     Then HP input is accepted
-    And character creation continues
+    And character creation continues successfully
 
   @skip
   Scenario: User recovers from out-of-range attack power input
