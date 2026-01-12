@@ -41,18 +41,13 @@ class TestCharacterCreatorIntegration:
         creator = CharacterCreator(console, dice_roller)
 
         # Simulate user inputs for two characters
-        with (
-            patch("rich.prompt.Prompt.ask") as mock_prompt,
-            patch("rich.prompt.IntPrompt.ask") as mock_int_prompt,
-        ):
+        with patch("rich.prompt.Prompt.ask") as mock_prompt:
             # Character 1: Hero with HP 50, Attack 10
-            mock_prompt.return_value = "Hero"
-            mock_int_prompt.side_effect = [50, 10]
+            mock_prompt.side_effect = ["Hero", "50", "10"]
             char1 = creator.create_character(1)
 
             # Character 2: Villain with HP 40, Attack 8
-            mock_prompt.return_value = "Villain"
-            mock_int_prompt.side_effect = [40, 8]
+            mock_prompt.side_effect = ["Villain", "40", "8"]
             char2 = creator.create_character(2)
 
         # Verify both characters created successfully
@@ -79,15 +74,19 @@ class TestCharacterCreatorIntegration:
         creator = CharacterCreator(console, dice_roller)
 
         # Simulate invalid then valid inputs
-        with (
-            patch("rich.prompt.Prompt.ask") as mock_prompt,
-            patch("rich.prompt.IntPrompt.ask") as mock_int_prompt,
-        ):
-            # Empty name, then valid name
-            mock_prompt.side_effect = ["", "  ", "Hero"]
-            # Invalid HP (0), invalid HP (1000), valid HP (50)
-            # Invalid attack (0), invalid attack (100), valid attack (10)
-            mock_int_prompt.side_effect = [0, 1000, 50, 0, 100, 10]
+        with patch("rich.prompt.Prompt.ask") as mock_prompt:
+            # Empty name, then valid name, then HP inputs, then attack inputs
+            mock_prompt.side_effect = [
+                "",      # Invalid name (empty)
+                "  ",    # Invalid name (whitespace)
+                "Hero",  # Valid name
+                "0",     # Invalid HP (too low)
+                "1000",  # Invalid HP (too high)
+                "50",    # Valid HP
+                "0",     # Invalid attack (too low)
+                "100",   # Invalid attack (too high)
+                "10",    # Valid attack
+            ]
 
             char = creator.create_character(1)
 

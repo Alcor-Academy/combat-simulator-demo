@@ -572,6 +572,7 @@ def both_characters_created(cli_context, production_services, mock_console):
 
     CRITICAL: This calls production CharacterCreator.
     Uses real CharacterCreator with mocked Rich prompts for input.
+    Handles both manual input and random defaults (empty string).
     """
     # Create real ConsoleOutput with mock console
     config = CLIConfig.test_mode()
@@ -588,36 +589,32 @@ def both_characters_created(cli_context, production_services, mock_console):
     char1_inputs = [inp for inp in input_seq if inp.get("char_num") == 1]
     char2_inputs = [inp for inp in input_seq if inp.get("char_num") == 2]
 
-    # Extract field values for character 1
-    char1_name = next((inp["value"] for inp in char1_inputs if inp["field"] == "name"), "Hero")
-    char1_hp = int(next((inp["value"] for inp in char1_inputs if "HP" in inp["field"]), "50"))
-    char1_attack = int(next((inp["value"] for inp in char1_inputs if "attack" in inp["field"]), "10"))
+    # Build input sequences (name, HP, attack) - empty string triggers random
+    def extract_inputs(char_inputs):
+        name = next((inp["value"] for inp in char_inputs if inp["field"] == "name"), "Hero")
+        hp_val = next((inp["value"] for inp in char_inputs if "HP" in inp["field"]), "50")
+        attack_val = next((inp["value"] for inp in char_inputs if "attack" in inp["field"]), "10")
+        return [name, hp_val, attack_val]
 
-    # Extract field values for character 2
-    char2_name = next((inp["value"] for inp in char2_inputs if inp["field"] == "name"), "Villain")
-    char2_hp = int(next((inp["value"] for inp in char2_inputs if "HP" in inp["field"]), "40"))
-    char2_attack = int(next((inp["value"] for inp in char2_inputs if "attack" in inp["field"]), "8"))
+    char1_sequence = extract_inputs(char1_inputs)
+    char2_sequence = extract_inputs(char2_inputs) if char2_inputs else ["Villain", "40", "8"]
 
     # Mock Rich prompts to return stored inputs
-    with (
-        patch("rich.prompt.Prompt.ask") as mock_prompt,
-        patch("rich.prompt.IntPrompt.ask") as mock_int_prompt,
-    ):
+    with patch("rich.prompt.Prompt.ask") as mock_prompt:
         # Character 1
-        mock_prompt.return_value = char1_name
-        mock_int_prompt.side_effect = [char1_hp, char1_attack]
+        mock_prompt.side_effect = char1_sequence
         char1 = creator.create_character(1)
 
-        # Character 2
-        mock_prompt.return_value = char2_name
-        mock_int_prompt.side_effect = [char2_hp, char2_attack]
-        char2 = creator.create_character(2)
-
-    # Store created characters in context
-    cli_context["characters"] = [char1, char2]
+        # Character 2 (if inputs exist)
+        if char2_inputs or not cli_context.get("single_character_only", False):
+            mock_prompt.side_effect = char2_sequence
+            char2 = creator.create_character(2)
+            cli_context["characters"] = [char1, char2]
+        else:
+            cli_context["characters"] = [char1]
 
     # Verify characters created
-    assert len(cli_context["characters"]) == 2, "Should have 2 characters"
+    assert len(cli_context["characters"]) >= 1, "Should have at least 1 character"
     assert all(isinstance(c, Character) for c in cli_context["characters"]), "Should be Character objects"
 
 

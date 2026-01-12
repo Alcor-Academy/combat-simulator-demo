@@ -35,3 +35,14 @@ class DiceRoller(Protocol):
             int: Result in range [1, 6] inclusive
         """
         ...
+
+    def roll_range(self, max_value: int) -> int:
+        """Roll a die with custom number of sides and return result.
+
+        Args:
+            max_value: Maximum value (number of sides on the die)
+
+        Returns:
+            int: Result in range [1, max_value] inclusive
+        """
+        ...

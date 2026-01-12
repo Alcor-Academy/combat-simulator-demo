@@ -27,10 +27,7 @@ class TestCharacterCreator:
 
     def test_create_character_with_manual_input(self, creator):
         """Test basic character creation with valid inputs."""
-        with (
-            patch("rich.prompt.Prompt.ask", return_value="Hero"),
-            patch("rich.prompt.IntPrompt.ask", side_effect=[50, 10]),
-        ):
+        with patch("rich.prompt.Prompt.ask", side_effect=["Hero", "50", "10"]):
             char = creator.create_character(1)
 
         assert char.name == "Hero"
@@ -39,10 +36,7 @@ class TestCharacterCreator:
 
     def test_empty_name_triggers_reprompt(self, creator, console):
         """Test that empty name is rejected and user is re-prompted."""
-        with (
-            patch("rich.prompt.Prompt.ask", side_effect=["", "  ", "Hero"]),
-            patch("rich.prompt.IntPrompt.ask", side_effect=[50, 10]),
-        ):
+        with patch("rich.prompt.Prompt.ask", side_effect=["", "  ", "Hero", "50", "10"]):
             char = creator.create_character(1)
 
         assert char.name == "Hero"
@@ -54,10 +48,7 @@ class TestCharacterCreator:
 
     def test_hp_range_validation(self, creator, console):
         """Test HP validation enforces range [1-999]."""
-        with (
-            patch("rich.prompt.Prompt.ask", return_value="Hero"),
-            patch("rich.prompt.IntPrompt.ask", side_effect=[0, 1000, 50, 10]),
-        ):
+        with patch("rich.prompt.Prompt.ask", side_effect=["Hero", "0", "1000", "50", "10"]):
             char = creator.create_character(1)
 
         assert char.hp == 50
@@ -71,10 +62,7 @@ class TestCharacterCreator:
 
     def test_attack_range_validation(self, creator, console):
         """Test attack power validation enforces range [1-99]."""
-        with (
-            patch("rich.prompt.Prompt.ask", return_value="Hero"),
-            patch("rich.prompt.IntPrompt.ask", side_effect=[50, 0, 100, 10]),
-        ):
+        with patch("rich.prompt.Prompt.ask", side_effect=["Hero", "50", "0", "100", "10"]):
             char = creator.create_character(1)
 
         assert char.attack_power == 10
@@ -88,10 +76,7 @@ class TestCharacterCreator:
 
     def test_character_card_displayed(self, creator, console):
         """Test that character confirmation card is displayed."""
-        with (
-            patch("rich.prompt.Prompt.ask", return_value="Hero"),
-            patch("rich.prompt.IntPrompt.ask", side_effect=[50, 10]),
-        ):
+        with patch("rich.prompt.Prompt.ask", side_effect=["Hero", "50", "10"]):
             creator.create_character(1)
 
         # Verify console was used to display card via print_panel
@@ -103,3 +88,41 @@ class TestCharacterCreator:
 
         assert creator._console is console
         assert creator._dice_roller is dice_roller
+
+    def test_random_hp_generates_value_in_valid_range(self, creator, dice_roller):
+        """Test _random_hp() generates HP in range [20-80]."""
+        # Mock dice_roller to return specific value
+        # HP range [20-80] = 61 possible values = 61d1 + 19
+        # Strategy: roll 61 sided die and add 19 → result in [20-80]
+        dice_roller.roll_range.return_value = 35  # Will result in 35+19 = 54
+
+        hp = creator._random_hp()
+
+        assert 20 <= hp <= 80
+        assert hp == 54
+        dice_roller.roll_range.assert_called_once_with(61)
+
+    def test_random_attack_generates_value_in_valid_range(self, creator, dice_roller):
+        """Test _random_attack() generates attack in range [5-15]."""
+        # Attack range [5-15] = 11 possible values = 11d1 + 4
+        # Strategy: roll 11 sided die and add 4 → result in [5-15]
+        dice_roller.roll_range.return_value = 7  # Will result in 7+4 = 11
+
+        attack = creator._random_attack()
+
+        assert 5 <= attack <= 15
+        assert attack == 11
+        dice_roller.roll_range.assert_called_once_with(11)
+
+    def test_empty_input_triggers_random_generation(self, creator, dice_roller):
+        """Test that pressing INVIO (empty input) triggers random HP and attack generation."""
+        dice_roller.roll_range.side_effect = [35, 7]  # HP: 35+19=54, Attack: 7+4=11
+
+        with patch("rich.prompt.Prompt.ask", side_effect=["Hero", "", ""]):  # Name, empty HP, empty attack
+            char = creator.create_character(1)
+
+        assert char.name == "Hero"
+        assert char.hp == 54  # Random HP
+        assert char.attack_power == 11  # Random attack
+        # Verify dice_roller was called for both HP and attack
+        assert dice_roller.roll_range.call_count == 2

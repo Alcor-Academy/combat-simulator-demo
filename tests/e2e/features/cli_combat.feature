@@ -38,7 +38,8 @@ Feature: Interactive CLI Combat Viewer
     When I enter "Hero" for character 1 name
     And I press INVIO for character 1 HP
     And I press INVIO for character 1 attack power
-    Then character 1 HP is randomly generated in range [20-80]
+    Then both characters are created successfully
+    And character 1 HP is randomly generated in range [20-80]
     And character 1 attack power is randomly generated in range [5-15]
     And character 1 agility is calculated as HP plus attack power
 
