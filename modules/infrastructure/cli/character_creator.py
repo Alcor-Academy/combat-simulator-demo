@@ -13,6 +13,15 @@ if TYPE_CHECKING:
     from modules.infrastructure.random_dice_roller import RandomDiceRoller
 
 
+# Business Domain: Health Points Range
+MIN_RANDOM_HEALTH_POINTS = 20
+MAX_RANDOM_HEALTH_POINTS = 80
+
+# Business Domain: Attack Strength Range
+MIN_RANDOM_ATTACK_STRENGTH = 5
+MAX_RANDOM_ATTACK_STRENGTH = 15
+
+
 class CharacterCreator:
     """Handles interactive character creation with validation."""
 
@@ -44,11 +53,15 @@ class CharacterCreator:
             name = Prompt.ask(f"Nome personaggio {num}").strip()
             if name:
                 break
-            self._console.print("❌ Name cannot be empty. Please enter a name.", style="red")
+            self._console.print(
+                "❌ Name cannot be empty. Please enter a name.",
+                style="red",
+            )
 
         # HP input (with validation, allow empty for random)
         while True:
-            hp_input = Prompt.ask("HP [1-999] (INVIO per random [20-80])", default="")
+            hp_prompt = f"HP [1-999] (INVIO per random [{MIN_RANDOM_HEALTH_POINTS}-{MAX_RANDOM_HEALTH_POINTS}])"
+            hp_input = Prompt.ask(hp_prompt, default="")
             if hp_input == "":
                 # Empty input → random HP
                 hp = self._random_hp()
@@ -64,7 +77,12 @@ class CharacterCreator:
 
         # Attack input (with validation, allow empty for random)
         while True:
-            attack_input = Prompt.ask("Potere d'attacco [1-99] (INVIO per random [5-15])", default="")
+            attack_prompt = (
+                f"Potere d'attacco [1-99] (INVIO per random "
+                f"[{MIN_RANDOM_ATTACK_STRENGTH}-"
+                f"{MAX_RANDOM_ATTACK_STRENGTH}])"
+            )
+            attack_input = Prompt.ask(attack_prompt, default="")
             if attack_input == "":
                 # Empty input → random attack
                 attack = self._random_attack()
@@ -74,7 +92,10 @@ class CharacterCreator:
                 attack = int(attack_input)
                 if 1 <= attack <= 99:
                     break
-                self._console.print("❌ Attack power must be between 1 and 99.", style="red")
+                self._console.print(
+                    "❌ Attack power must be between 1 and 99.",
+                    style="red",
+                )
             except ValueError:
                 self._console.print("❌ Attack power must be a whole number.", style="red")
 
@@ -88,29 +109,31 @@ class CharacterCreator:
 
     def _random_hp(self) -> int:
         """
-        Generate random HP in range [20-80].
+        Generate random health points within business-defined range.
 
         Uses dice_roller to generate random value.
-        Range: [20-80] = 61 possible values
-        Implementation: roll_range(61) returns [1-61], add 19 to get [20-80]
+        Range: [MIN_RANDOM_HEALTH_POINTS-MAX_RANDOM_HEALTH_POINTS]
+        Implementation: roll_range(range_size) + offset
 
         Returns:
-            Random HP value in range [20-80]
+            Random HP value in business-defined range
         """
-        return self._dice_roller.roll_range(61) + 19
+        range_size = MAX_RANDOM_HEALTH_POINTS - MIN_RANDOM_HEALTH_POINTS + 1
+        return self._dice_roller.roll_range(range_size) + (MIN_RANDOM_HEALTH_POINTS - 1)
 
     def _random_attack(self) -> int:
         """
-        Generate random attack power in range [5-15].
+        Generate random attack strength within business-defined range.
 
         Uses dice_roller to generate random value.
-        Range: [5-15] = 11 possible values
-        Implementation: roll_range(11) returns [1-11], add 4 to get [5-15]
+        Range: [MIN_RANDOM_ATTACK_STRENGTH-MAX_RANDOM_ATTACK_STRENGTH]
+        Implementation: roll_range(range_size) + offset
 
         Returns:
-            Random attack power in range [5-15]
+            Random attack power in business-defined range
         """
-        return self._dice_roller.roll_range(11) + 4
+        range_size = MAX_RANDOM_ATTACK_STRENGTH - MIN_RANDOM_ATTACK_STRENGTH + 1
+        return self._dice_roller.roll_range(range_size) + (MIN_RANDOM_ATTACK_STRENGTH - 1)
 
     def _display_character_card(self, char: Character) -> None:
         """
