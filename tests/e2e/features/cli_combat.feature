@@ -137,7 +137,6 @@ Feature: Interactive CLI Combat Viewer
     And winner final HP is displayed
     And loser final HP shows 0 HP
 
-  @skip
   Scenario: Extended combat displays all rounds with consistent formatting
     Given two balanced characters are created
     When combat runs for 7 rounds
@@ -146,7 +145,6 @@ Feature: Interactive CLI Combat Viewer
     And no output is truncated or skipped
     And all combat events are shown in full detail
 
-  @skip
   Scenario: Defender death prevents counter-attack display
     Given two characters are created: Hero (HP 50, attack 10) and Villain (HP 5, attack 8)
     And combat will result in lethal damage to Villain in round 1
@@ -157,7 +155,6 @@ Feature: Interactive CLI Combat Viewer
     And Villain counter-attack is NOT displayed
     And combat ends after attacker action
 
-  @skip
   Scenario: Initiative tie-breaker is transparently explained
     Given two characters with identical agility values
     When initiative is rolled with identical dice results

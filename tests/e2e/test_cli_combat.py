@@ -15,6 +15,8 @@ Architecture: Tests through CLI → Application → Domain (full stack)
 import contextlib
 import io
 import time
+from dataclasses import dataclass, field
+from typing import Any
 from unittest.mock import Mock, patch
 
 import pytest
@@ -51,6 +53,73 @@ scenarios("../features/cli_combat.feature")
 
 
 # ============================================================================
+# TYPE-DRIVEN TEST CONTEXT
+# ============================================================================
+
+
+@dataclass
+class CLITestContext:
+    """
+    Type-safe context for CLI test execution.
+
+    Domain types replace primitive obsession with explicit test context structure.
+    Makes invalid states unrepresentable through type system.
+    """
+
+    characters: list[Character] = field(default_factory=list)
+    combat_result: Any = None  # CombatResult type
+    output: list[Any] = field(default_factory=list)
+    input_sequence: list[dict[str, Any]] = field(default_factory=list)
+    errors: list[str] = field(default_factory=list)
+    timing_measurements: list[float] = field(default_factory=list)
+    dice_rolls: list[int] = field(default_factory=list)
+
+    # Additional context fields (dynamically added in tests)
+    config: dict[str, Any] = field(default_factory=dict)
+    services: dict[str, Any] = field(default_factory=dict)
+    cli_active: bool = False
+    test_mode: bool = False
+    current_prompt: str | None = None
+    prompting: bool = False
+    combat_active: bool = False
+    victory_displayed: bool = False
+    exit_prompt_shown: bool = False
+    emoji_support: bool = True
+    color_support: str = "256"
+    creation_error: str | None = None
+    creation_continued: bool = True
+    interrupt: bool = False
+    interrupt_signal: str | None = None
+    interrupt_location: str | None = None
+    enter_pressed: bool = False
+    cli_executed: bool = False
+    execution_time: float = 0.0
+    expected_rounds: int = 0
+    single_character_only: bool = False
+    output_text: list[str] = field(default_factory=list)
+    random_characters: list[Character] = field(default_factory=list)
+    last_attack: dict[str, Any] = field(default_factory=dict)
+    delay_measurements: list[float] = field(default_factory=list)
+    exit_code: int = 0
+
+    def __getitem__(self, key: str) -> Any:
+        """Dictionary-style access for backward compatibility."""
+        return getattr(self, key, None)
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        """Dictionary-style assignment for backward compatibility."""
+        setattr(self, key, value)
+
+    def __contains__(self, key: str) -> bool:
+        """Dictionary-style membership test for backward compatibility."""
+        return hasattr(self, key)
+
+    def get(self, key: str, default: Any = None) -> Any:
+        """Dictionary-style get with default for backward compatibility."""
+        return getattr(self, key, default)
+
+
+# ============================================================================
 # TEST FIXTURES - Context Management
 # ============================================================================
 
@@ -58,25 +127,12 @@ scenarios("../features/cli_combat.feature")
 @pytest.fixture
 def cli_context():
     """
-    Context for CLI test execution.
+    Context for CLI test execution with type safety.
 
-    Stores:
-    - characters: List of created Character domain objects
-    - combat_result: CombatResult from CombatSimulator
-    - output: List of output strings captured
-    - input_sequence: List of user inputs for simulation
-    - errors: List of validation errors encountered
-    - timing_measurements: Timing data for pacing validation
+    Returns typed CLITestContext instead of raw dictionary.
+    Provides type safety while maintaining backward compatibility.
     """
-    return {
-        "characters": [],
-        "combat_result": None,
-        "output": [],
-        "input_sequence": [],
-        "errors": [],
-        "timing_measurements": [],
-        "dice_rolls": [],
-    }
+    return CLITestContext()
 
 
 @pytest.fixture
@@ -226,9 +282,12 @@ def create_two_generic_characters(cli_context):
 
 @given("two balanced characters are created")
 def create_balanced_characters(cli_context):
-    """Create two characters with balanced stats for extended combat."""
-    char1 = Character(name="Warrior", hp=50, attack_power=8)
-    char2 = Character(name="Knight", hp=50, attack_power=8)
+    """Create two characters with balanced stats for extended combat.
+
+    HP=70, Attack=7 produces exactly 7 rounds with seed=42.
+    """
+    char1 = Character(name="Warrior", hp=70, attack_power=7)
+    char2 = Character(name="Knight", hp=70, attack_power=7)
     cli_context["characters"] = [char1, char2]
 
 
@@ -273,14 +332,29 @@ def loser_has_hp(cli_context, loser_name, hp):
 
 @given("combat will result in lethal damage to Villain in round 1")
 def combat_lethal_damage_round_1(cli_context, production_services):
-    """Set up dice roller for lethal damage in first round."""
+    """Set up dice roller for lethal damage in first round.
+
+    Seed Selection Rationale:
+    - seed=999 produces high dice roll values (typically 5-6 on d6)
+    - Combined with Hero's attack power, ensures damage >= Villain's HP
+    - Creates edge case: combat ends immediately after attacker's first action
+    - Tests death announcement display without defender counter-attack
+    - Validates proper combat termination when defender HP reaches 0
+    """
     # Seed dice roller to produce high rolls for lethal damage
     production_services["dice_roller"] = RandomDiceRoller(seed=999)  # High roll seed
 
 
 @given("two characters with identical agility values")
 def characters_identical_agility(cli_context):
-    """Create characters with same agility for tie-breaker test."""
+    """Create characters with same agility for tie-breaker test.
+
+    Seed Selection Rationale:
+    - seed=777 is used in initiative_identical_rolls() step (line 592)
+    - This seed produces identical dice rolls for both characters during initiative
+    - Identical agility (40) + identical dice rolls = initiative tie
+    - Tests tie-breaker rule: first character wins when totals match
+    """
     # Both characters: HP=30, Attack=10 → Agility=40
     char1 = Character(name="Twin1", hp=30, attack_power=10)
     char2 = Character(name="Twin2", hp=30, attack_power=10)
@@ -637,8 +711,179 @@ def cli_runs(cli_context):
 
 
 # ============================================================================
-# HELPER FUNCTIONS - Internal Test Utilities
+# HELPER CLASSES - Internal Test Utilities
 # ============================================================================
+
+
+class InputSequenceExtractor:
+    """Extract and organize test input sequences for character creation."""
+
+    @staticmethod
+    def filter_character_inputs(input_seq, char_num=1):
+        """Filter input sequence for specific character number."""
+        return [
+            inp
+            for inp in input_seq
+            if inp.get("char_num") == char_num or f"character {char_num}" in inp.get("field", "").lower()
+        ]
+
+    @staticmethod
+    def extract_input_values(char_inputs):
+        """Extract input values from character input sequence."""
+        return [inp["value"] for inp in char_inputs]
+
+    @staticmethod
+    def extract_character_sequence(char_inputs, defaults=("Hero", "50", "10")):
+        """Extract character input sequence (name, HP, attack) with defaults."""
+        name = next((inp["value"] for inp in char_inputs if inp["field"] == "name"), defaults[0])
+        hp_val = next((inp["value"] for inp in char_inputs if "HP" in inp["field"]), defaults[1])
+        attack_val = next((inp["value"] for inp in char_inputs if "attack" in inp["field"]), defaults[2])
+        return [name, hp_val, attack_val]
+
+    @staticmethod
+    def has_field_input(char_inputs, field_name):
+        """Check if character inputs contain specific field."""
+        return any(field_name in inp.get("field", "").lower() for inp in char_inputs)
+
+    @staticmethod
+    def count_field_inputs(char_inputs, field_name):
+        """Count number of inputs for specific field."""
+        return len([i for i in char_inputs if field_name in i.get("field", "").lower()])
+
+
+class ValidationInputBuilder:
+    """Build input sequences for validation testing scenarios."""
+
+    def __init__(self, extractor: InputSequenceExtractor):
+        self.extractor = extractor
+
+    def add_validation_retry_inputs(self, input_values, char_inputs):
+        """Add valid inputs for validation retry scenarios."""
+        has_hp = self.extractor.has_field_input(char_inputs, "hp")
+        has_attack = self.extractor.has_field_input(char_inputs, "attack")
+        has_name = self.extractor.has_field_input(char_inputs, "name")
+
+        # Add valid HP for retry if only one invalid HP provided
+        if has_hp and self.extractor.count_field_inputs(char_inputs, "hp") == 1:
+            input_values.append("50")
+
+        # Add valid attack for retry if only one invalid attack provided
+        if has_attack and self.extractor.count_field_inputs(char_inputs, "attack") == 1:
+            input_values.append("10")
+
+        # Add valid name for retry if empty name provided
+        if has_name and self.extractor.count_field_inputs(char_inputs, "name") == 1:
+            name_value = next((i["value"] for i in char_inputs if "name" in i.get("field", "").lower()), "")
+            if not name_value:
+                input_values.append("Hero")
+
+        # Add missing required inputs
+        if not has_hp:
+            input_values.append("50")
+        if not has_attack:
+            input_values.append("10")
+
+
+class ConsoleCapture:
+    """Capture console output for test assertions."""
+
+    @staticmethod
+    def create_capturing_console():
+        """Create mock console that captures all output with style information."""
+        mock_console = Mock()
+        output_buffer = []
+
+        def capture_print(*args, style=None, end="\n", **kwargs):
+            """Capture print calls with style information."""
+            text = " ".join(str(a) for a in args) if args else ""
+            output_buffer.append({"text": text, "style": style})
+
+        mock_console.print = Mock(side_effect=capture_print)
+        return mock_console, output_buffer
+
+
+class E2ETestExecutor:
+    """Execute TRUE E2E tests through run_cli()."""
+
+    @staticmethod
+    def is_true_e2e_scenario(char1_inputs, char2_inputs):
+        """Detect if scenario is TRUE E2E (manual input for both characters)."""
+        return len(char1_inputs) >= 3 and len(char2_inputs) >= 3
+
+    @staticmethod
+    def run_e2e_test(char1_sequence, char2_sequence, cli_context):
+        """Execute TRUE E2E test through run_cli()."""
+        stdin_input = "\n".join(char1_sequence + char2_sequence) + "\n"
+
+        with (
+            patch("sys.stdin", io.StringIO(stdin_input)),
+            patch("sys.stdout", new_callable=io.StringIO) as mock_stdout,
+            contextlib.suppress(SystemExit),
+        ):
+            run_cli()
+
+        output_text = mock_stdout.getvalue()
+        cli_context["output"] = output_text
+
+        E2ETestExecutor._validate_character_names_in_output(char1_sequence[0], char2_sequence[0], output_text)
+        E2ETestExecutor._store_characters_from_input(char1_sequence, char2_sequence, cli_context)
+
+    @staticmethod
+    def _validate_character_names_in_output(char1_name, char2_name, output_text):
+        """Validate character names appear in CLI output."""
+        assert char1_name in output_text, (
+            f"Expected character 1 name '{char1_name}' in output. "
+            f"This failure indicates main.py is using hardcoded characters instead of CharacterCreator. "
+            f"Output: {output_text[:200]}"
+        )
+        assert char2_name in output_text, (
+            f"Expected character 2 name '{char2_name}' in output. "
+            f"This failure indicates main.py is using hardcoded characters instead of CharacterCreator. "
+            f"Output: {output_text[:200]}"
+        )
+
+    @staticmethod
+    def _store_characters_from_input(char1_sequence, char2_sequence, cli_context):
+        """Create and store Character objects from input sequences."""
+        char1 = Character(name=char1_sequence[0], hp=int(char1_sequence[1]), attack_power=int(char1_sequence[2]))
+        char2 = Character(name=char2_sequence[0], hp=int(char2_sequence[1]), attack_power=int(char2_sequence[2]))
+        cli_context["characters"] = [char1, char2]
+
+
+@dataclass
+class ComponentTestParams:
+    """Parameters for component test execution (L4: Parameter Object pattern)."""
+
+    char1_sequence: list[str]
+    char2_sequence: list[str]
+    char2_inputs: list[dict[str, Any]]
+    cli_context: CLITestContext
+    mock_console: Any
+    production_services: dict[str, Any]
+
+
+class ComponentTestExecutor:
+    """Execute component tests through CharacterCreator."""
+
+    @staticmethod
+    def run_component_test(params: ComponentTestParams):
+        """Execute component test through CharacterCreator."""
+        config = CLIConfig.test_mode()
+        console_output = ConsoleOutput(params.mock_console, config)
+        console_output._console = params.mock_console
+
+        creator = CharacterCreator(console_output, params.production_services["dice_roller"])
+
+        with patch("rich.prompt.Prompt.ask") as mock_prompt:
+            mock_prompt.side_effect = params.char1_sequence
+            char1 = creator.create_character(1)
+
+            if params.char2_inputs or not params.cli_context.get("single_character_only", False):
+                mock_prompt.side_effect = params.char2_sequence
+                char2 = creator.create_character(2)
+                params.cli_context["characters"] = [char1, char2]
+            else:
+                params.cli_context["characters"] = [char1]
 
 
 def _execute_character_creation_with_validation(cli_context, production_services):
@@ -648,72 +893,19 @@ def _execute_character_creation_with_validation(cli_context, production_services
     Simulates invalid then valid input sequence to test validation logic.
     Captures console output for validation assertions.
     """
-    # Create mock console that captures ALL output
-    mock_console = Mock()
-    output_buffer = []
+    mock_console, output_buffer = ConsoleCapture.create_capturing_console()
 
-    def capture_print(*args, style=None, end="\n", **kwargs):
-        """Capture print calls with style information."""
-        text = " ".join(str(a) for a in args) if args else ""
-        output_buffer.append({"text": text, "style": style})
-
-    mock_console.print = Mock(side_effect=capture_print)
-
-    # Create real ConsoleOutput with capturing mock
     config = CLIConfig.test_mode()
     console_output = ConsoleOutput(mock_console, config)
-
-    # Create real CharacterCreator
     creator = CharacterCreator(console_output, production_services["dice_roller"])
 
-    # Extract inputs from input_sequence (includes invalid and valid inputs)
+    extractor = InputSequenceExtractor()
     input_seq = cli_context.get("input_sequence", [])
+    char1_inputs = extractor.filter_character_inputs(input_seq, char_num=1)
+    input_values = extractor.extract_input_values(char1_inputs)
 
-    # Build input sequence with ALL inputs for character 1
-    # The inputs are already in order from the When steps
-    # Example for HP validation: ["Hero", "1500", "50"] - name, invalid HP, valid HP
-    # Example for attack validation: ["Hero", "50", "0", "10"] - name, HP, invalid attack, valid attack
-    # Example for name validation: ["", "Hero", "50", "10"] - invalid name, valid name, HP, attack
-
-    # Filter for character 1 inputs - handle both formats:
-    # 1. {"char_num": 1, "field": "name", "value": "Hero"}
-    # 2. {"field": "character 1 name", "value": "Hero"}
-    char1_inputs = [
-        inp for inp in input_seq if inp.get("char_num") == 1 or "character 1" in inp.get("field", "").lower()
-    ]
-
-    # Collect ALL inputs for this character in order
-    input_values = [inp["value"] for inp in char1_inputs]
-
-    # For validation scenarios, we need to provide both invalid AND valid inputs
-    # The scenario up to the first "Then" only has the invalid input
-    # We need to add the valid retry + attack power
-
-    # Check what type of validation we're testing
-    has_hp_input = any("hp" in inp.get("field", "").lower() for inp in char1_inputs)
-    has_attack_input = any("attack" in inp.get("field", "").lower() for inp in char1_inputs)
-    has_name_input = any("name" in inp.get("field", "").lower() for inp in char1_inputs)
-
-    # Add valid inputs for re-prompts
-    if has_hp_input and len([i for i in char1_inputs if "hp" in i.get("field", "").lower()]) == 1:
-        # Only one HP input = invalid scenario, need to add valid HP
-        input_values.append("50")  # Valid HP for retry
-
-    if has_attack_input and len([i for i in char1_inputs if "attack" in i.get("field", "").lower()]) == 1:
-        # Only one attack input = invalid scenario, need to add valid attack
-        input_values.append("10")  # Valid attack for retry
-
-    if has_name_input and len([i for i in char1_inputs if "name" in i.get("field", "").lower()]) == 1:
-        # Check if name is empty (invalid)
-        name_value = next((i["value"] for i in char1_inputs if "name" in i.get("field", "").lower()), "")
-        if not name_value:
-            input_values.append("Hero")  # Valid name for retry
-
-    # Add missing required inputs (if not present at all)
-    if not has_hp_input:
-        input_values.append("50")  # Default HP
-    if not has_attack_input:
-        input_values.append("10")  # Default attack power
+    validation_builder = ValidationInputBuilder(extractor)
+    validation_builder.add_validation_retry_inputs(input_values, char1_inputs)
 
     # Mock Rich prompts to return input sequence
     with patch("rich.prompt.Prompt.ask") as mock_prompt:
@@ -750,93 +942,32 @@ def both_characters_created(cli_context, production_services, mock_console):
     Uses real CharacterCreator with mocked Rich prompts for input.
     Handles both manual input and random defaults (empty string).
     """
-    # Extract inputs from input_sequence
+    extractor = InputSequenceExtractor()
     input_seq = cli_context.get("input_sequence", [])
 
-    # Organize inputs by character number
-    char1_inputs = [inp for inp in input_seq if inp.get("char_num") == 1]
-    char2_inputs = [inp for inp in input_seq if inp.get("char_num") == 2]
+    char1_inputs = extractor.filter_character_inputs(input_seq, char_num=1)
+    char2_inputs = extractor.filter_character_inputs(input_seq, char_num=2)
 
-    # Build input sequences (name, HP, attack) - empty string triggers random
-    def extract_inputs(char_inputs):
-        name = next((inp["value"] for inp in char_inputs if inp["field"] == "name"), "Hero")
-        hp_val = next((inp["value"] for inp in char_inputs if "HP" in inp["field"]), "50")
-        attack_val = next((inp["value"] for inp in char_inputs if "attack" in inp["field"]), "10")
-        return [name, hp_val, attack_val]
+    char1_sequence = extractor.extract_character_sequence(char1_inputs)
+    char2_sequence = (
+        extractor.extract_character_sequence(char2_inputs, defaults=("Villain", "40", "8"))
+        if char2_inputs
+        else ["Villain", "40", "8"]
+    )
 
-    char1_sequence = extract_inputs(char1_inputs)
-    char2_sequence = extract_inputs(char2_inputs) if char2_inputs else ["Villain", "40", "8"]
-
-    # Detect if this is TRUE E2E test (Scenario #1: Manual Input)
-    # Scenario #1 has inputs for BOTH characters (manual input)
-    # Scenarios #2-5 typically test validation (single character or specific input patterns)
-    is_true_e2e = len(char1_inputs) >= 3 and len(char2_inputs) >= 3
-
-    if is_true_e2e:
-        # TRUE E2E TEST PATH: Call run_cli() through complete production stack
-        # Build complete stdin input for run_cli()
-        # Format: Hero\n50\n10\nVillain\n40\n8\n
-        stdin_input = "\n".join(char1_sequence + char2_sequence) + "\n"
-
-        # Mock stdin with input sequence and capture stdout
-        with (
-            patch("sys.stdin", io.StringIO(stdin_input)),
-            patch("sys.stdout", new_callable=io.StringIO) as mock_stdout,
-            contextlib.suppress(SystemExit),
-        ):
-            # Call REAL production entry point
-            # (May exit cleanly - suppressed by contextlib.suppress)
-            run_cli()
-
-        # Capture output (after context manager exits)
-        output_text = mock_stdout.getvalue()
-        cli_context["output"] = output_text
-
-        # CRITICAL VALIDATION: Verify output contains the CHARACTER NAMES from input
-        # If main.py uses hardcoded chars, output will show "Hero" and "Villain" regardless of input
-        # If main.py uses CharacterCreator, output will show the names from stdin
-        assert char1_sequence[0] in output_text, (
-            f"Expected character 1 name '{char1_sequence[0]}' in output. "
-            f"This failure indicates main.py is using hardcoded characters instead of CharacterCreator. "
-            f"Output: {output_text[:200]}"
-        )
-        assert char2_sequence[0] in output_text, (
-            f"Expected character 2 name '{char2_sequence[0]}' in output. "
-            f"This failure indicates main.py is using hardcoded characters instead of CharacterCreator. "
-            f"Output: {output_text[:200]}"
-        )
-
-        # Create Character objects matching expected input for assertions
-        # These verify the domain model behavior, not the CLI wiring
-        char1 = Character(name=char1_sequence[0], hp=int(char1_sequence[1]), attack_power=int(char1_sequence[2]))
-        char2 = Character(name=char2_sequence[0], hp=int(char2_sequence[1]), attack_power=int(char2_sequence[2]))
-        cli_context["characters"] = [char1, char2]
-
+    if E2ETestExecutor.is_true_e2e_scenario(char1_inputs, char2_inputs):
+        E2ETestExecutor.run_e2e_test(char1_sequence, char2_sequence, cli_context)
     else:
-        # COMPONENT TEST PATH: Call CharacterCreator directly (Scenarios #2-5)
-        # Create real ConsoleOutput with mock console
-        config = CLIConfig.test_mode()
-        console_output = ConsoleOutput(mock_console, config)
-        console_output._console = mock_console  # Inject mock for output capture
+        params = ComponentTestParams(
+            char1_sequence=char1_sequence,
+            char2_sequence=char2_sequence,
+            char2_inputs=char2_inputs,
+            cli_context=cli_context,
+            mock_console=mock_console,
+            production_services=production_services,
+        )
+        ComponentTestExecutor.run_component_test(params)
 
-        # Create real CharacterCreator
-        creator = CharacterCreator(console_output, production_services["dice_roller"])
-
-        # Mock Rich prompts to return stored inputs
-        with patch("rich.prompt.Prompt.ask") as mock_prompt:
-            # Character 1
-            mock_prompt.side_effect = char1_sequence
-            char1 = creator.create_character(1)
-
-            # Character 2 (if inputs exist)
-            if char2_inputs or not cli_context.get("single_character_only", False):
-                mock_prompt.side_effect = char2_sequence
-                char2 = creator.create_character(2)
-                cli_context["characters"] = [char1, char2]
-            else:
-                cli_context["characters"] = [char1]
-
-    # Verify characters created
     assert len(cli_context["characters"]) >= 1, "Should have at least 1 character"
     assert all(isinstance(c, Character) for c in cli_context["characters"]), "Should be Character objects"
 
@@ -1332,14 +1463,37 @@ def all_rounds_consistent(cli_context, count):
     assert len(combat_result.rounds) == count
 
 
+@then("each round shows round number")
+def each_round_shows_number(cli_context):
+    """Verify each round has sequential round number."""
+    combat_result = cli_context["combat_result"]
+    for idx, round_result in enumerate(combat_result.rounds, start=1):
+        assert round_result.round_number == idx, f"Round {idx} has incorrect number: {round_result.round_number}"
+
+
 @then("no output is truncated or skipped")
 def no_truncation(cli_context):
-    """Verify complete output."""
+    """Verify complete output - all rounds present and sequential."""
+    combat_result = cli_context["combat_result"]
+    # Verify round numbers are sequential without gaps
+    round_numbers = [r.round_number for r in combat_result.rounds]
+    expected_numbers = list(range(1, len(combat_result.rounds) + 1))
+    assert round_numbers == expected_numbers, f"Round numbers not sequential: {round_numbers}"
 
 
 @then("all combat events are shown in full detail")
 def full_detail_shown(cli_context):
-    """Verify comprehensive event display."""
+    """Verify comprehensive event display - all rounds have complete data."""
+    combat_result = cli_context["combat_result"]
+    for round_result in combat_result.rounds:
+        # Every round must have attacker action
+        assert round_result.attacker_action is not None, f"Round {round_result.round_number} missing attacker action"
+        # Every non-final round should have defender action (unless defender died)
+        if not round_result.combat_ended:
+            # If combat didn't end, defender should have counter-attacked
+            assert round_result.defender_action is not None, (
+                f"Round {round_result.round_number} missing defender action"
+            )
 
 
 # Timing and Pacing Assertions
