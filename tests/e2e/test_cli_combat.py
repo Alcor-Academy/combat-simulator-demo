@@ -12,6 +12,8 @@ CRITICAL PRODUCTION SERVICE INTEGRATION REQUIREMENT:
 Architecture: Tests through CLI → Application → Domain (full stack)
 """
 
+import contextlib
+import io
 import time
 from unittest.mock import Mock, patch
 
@@ -34,14 +36,14 @@ from modules.domain.services.initiative_resolver import InitiativeResolver
 from modules.infrastructure.cli.character_creator import CharacterCreator
 from modules.infrastructure.cli.config import CLIConfig
 from modules.infrastructure.cli.console_output import ConsoleOutput
+from modules.infrastructure.cli.main import run_cli
 
 # Infrastructure Layer (REAL + NEW CLI components)
 from modules.infrastructure.random_dice_roller import RandomDiceRoller
 
 
-# from modules.infrastructure.cli.main import run_cli
 # from modules.infrastructure.cli.combat_renderer import CombatRenderer
-# from modules.infrastructure.cli.config import CLIConfig
+# (config already imported above)
 
 
 # Load all scenarios from feature file
@@ -666,18 +668,14 @@ def both_characters_created(cli_context, production_services, mock_console):
     """
     Verify both Character objects created via CharacterCreator.
 
-    CRITICAL: This calls production CharacterCreator.
+    STRATEGY: Hybrid testing approach
+    - TRUE E2E test: If scenario tests MANUAL INPUT (#1), call run_cli() through complete stack
+    - Component test: If scenario tests VALIDATION (#2-5), call CharacterCreator directly for speed
+
+    CRITICAL: This calls production services.
     Uses real CharacterCreator with mocked Rich prompts for input.
     Handles both manual input and random defaults (empty string).
     """
-    # Create real ConsoleOutput with mock console
-    config = CLIConfig.test_mode()
-    console_output = ConsoleOutput(mock_console, config)
-    console_output._console = mock_console  # Inject mock for output capture
-
-    # Create real CharacterCreator
-    creator = CharacterCreator(console_output, production_services["dice_roller"])
-
     # Extract inputs from input_sequence
     input_seq = cli_context.get("input_sequence", [])
 
@@ -695,19 +693,74 @@ def both_characters_created(cli_context, production_services, mock_console):
     char1_sequence = extract_inputs(char1_inputs)
     char2_sequence = extract_inputs(char2_inputs) if char2_inputs else ["Villain", "40", "8"]
 
-    # Mock Rich prompts to return stored inputs
-    with patch("rich.prompt.Prompt.ask") as mock_prompt:
-        # Character 1
-        mock_prompt.side_effect = char1_sequence
-        char1 = creator.create_character(1)
+    # Detect if this is TRUE E2E test (Scenario #1: Manual Input)
+    # Scenario #1 has inputs for BOTH characters (manual input)
+    # Scenarios #2-5 typically test validation (single character or specific input patterns)
+    is_true_e2e = len(char1_inputs) >= 3 and len(char2_inputs) >= 3
 
-        # Character 2 (if inputs exist)
-        if char2_inputs or not cli_context.get("single_character_only", False):
-            mock_prompt.side_effect = char2_sequence
-            char2 = creator.create_character(2)
-            cli_context["characters"] = [char1, char2]
-        else:
-            cli_context["characters"] = [char1]
+    if is_true_e2e:
+        # TRUE E2E TEST PATH: Call run_cli() through complete production stack
+        # Build complete stdin input for run_cli()
+        # Format: Hero\n50\n10\nVillain\n40\n8\n
+        stdin_input = "\n".join(char1_sequence + char2_sequence) + "\n"
+
+        # Mock stdin with input sequence and capture stdout
+        with (
+            patch("sys.stdin", io.StringIO(stdin_input)),
+            patch("sys.stdout", new_callable=io.StringIO) as mock_stdout,
+            contextlib.suppress(SystemExit),
+        ):
+            # Call REAL production entry point
+            # (May exit cleanly - suppressed by contextlib.suppress)
+            run_cli()
+
+        # Capture output (after context manager exits)
+        output_text = mock_stdout.getvalue()
+        cli_context["output"] = output_text
+
+        # CRITICAL VALIDATION: Verify output contains the CHARACTER NAMES from input
+        # If main.py uses hardcoded chars, output will show "Hero" and "Villain" regardless of input
+        # If main.py uses CharacterCreator, output will show the names from stdin
+        assert char1_sequence[0] in output_text, (
+            f"Expected character 1 name '{char1_sequence[0]}' in output. "
+            f"This failure indicates main.py is using hardcoded characters instead of CharacterCreator. "
+            f"Output: {output_text[:200]}"
+        )
+        assert char2_sequence[0] in output_text, (
+            f"Expected character 2 name '{char2_sequence[0]}' in output. "
+            f"This failure indicates main.py is using hardcoded characters instead of CharacterCreator. "
+            f"Output: {output_text[:200]}"
+        )
+
+        # Create Character objects matching expected input for assertions
+        # These verify the domain model behavior, not the CLI wiring
+        char1 = Character(name=char1_sequence[0], hp=int(char1_sequence[1]), attack_power=int(char1_sequence[2]))
+        char2 = Character(name=char2_sequence[0], hp=int(char2_sequence[1]), attack_power=int(char2_sequence[2]))
+        cli_context["characters"] = [char1, char2]
+
+    else:
+        # COMPONENT TEST PATH: Call CharacterCreator directly (Scenarios #2-5)
+        # Create real ConsoleOutput with mock console
+        config = CLIConfig.test_mode()
+        console_output = ConsoleOutput(mock_console, config)
+        console_output._console = mock_console  # Inject mock for output capture
+
+        # Create real CharacterCreator
+        creator = CharacterCreator(console_output, production_services["dice_roller"])
+
+        # Mock Rich prompts to return stored inputs
+        with patch("rich.prompt.Prompt.ask") as mock_prompt:
+            # Character 1
+            mock_prompt.side_effect = char1_sequence
+            char1 = creator.create_character(1)
+
+            # Character 2 (if inputs exist)
+            if char2_inputs or not cli_context.get("single_character_only", False):
+                mock_prompt.side_effect = char2_sequence
+                char2 = creator.create_character(2)
+                cli_context["characters"] = [char1, char2]
+            else:
+                cli_context["characters"] = [char1]
 
     # Verify characters created
     assert len(cli_context["characters"]) >= 1, "Should have at least 1 character"

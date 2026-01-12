@@ -5,7 +5,6 @@ import sys
 from rich.console import Console
 
 from modules.application.combat_simulator import CombatSimulator
-from modules.domain.model.character import Character
 from modules.domain.services.attack_resolver import AttackResolver
 from modules.domain.services.combat_round import CombatRound
 from modules.domain.services.initiative_resolver import InitiativeResolver
@@ -37,17 +36,15 @@ def run_cli() -> None:
 
         # CLI components
         renderer = CombatRenderer(console, config)
-        _ = CharacterCreator(console, dice_roller)  # Available for Phase 2 (unused in Phase 1)
+        creator = CharacterCreator(console, dice_roller)  # Phase 2: Active character creation
 
         # Welcome
         console.print("\n=== COMBAT SIMULATOR ===\n")
 
-        # Hardcoded characters (Phase 1 baseline)
-        char1 = Character("Hero", 50, 10)
-        char2 = Character("Villain", 40, 8)
+        # Characters created through interactive CLI (Phase 2)
+        char1 = creator.create_character(1)  # Prompts user for name, HP, attack
+        char2 = creator.create_character(2)  # Prompts user for name, HP, attack
 
-        console.print(f"Character 1: {char1.name} (HP: {char1.hp}, Attack: {char1.attack_power})")
-        console.print(f"Character 2: {char2.name} (HP: {char2.hp}, Attack: {char2.attack_power})")
         console.print("")
 
         # Run combat
