@@ -61,7 +61,9 @@ class TestCharacterCreator:
         # TODO: Extract validation messages to constants for i18n readiness
         # Verify error message was shown (in red)
         error_calls = [
-            c for c in mock_rich_console.print.call_args_list if len(c[0]) > 0 and "cannot be empty" in str(c[0][0]).lower()
+            c
+            for c in mock_rich_console.print.call_args_list
+            if len(c[0]) > 0 and "cannot be empty" in str(c[0][0]).lower()
         ]
         assert len(error_calls) >= 2  # Two rejections
 

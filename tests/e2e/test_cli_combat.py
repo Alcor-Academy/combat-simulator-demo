@@ -573,19 +573,13 @@ def _execute_character_creation_with_validation(cli_context, production_services
     Captures console output for validation assertions.
     """
     # Create mock console that captures ALL output
-    from unittest.mock import Mock
-
     mock_console = Mock()
     output_buffer = []
 
     def capture_print(*args, style=None, end="\n", **kwargs):
         """Capture print calls with style information."""
-        if args:
-            text = " ".join(str(a) for a in args)
-        else:
-            text = ""
+        text = " ".join(str(a) for a in args) if args else ""
         output_buffer.append({"text": text, "style": style})
-        return None
 
     mock_console.print = Mock(side_effect=capture_print)
 
@@ -609,8 +603,7 @@ def _execute_character_creation_with_validation(cli_context, production_services
     # 1. {"char_num": 1, "field": "name", "value": "Hero"}
     # 2. {"field": "character 1 name", "value": "Hero"}
     char1_inputs = [
-        inp for inp in input_seq
-        if inp.get("char_num") == 1 or "character 1" in inp.get("field", "").lower()
+        inp for inp in input_seq if inp.get("char_num") == 1 or "character 1" in inp.get("field", "").lower()
     ]
 
     # Collect ALL inputs for this character in order
@@ -788,10 +781,7 @@ def validation_error_displayed_red(cli_context, production_services):
     has_error = any("error" in str(o).lower() or "❌" in str(o) for o in output)
     # Check for red styling in dict entries (style field) or string representations
     has_red_styling = any(
-        isinstance(o, dict) and o.get("style") == "red"
-        or "[red]" in str(o)
-        or "\x1b[31m" in str(o)
-        for o in output
+        (isinstance(o, dict) and o.get("style") == "red") or "[red]" in str(o) or "\x1b[31m" in str(o) for o in output
     )
 
     assert has_error, f"Expected error message in output, got: {output}"
@@ -814,9 +804,7 @@ def error_contains_text(cli_context, text):
     # Check if error message containing text exists
     has_text = any(text in str(o) for o in output_text)
 
-    assert has_text, (
-        f"Expected error containing '{text}', got output: {output_text}"
-    )
+    assert has_text, f"Expected error containing '{text}', got output: {output_text}"
 
 
 @then(parsers.parse("I am re-prompted for character {char_num:d} {field}"))
@@ -838,8 +826,7 @@ def reprompted_for_field(cli_context, char_num, field):
 
     # We should have at least 2 inputs (1 invalid, 1 valid)
     assert len(field_inputs) >= 2, (
-        f"Expected at least 2 inputs for {field} (invalid + valid), "
-        f"got {len(field_inputs)}: {field_inputs}"
+        f"Expected at least 2 inputs for {field} (invalid + valid), got {len(field_inputs)}: {field_inputs}"
     )
 
 
