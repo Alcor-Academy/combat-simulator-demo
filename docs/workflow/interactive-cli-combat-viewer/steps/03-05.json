@@ -26,7 +26,8 @@
       "Expected duration calculation",
       "Test PASSES (timing already correct)"
     ],
-    "estimated_hours": 0.5
+    "estimated_hours": 0.5,
+    "commit_policy": "NO COMMIT - RED phase. Test is expected to FAIL. Only enable test and verify failure. DO NOT commit or push until GREEN phase completes and all tests pass."
   },
   "dependencies": {
     "requires": [

@@ -26,7 +26,8 @@
       "Step definitions for tie-breaker",
       "Tests FAIL if tie-breaker not explained"
     ],
-    "estimated_hours": 0.5
+    "estimated_hours": 0.5,
+    "commit_policy": "NO COMMIT - RED phase. Test is expected to FAIL. Only enable test and verify failure. DO NOT commit or push until GREEN phase completes and all tests pass."
   },
   "dependencies": {
     "requires": [
