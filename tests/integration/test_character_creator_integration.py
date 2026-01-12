@@ -77,15 +77,15 @@ class TestCharacterCreatorIntegration:
         with patch("rich.prompt.Prompt.ask") as mock_prompt:
             # Empty name, then valid name, then HP inputs, then attack inputs
             mock_prompt.side_effect = [
-                "",      # Invalid name (empty)
-                "  ",    # Invalid name (whitespace)
+                "",  # Invalid name (empty)
+                "  ",  # Invalid name (whitespace)
                 "Hero",  # Valid name
-                "0",     # Invalid HP (too low)
+                "0",  # Invalid HP (too low)
                 "1000",  # Invalid HP (too high)
-                "50",    # Valid HP
-                "0",     # Invalid attack (too low)
-                "100",   # Invalid attack (too high)
-                "10",    # Valid attack
+                "50",  # Valid HP
+                "0",  # Invalid attack (too low)
+                "100",  # Invalid attack (too high)
+                "10",  # Valid attack
             ]
 
             char = creator.create_character(1)
