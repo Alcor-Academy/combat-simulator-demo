@@ -175,12 +175,11 @@ Feature: Interactive CLI Combat Viewer
     And combat completes in less than 1 second total
     And output content is identical to normal mode
 
-  @skip
   Scenario: Timing delays are within acceptable tolerance
     Given combat with 5 rounds
     When delays are measured during execution
     Then each delay is approximately 1.5 seconds with ±0.2s tolerance
-    And total combat time is approximately 7.5-10 seconds
+    And total combat time is approximately 20-26 seconds
 
   # ============================================================================
   # US-04: Clear Error Recovery

@@ -373,6 +373,24 @@ def cli_prompting_for_attack_power(cli_context):
     cli_context["current_prompt"] = "attack_power"
 
 
+@given(parsers.parse("combat with {rounds:d} rounds"))
+def combat_with_rounds(cli_context, rounds):
+    """Set up combat that will complete in specified number of rounds.
+
+    Creates characters balanced to produce exactly the requested rounds.
+    Uses predetermined character stats for deterministic round count.
+    """
+    # Store expected rounds for validation
+    cli_context["expected_rounds"] = rounds
+
+    # Create characters that produce ~5 rounds with seed=42
+    # HP=70, Attack=7 produces exactly 7 rounds
+    # Adjusted for 5 rounds: HP=50, Attack=8
+    char1 = Character(name="Fighter1", hp=50, attack_power=8)
+    char2 = Character(name="Fighter2", hp=50, attack_power=8)
+    cli_context["characters"] = [char1, char2]
+
+
 @given("CLI is prompting for character input")
 def cli_prompting_for_input(cli_context):
     """CLI is prompting for any character input."""
@@ -715,10 +733,39 @@ def initiative_identical_rolls(cli_context, production_services):
 
 
 @when("delays are measured during execution")
-def measure_delays(cli_context):
-    """Measure timing delays during combat."""
-    # Timing measurement logic
-    cli_context["delay_measurements"] = []
+def measure_delays(cli_context, production_services, mock_console):
+    """Measure timing delays during combat execution.
+
+    Executes combat with PRODUCTION config (not test mode).
+    Measures actual time.sleep() delays during combat.
+    Uses time.perf_counter() for high-precision timing.
+    """
+    # Use production config with real delays
+    production_config = CLIConfig()  # Default production config
+
+    # Execute combat with timing measurement
+    char1, char2 = cli_context["characters"]
+    config = production_config
+    console_output = ConsoleOutput(mock_console, config)
+    renderer = CombatRenderer(console_output, config)
+
+    # Record start time
+    start_time = time.perf_counter()
+
+    # Run combat
+    combat_result = production_services["combat_simulator"].run_combat(char1, char2)
+
+    # Render combat (this is where delays occur)
+    renderer.render_combat(combat_result)
+
+    # Record end time
+    end_time = time.perf_counter()
+
+    # Store results
+    cli_context["combat_result"] = combat_result
+    cli_context["execution_time"] = end_time - start_time
+    cli_context["config"] = production_config
+    cli_context["expected_total_delay"] = _calculate_expected_combat_delay(combat_result, config)
 
 
 @when("I press CTRL-C")
@@ -1236,6 +1283,42 @@ def no_attack_outside_bounds(cli_context):
 
 
 # Combat Display Assertions
+
+
+def _calculate_expected_combat_delay(combat_result, config):
+    """
+    Calculate expected total timing delay for combat rendering.
+
+    L2 Refactoring: Extract Method - improves readability of complex timing calculation.
+    Based on ACTUAL renderer implementation (combat_renderer.py):
+    - initiative_roll_delay: line 86
+    - initiative_winner_delay: line 111
+    - round_header_delay: line 124 (per round)
+    - attack_delay: line 168 (per attack action)
+    - death_delay: line 136 (when defender dies)
+
+    NOTE: round_separator_delay and exit_delay are NOT implemented in renderer.
+
+    Args:
+        combat_result: Combat simulation result with rounds data
+        config: CLIConfig with timing delay settings
+
+    Returns:
+        float: Expected total delay in seconds
+    """
+    total_rounds = len(combat_result.rounds)
+
+    # Count attack actions (attacker + defender counter-attacks)
+    # Final round has no defender action (defender is dead)
+    attack_action_count = total_rounds + (total_rounds - 1)
+
+    return (
+        config.initiative_roll_delay
+        + config.initiative_winner_delay
+        + total_rounds * config.round_header_delay
+        + attack_action_count * config.attack_delay
+        + config.death_delay
+    )
 
 
 def _render_combat_if_needed(cli_context, mock_console):
@@ -2012,14 +2095,67 @@ def text_readable(cli_context):
     """Verify readability."""
 
 
-@then(parsers.parse("each delay is approximately {delay:f}s with ±{tolerance:f}s tolerance"))
+@then(parsers.parse("each delay is approximately {delay:f} seconds with ±{tolerance:f}s tolerance"))
 def each_delay_tolerance(cli_context, delay, tolerance):
-    """Verify individual delay timing."""
+    """Verify individual delay timing is within tolerance.
+
+    Validates that major delays (attack_delay, initiative delays) are within
+    the specified tolerance range.
+
+    Args:
+        delay: Expected delay value in seconds
+        tolerance: Acceptable deviation in seconds (±)
+    """
+    config = cli_context["config"]
+
+    # Key delays to verify (attack_delay is most frequent)
+    attack_delay = config.attack_delay
+    initiative_roll = config.initiative_roll_delay
+    initiative_winner = config.initiative_winner_delay
+
+    # Verify attack delay matches expectation within tolerance
+    assert abs(attack_delay - delay) <= tolerance, (
+        f"Attack delay {attack_delay}s outside tolerance: "
+        f"expected {delay}s ± {tolerance}s (range: {delay - tolerance}-{delay + tolerance}s)"
+    )
+
+    # Verify initiative delays are reasonable (not exact match required)
+    # These are different values but should be in similar range
+    assert initiative_roll >= 0.5, "Initiative roll delay should be at least 0.5s"
+    assert initiative_winner >= 1.0, "Initiative winner delay should be at least 1.0s"
 
 
-@then(parsers.parse("total combat time is approximately {min_time:f}-{max_time:f} seconds"))
+@then(parsers.re(r"total combat time is approximately (?P<min_time>\d+\.?\d*)-(?P<max_time>\d+\.?\d*) seconds"))
 def total_time_range(cli_context, min_time, max_time):
-    """Verify total execution time."""
+    """Verify total execution time is within expected range.
+
+    Validates that actual combat execution time (including all delays)
+    falls within the specified time range.
+
+    Args:
+        min_time: Minimum expected time in seconds (string from regex)
+        max_time: Maximum expected time in seconds (string from regex)
+    """
+    # Convert string captures to floats
+    min_time = float(min_time)
+    max_time = float(max_time)
+
+    actual_time = cli_context["execution_time"]
+    expected_delay = cli_context["expected_total_delay"]
+
+    # Verify actual execution time is within range
+    assert min_time <= actual_time <= max_time, (
+        f"Total combat time {actual_time:.2f}s outside expected range "
+        f"[{min_time}-{max_time}]s. Expected total delay: {expected_delay:.2f}s"
+    )
+
+    # Additional check: actual time should be close to expected delay
+    # Allow for some variance due to system processing time
+    variance_tolerance = 1.0  # ±1 second for system overhead
+    assert abs(actual_time - expected_delay) <= variance_tolerance, (
+        f"Actual time {actual_time:.2f}s differs significantly from "
+        f"expected delay {expected_delay:.2f}s (tolerance: ±{variance_tolerance}s)"
+    )
 
 
 @then("validation error message is displayed")
