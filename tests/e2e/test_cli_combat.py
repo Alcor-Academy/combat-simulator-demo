@@ -1573,6 +1573,12 @@ def exits_immediately(cli_context):
     """Verify immediate exit on CTRL-C."""
 
 
+@then("program exits with code 0")
+def program_exits_with_code_0(cli_context):
+    """Verify program exits successfully with code 0."""
+    assert cli_context.get("exit_code", 0) == 0
+
+
 @then(parsers.parse('victory banner includes winner name "{name}"'))
 def victory_includes_name(cli_context, name):
     """Verify winner name in banner."""

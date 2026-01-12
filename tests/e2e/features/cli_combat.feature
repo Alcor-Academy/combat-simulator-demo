@@ -247,7 +247,6 @@ Feature: Interactive CLI Combat Viewer
   # US-05: Victory Celebration
   # ============================================================================
 
-  @skip
   Scenario: Victory celebration shows all required information
     Given combat completes with Hero winning after 3 rounds
     And Hero has 26 HP remaining
@@ -258,7 +257,6 @@ Feature: Interactive CLI Combat Viewer
     And winner final HP is displayed as "Hero: 26 HP remaining"
     And loser final HP is displayed as "Villain: 0 HP (defeated)"
 
-  @skip
   Scenario: Exit confirmation waits for user keypress
     Given combat has completed successfully
     When victory banner is displayed
@@ -268,7 +266,6 @@ Feature: Interactive CLI Combat Viewer
     When I press INVIO
     Then program exits with code 0
 
-  @skip
   Scenario: CTRL-C during exit confirmation terminates program
     Given combat has completed and exit confirmation is shown
     When I press CTRL-C
