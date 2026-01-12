@@ -223,7 +223,6 @@ Feature: Interactive CLI Combat Viewer
     And no stack trace is shown
     And exit code is 130
 
-  @skip
   Scenario: Non-numeric input is handled with clear guidance
     Given CLI is prompting for HP
     When I enter "strong" for HP

@@ -864,44 +864,57 @@ class ValidationInputBuilder:
     def __init__(self, extractor: InputSequenceExtractor):
         self.extractor = extractor
 
+    def _add_hp_only_validation_inputs(self, input_values, char_inputs, has_attack):
+        """Handle HP-only validation case (no name provided)."""
+        input_values.insert(0, "Hero")
+        if self.extractor.count_field_inputs(char_inputs, "hp") == 1:
+            input_values.append("50")
+        if not has_attack:
+            input_values.append("10")
+
+    def _add_attack_only_validation_inputs(self, input_values, char_inputs):
+        """Handle attack-only validation case (no name or HP provided)."""
+        input_values.insert(0, "Hero")
+        input_values.insert(1, "50")
+        if self.extractor.count_field_inputs(char_inputs, "attack") == 1:
+            input_values.append("10")
+
+    def _add_normal_validation_retries(self, input_values, char_inputs, has_hp, has_attack, has_name):
+        """Add retry values for normal validation cases."""
+        if has_hp and self.extractor.count_field_inputs(char_inputs, "hp") == 1:
+            input_values.append("50")
+
+        if has_attack and self.extractor.count_field_inputs(char_inputs, "attack") == 1:
+            input_values.append("10")
+
+        if has_name and self.extractor.count_field_inputs(char_inputs, "name") == 1:
+            name_value = next((i["value"] for i in char_inputs if "name" in i.get("field", "").lower()), "")
+            if not name_value:
+                input_values.append("Hero")
+
+        if not has_hp:
+            input_values.append("50")
+        if not has_attack:
+            input_values.append("10")
+
     def add_validation_retry_inputs(self, input_values, char_inputs):
         """Add valid inputs for validation retry scenarios."""
         has_hp = self.extractor.has_field_input(char_inputs, "hp")
         has_attack = self.extractor.has_field_input(char_inputs, "attack")
         has_name = self.extractor.has_field_input(char_inputs, "name")
 
+        # Special case: HP-only validation (no name provided)
+        if has_hp and not has_name:
+            self._add_hp_only_validation_inputs(input_values, char_inputs, has_attack)
+            return
+
         # Special case: attack-only validation (no name or HP provided)
-        # Need to prepend name and HP BEFORE attack values
         if has_attack and not has_name and not has_hp:
-            # Prepend name and HP to start of sequence
-            input_values.insert(0, "Hero")  # Name first
-            input_values.insert(1, "50")  # HP second
-            # Attack value(s) already in input_values, will be after name+HP
-            # Then add retry value for attack
-            if self.extractor.count_field_inputs(char_inputs, "attack") == 1:
-                input_values.append("10")  # Attack retry
-            return  # Early return - all done for this case
+            self._add_attack_only_validation_inputs(input_values, char_inputs)
+            return
 
         # Normal cases: add retry values after invalid inputs
-        # Add valid HP for retry if only one invalid HP provided
-        if has_hp and self.extractor.count_field_inputs(char_inputs, "hp") == 1:
-            input_values.append("50")
-
-        # Add valid attack for retry if only one invalid attack provided
-        if has_attack and self.extractor.count_field_inputs(char_inputs, "attack") == 1:
-            input_values.append("10")
-
-        # Add valid name for retry if empty name provided
-        if has_name and self.extractor.count_field_inputs(char_inputs, "name") == 1:
-            name_value = next((i["value"] for i in char_inputs if "name" in i.get("field", "").lower()), "")
-            if not name_value:
-                input_values.append("Hero")
-
-        # Add missing required inputs (append at end)
-        if not has_hp:
-            input_values.append("50")
-        if not has_attack:
-            input_values.append("10")
+        self._add_normal_validation_retries(input_values, char_inputs, has_hp, has_attack, has_name)
 
 
 class ConsoleCapture:
