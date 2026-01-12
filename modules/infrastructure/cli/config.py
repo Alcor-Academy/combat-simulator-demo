@@ -4,14 +4,14 @@ from dataclasses import dataclass, field
 # Default emoji symbols for combat events
 DEFAULT_EMOJI: dict[str, str] = {
     "attack": "\u2694\ufe0f",  # Crossed swords
-    "damage": "\U0001F4A5",  # Collision/explosion
+    "damage": "\U0001f4a5",  # Collision/explosion
     "hp": "\u2764\ufe0f",  # Red heart
-    "dice": "\U0001F3B2",  # Game die
+    "dice": "\U0001f3b2",  # Game die
     "initiative": "\u26a1",  # High voltage
-    "victory": "\U0001F3C6",  # Trophy
+    "victory": "\U0001f3c6",  # Trophy
     "death": "\u2620\ufe0f",  # Skull and crossbones
-    "defend": "\U0001F6E1\ufe0f",  # Shield
-    "character": "\U0001F9D9",  # Mage
+    "defend": "\U0001f6e1\ufe0f",  # Shield
+    "character": "\U0001f9d9",  # Mage
 }
 
 # Fallback text symbols for terminals without emoji support
@@ -82,8 +82,7 @@ class CLIConfig:
         """
         if self.emoji_enabled:
             return self.emoji.get(key, key)
-        else:
-            return self.fallback.get(key, key)
+        return self.fallback.get(key, key)
 
     @staticmethod
     def test_mode() -> "CLIConfig":

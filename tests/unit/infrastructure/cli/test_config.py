@@ -1,8 +1,6 @@
 """Unit tests for CLIConfig emoji configuration."""
 
-import pytest
-
-from modules.infrastructure.cli.config import CLIConfig, DEFAULT_EMOJI, DEFAULT_FALLBACK
+from modules.infrastructure.cli.config import DEFAULT_EMOJI, DEFAULT_FALLBACK, CLIConfig
 
 
 class TestCLIConfigEmoji:
@@ -97,14 +95,14 @@ class TestCLIConfigEmoji:
 
         # Verify specific emoji Unicode values
         assert "\u2694" in config.get_symbol("attack")  # Crossed swords base
-        assert "\U0001F4A5" in config.get_symbol("damage")  # Collision
+        assert "\U0001f4a5" in config.get_symbol("damage")  # Collision
         assert "\u2764" in config.get_symbol("hp")  # Heart base
-        assert "\U0001F3B2" in config.get_symbol("dice")  # Game die
+        assert "\U0001f3b2" in config.get_symbol("dice")  # Game die
         assert "\u26a1" in config.get_symbol("initiative")  # High voltage
-        assert "\U0001F3C6" in config.get_symbol("victory")  # Trophy
+        assert "\U0001f3c6" in config.get_symbol("victory")  # Trophy
         assert "\u2620" in config.get_symbol("death")  # Skull base
-        assert "\U0001F6E1" in config.get_symbol("defend")  # Shield base
-        assert "\U0001F9D9" in config.get_symbol("character")  # Mage
+        assert "\U0001f6e1" in config.get_symbol("defend")  # Shield base
+        assert "\U0001f9d9" in config.get_symbol("character")  # Mage
 
     def test_fallback_values_are_bracketed_text(self) -> None:
         """Test that all fallback values are bracketed text format."""

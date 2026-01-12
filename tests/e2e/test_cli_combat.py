@@ -34,16 +34,13 @@ from modules.domain.services.initiative_resolver import InitiativeResolver
 
 # CLI Components (IMPLEMENTED - production integration)
 from modules.infrastructure.cli.character_creator import CharacterCreator
+from modules.infrastructure.cli.combat_renderer import CombatRenderer
 from modules.infrastructure.cli.config import CLIConfig
 from modules.infrastructure.cli.console_output import ConsoleOutput
 from modules.infrastructure.cli.main import run_cli
 
 # Infrastructure Layer (REAL + NEW CLI components)
 from modules.infrastructure.random_dice_roller import RandomDiceRoller
-
-
-# from modules.infrastructure.cli.combat_renderer import CombatRenderer
-# (config already imported above)
 
 
 # Load all scenarios from feature file
@@ -1039,9 +1036,6 @@ def attacker_shows_emoji(cli_context, mock_console, production_services, emoji):
     Cross-platform: accepts emoji OR bracketed fallback text [ATK].
     STRICT: Does NOT accept plain text like "attacks" - requires visual indicator.
     """
-    # Import here to avoid circular imports
-    from modules.infrastructure.cli.combat_renderer import CombatRenderer
-
     # Capture output through renderer
     config = CLIConfig.test_mode()
     console_output = ConsoleOutput(mock_console, config)
@@ -1066,8 +1060,6 @@ def attack_shows_dice_emoji(cli_context, mock_console, emoji):
     Cross-platform: accepts emoji OR bracketed fallback text [D6].
     STRICT: Requires visual indicator of dice roll in output.
     """
-    from modules.infrastructure.cli.combat_renderer import CombatRenderer
-
     combat_result = cli_context["combat_result"]
     # Verify dice roll data exists
     for round_result in combat_result.rounds:
@@ -1102,8 +1094,6 @@ def attack_shows_damage(cli_context, mock_console, emoji):
     Cross-platform: accepts emoji OR bracketed fallback text [DMG].
     STRICT: Requires visual indicator of damage in output.
     """
-    from modules.infrastructure.cli.combat_renderer import CombatRenderer
-
     # Get combat result data
     combat_result = cli_context["combat_result"]
     for round_result in combat_result.rounds:
@@ -1131,8 +1121,6 @@ def hp_change_displayed(cli_context, mock_console, emoji):
     Cross-platform: accepts emoji OR bracketed fallback text [HP].
     STRICT: Requires visual indicator of HP in output.
     """
-    from modules.infrastructure.cli.combat_renderer import CombatRenderer
-
     # Verify data exists
     combat_result = cli_context["combat_result"]
     for round_result in combat_result.rounds:
@@ -1161,8 +1149,6 @@ def defender_counter_attack(cli_context, mock_console, emoji):
     Cross-platform: accepts emoji OR bracketed fallback text [DEF].
     STRICT: Requires visual indicator of defend in output.
     """
-    from modules.infrastructure.cli.combat_renderer import CombatRenderer
-
     combat_result = cli_context["combat_result"]
     # Check if any round has defender action (survived)
     has_counter_attack = False
@@ -1180,7 +1166,8 @@ def defender_counter_attack(cli_context, mock_console, emoji):
 
         output_text = " ".join(str(call) for call in mock_console.output_buffer)
         has_defend_indicator = emoji in output_text or "[DEF]" in output_text
-        assert has_defend_indicator, f"Expected defend emoji '{emoji}' or fallback '[DEF]' in output: {output_text[:500]}"
+        msg = f"Expected defend emoji '{emoji}' or fallback '[DEF]' in output: {output_text[:500]}"
+        assert has_defend_indicator, msg
 
 
 @then(parsers.parse("death announcement shows {emoji} emoji when character dies"))
@@ -1191,8 +1178,6 @@ def death_announcement(cli_context, mock_console, emoji):
     Cross-platform: accepts emoji OR bracketed fallback text [DEAD].
     STRICT: Requires visual indicator of death in output.
     """
-    from modules.infrastructure.cli.combat_renderer import CombatRenderer
-
     combat_result = cli_context["combat_result"]
     # Final round should have combat_ended=True
     final_round = combat_result.rounds[-1]
