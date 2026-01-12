@@ -77,13 +77,11 @@ Feature: Interactive CLI Combat Viewer
     And error message contains "must be a whole number"
     And I am re-prompted for character 1 HP
 
-  @skip
   Scenario: Random HP values are within valid range across multiple generations
     When I create 10 characters using random HP defaults
     Then all random HP values are in range [20-80]
     And no random HP value is outside specified bounds
 
-  @skip
   Scenario: Random attack power values are within valid range
     When I create 10 characters using random attack defaults
     Then all random attack power values are in range [5-15]
