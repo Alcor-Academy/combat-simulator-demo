@@ -45,7 +45,7 @@ def villain():
 
 
 def test_render_initiative_displays_rolls(renderer, mock_console, hero, villain):
-    """Test that initiative rendering displays character names and totals."""
+    """Test that initiative rendering displays character names, rolls, agility, and totals."""
     # Create InitiativeResult with known values
     init_result = InitiativeResult(
         attacker=hero,
@@ -61,12 +61,23 @@ def test_render_initiative_displays_rolls(renderer, mock_console, hero, villain)
     # Verify output contains expected text
     calls = [str(call) for call in mock_console.print.call_args_list]
     assert any("Rolling Initiative" in str(call) for call in calls)
-    assert any("Hero" in str(call) and "65" in str(call) for call in calls)
-    assert any("Villain" in str(call) and "51" in str(call) for call in calls)
+
+    # Verify agility values are shown
+    assert any("60" in str(call) for call in calls), "Should show Hero's agility (60)"
+    assert any("48" in str(call) for call in calls), "Should show Villain's agility (48)"
+
+    # Verify dice rolls are shown
+    assert any("5" in str(call) for call in calls), "Should show Hero's roll (5)"
+    assert any("3" in str(call) for call in calls), "Should show Villain's roll (3)"
+
+    # Verify totals are shown
+    assert any("65" in str(call) for call in calls), "Should show Hero's total (65)"
+    assert any("51" in str(call) for call in calls), "Should show Villain's total (51)"
+
     assert any("attacks first" in str(call) for call in calls)
 
-    # Verify delay was called
-    mock_console.display_with_delay.assert_called_once()
+    # Verify delay was called twice (after roll announcement and after winner announcement)
+    assert mock_console.display_with_delay.call_count == 2
 
 
 def test_render_round_displays_attacker_action(renderer, mock_console, hero, villain):
@@ -401,3 +412,43 @@ def test_render_victory_uses_decorative_borders(renderer, mock_console, hero, vi
     # Should have box drawing characters (╔ ═ ╗ ║ ╚ ╝)
     has_borders = any(char in output_text for char in ["╔", "═", "╗", "║", "╚", "╝"])
     assert has_borders, "Victory should use decorative box borders"
+
+
+def test_initiative_tie_displays_explanation(renderer, mock_console, hero, villain):
+    """Test that initiative tie displays tie-breaker explanation.
+
+    When initiative totals are equal, display:
+    1. Tie announcement
+    2. Tie-breaker rule explanation with two variants:
+       - "wins by tie-breaker rule (first character)" - when agility equal
+       - "wins by tie-breaker rule (higher agility)" - when agility differs
+    3. Show agility values to make tie-breaker transparent
+    """
+    # Create initiative result with tied totals (same dice roll + same agility)
+    init_result = InitiativeResult(
+        attacker=hero,
+        defender=villain,
+        attacker_roll=5,
+        defender_roll=8,  # Different roll but totals equal
+        attacker_total=65,  # 60 agility + 5 roll = 65
+        defender_total=65,  # 48 agility + 8 roll = 65 (tied!)
+    )
+
+    renderer._render_initiative(init_result)
+
+    # Verify output contains tie-breaker explanation
+    calls = [str(call) for call in mock_console.print.call_args_list]
+    output_text = " ".join(calls)
+
+    # Should show agility values for transparency
+    assert "60" in output_text, "Should display Hero's agility (60)"
+    assert "48" in output_text, "Should display Villain's agility (48)"
+
+    # Should announce the tie
+    assert "tied" in output_text.lower() or "tie" in output_text.lower(), "Should announce initiative tie"
+
+    # Should explain tie-breaker rule
+    assert "tie-breaker" in output_text.lower(), "Should mention tie-breaker rule"
+    assert "higher agility" in output_text.lower() or "first character" in output_text.lower(), (
+        "Should explain which tie-breaker rule applies"
+    )

@@ -53,19 +53,61 @@ class CombatRenderer:
             return "orange"
         return "red"
 
-    def _render_initiative(self, init_result: InitiativeResult) -> None:
-        """Display initiative resolution.
+    def _get_tiebreaker_message(self, init_result: InitiativeResult) -> str:
+        """Get appropriate tie-breaker explanation message.
 
         Args:
-            init_result: InitiativeResult containing roll details
+            init_result: InitiativeResult containing character data
+
+        Returns:
+            Tie-breaker message explaining which rule applies:
+            - "(first character)" when agility is equal
+            - "(higher agility)" when agility differs
+        """
+        if init_result.attacker.agility == init_result.defender.agility:
+            return f"{init_result.attacker.name} wins by tie-breaker rule (first character)."
+        return f"{init_result.attacker.name} wins by tie-breaker rule (higher agility)."
+
+    def _render_initiative(self, init_result: InitiativeResult) -> None:
+        """Display initiative resolution with tie-breaker explanation.
+
+        Shows initiative rolls with agility modifiers and final totals.
+        When totals are tied, explains which tie-breaker rule applies:
+        - Higher agility wins if agility differs
+        - First character (attacker) wins if agility equal
+
+        Args:
+            init_result: InitiativeResult containing roll details and character data
         """
         dice = self._config.get_symbol("dice")
         init_symbol = self._config.get_symbol("initiative")
 
-        self._console.print(f"{dice} Rolling Initiative...", style="bold cyan")
-        self._console.print(f"{init_result.attacker.name}: {init_result.attacker_total}")
-        self._console.print(f"{init_result.defender.name}: {init_result.defender_total}")
-        self._console.print(f"{init_symbol} {init_result.attacker.name} attacks first!", style="bold yellow")
+        self._console.print(f"\n{dice} Rolling Initiative...", style="bold cyan")
+        self._console.display_with_delay("", self._config.initiative_roll_delay)
+
+        # Display rolls with agility values
+        self._console.print(
+            f"{init_result.attacker.name}: Base agility {init_result.attacker.agility} + "
+            f"{dice} {init_result.attacker_roll} = {init_result.attacker_total}",
+            style="cyan",
+        )
+        self._console.print(
+            f"{init_result.defender.name}: Base agility {init_result.defender.agility} + "
+            f"{dice} {init_result.defender_roll} = {init_result.defender_total}",
+            style="cyan",
+        )
+
+        # Check for tie - when initiative totals are equal, apply tie-breaker rules
+        if init_result.attacker_total == init_result.defender_total:
+            self._console.print(f"\nInitiative tied at {init_result.attacker_total}!", style="yellow")
+            tiebreaker_msg = self._get_tiebreaker_message(init_result)
+            self._console.print(f"{init_symbol} {tiebreaker_msg}", style="bold yellow")
+        else:
+            self._console.print(
+                f"\n{init_symbol} {init_result.attacker.name} wins initiative and attacks first!",
+                style="bold yellow",
+            )
+
         self._console.display_with_delay("", self._config.initiative_winner_delay)
 
     def _render_round(self, round_result: RoundResult) -> None:
