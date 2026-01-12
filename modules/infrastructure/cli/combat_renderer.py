@@ -34,6 +34,25 @@ class CombatRenderer:
 
         self._render_victory(result)
 
+    def _hp_color(self, current_hp: int, max_hp: int) -> str:
+        """Return color based on HP percentage.
+
+        Args:
+            current_hp: Current HP value
+            max_hp: Maximum HP value
+
+        Returns:
+            Color string for Rich styling (green/yellow/orange/red)
+        """
+        pct = current_hp / max_hp
+        if pct >= 0.7:
+            return "green"
+        if pct >= 0.4:
+            return "yellow"
+        if pct >= 0.2:
+            return "orange"
+        return "red"
+
     def _render_initiative(self, init_result: InitiativeResult) -> None:
         """Display initiative resolution.
 
@@ -43,10 +62,10 @@ class CombatRenderer:
         dice = self._config.get_symbol("dice")
         init_symbol = self._config.get_symbol("initiative")
 
-        self._console.print(f"{dice} Rolling Initiative...")
+        self._console.print(f"{dice} Rolling Initiative...", style="bold cyan")
         self._console.print(f"{init_result.attacker.name}: {init_result.attacker_total}")
         self._console.print(f"{init_result.defender.name}: {init_result.defender_total}")
-        self._console.print(f"{init_symbol} {init_result.attacker.name} attacks first!")
+        self._console.print(f"{init_symbol} {init_result.attacker.name} attacks first!", style="bold yellow")
         self._console.display_with_delay("", self._config.initiative_winner_delay)
 
     def _render_round(self, round_result: RoundResult) -> None:
@@ -55,7 +74,11 @@ class CombatRenderer:
         Args:
             round_result: RoundResult containing round details
         """
-        self._console.print(f"\n=== ROUND {round_result.round_number} ===")
+        # Header with enhanced styling
+        attack_emoji = self._config.get_symbol("attack")
+        self._console.print(f"\n{'=' * 35}", style="dim")
+        self._console.print(f"{attack_emoji}  ROUND {round_result.round_number}", style="bold magenta")
+        self._console.print(f"{'=' * 35}", style="dim")
         self._console.display_with_delay("", self._config.round_header_delay)
 
         # Attacker action
@@ -67,7 +90,7 @@ class CombatRenderer:
         else:
             defender_name = round_result.attacker_action.defender_name
             death = self._config.get_symbol("death")
-            self._console.print(f"{death} {defender_name} has been defeated!")
+            self._console.print(f"\n{death}  {defender_name} has been defeated!", style="bold red dim")
             self._console.display_with_delay("", self._config.death_delay)
 
     def _render_attack_action(self, action: AttackResult, is_counter: bool) -> None:
@@ -80,17 +103,25 @@ class CombatRenderer:
         attack_symbol = self._config.get_symbol("attack")
         defend_symbol = self._config.get_symbol("defend")
         damage_symbol = self._config.get_symbol("damage")
-        hp_symbol = self._config.get_symbol("hp")
         dice_symbol = self._config.get_symbol("dice")
+        hp_symbol = self._config.get_symbol("hp")
 
         action_symbol = defend_symbol if is_counter else attack_symbol
         attack_verb = "counter-attacks" if is_counter else "attacks"
+        action_style = "bold blue" if is_counter else "bold cyan"
 
-        self._console.print(f"{action_symbol} {action.attacker_name} {attack_verb}!")
-        self._console.print(f"  {dice_symbol} Roll: {action.dice_roll}")
-        self._console.print(f"  {damage_symbol} Damage: {action.total_damage}")
+        self._console.print(f"\n{action_symbol}  {action.attacker_name} {attack_verb}!", style=action_style)
         self._console.print(
-            f"  {hp_symbol} {action.defender_name}: {action.defender_old_hp} HP -> {action.defender_new_hp} HP"
+            f"   {dice_symbol} Roll: {action.dice_roll} + ⚔️  Power: {action.attack_power} = "
+            f"{damage_symbol} {action.total_damage} damage",
+            style="yellow",
+        )
+
+        # HP display with color gradient
+        hp_color = self._hp_color(action.defender_new_hp, action.defender_old_hp)
+        self._console.print(
+            f"   {hp_symbol} {action.defender_name}: {action.defender_old_hp} HP → {action.defender_new_hp} HP",
+            style=hp_color,
         )
         self._console.display_with_delay("", self._config.attack_delay)
 
@@ -101,13 +132,18 @@ class CombatRenderer:
             result: Complete CombatResult with winner information
         """
         victory_symbol = self._config.get_symbol("victory")
-        hp_symbol = self._config.get_symbol("hp")
         death_symbol = self._config.get_symbol("death")
 
-        self._console.print(f"\n{victory_symbol} === {result.winner.name.upper()} WINS! === {victory_symbol}")
-        self._console.print(f"Combat lasted {result.total_rounds} rounds")
-        self._console.print(f"{hp_symbol} {result.winner.name}: {result.winner.hp} HP remaining")
-        self._console.print(f"{death_symbol} {result.loser.name}: 0 HP (defeated)")
+        # Decorative victory banner with box drawing characters
+        self._console.print(f"\n{'╔' + '═' * 35 + '╗'}", style="bold yellow")
+        self._console.print(
+            f"║  {victory_symbol}  {result.winner.name.upper()} WINS!  {victory_symbol}  ║", style="bold yellow"
+        )
+        self._console.print(f"{'╚' + '═' * 35 + '╝'}", style="bold yellow")
+
+        self._console.print(f"\nCombat lasted {result.total_rounds} rounds", style="dim")
+        self._console.print(f"{result.winner.name}: {result.winner.hp} HP remaining", style="green")
+        self._console.print(f"{result.loser.name}: 0 HP {death_symbol} (defeated)", style="red dim")
 
         if self._config.prompt_for_exit:
-            self._console.prompt_continue("\nPress ENTER to exit...")
+            self._console.prompt_continue("\nPremi INVIO per uscire (o CTRL-C per terminare)")
