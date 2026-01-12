@@ -45,7 +45,7 @@ Feature: Interactive CLI Combat Viewer
 
   Scenario: Invalid HP input triggers validation error and re-prompt
     When I enter "Hero" for character 1 name
-    And I enter "150" for character 1 HP
+    And I enter "1500" for character 1 HP
     Then validation error is displayed in red
     And error message contains "HP must be between 1 and 999"
     And I am re-prompted for character 1 HP

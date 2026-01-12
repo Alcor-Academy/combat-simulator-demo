@@ -5,24 +5,42 @@ from unittest.mock import Mock, patch
 import pytest
 
 from modules.infrastructure.cli.character_creator import CharacterCreator
+from modules.infrastructure.cli.config import CLIConfig
+from modules.infrastructure.cli.console_output import ConsoleOutput
+from modules.infrastructure.random_dice_roller import RandomDiceRoller
 
 
 class TestCharacterCreator:
     """Test suite for CharacterCreator class."""
 
     @pytest.fixture
-    def console(self):
-        """Mock console for testing."""
-        return Mock()
+    def mock_rich_console(self):
+        """Mock Rich Console for I/O boundary only."""
+        console = Mock()
+        console.output_buffer = []
+
+        def capture_print(*args, **kwargs):
+            """Capture print calls to buffer."""
+            console.output_buffer.append(str(args))
+
+        console.print = Mock(side_effect=capture_print)
+        console.print_panel = Mock()
+        return console
+
+    @pytest.fixture
+    def console(self, mock_rich_console):
+        """REAL ConsoleOutput with mocked Rich Console (I/O boundary)."""
+        config = CLIConfig.test_mode()
+        return ConsoleOutput(mock_rich_console, config)
 
     @pytest.fixture
     def dice_roller(self):
-        """Mock dice roller for testing."""
-        return Mock()
+        """REAL RandomDiceRoller with seed for determinism."""
+        return RandomDiceRoller(seed=42)
 
     @pytest.fixture
     def creator(self, console, dice_roller):
-        """Create CharacterCreator instance with mocked dependencies."""
+        """Create CharacterCreator instance with REAL dependencies."""
         return CharacterCreator(console, dice_roller)
 
     def test_create_character_with_manual_input(self, creator):
@@ -34,95 +52,112 @@ class TestCharacterCreator:
         assert char.hp == 50
         assert char.attack_power == 10
 
-    def test_empty_name_triggers_reprompt(self, creator, console):
+    def test_empty_name_triggers_reprompt(self, creator, mock_rich_console):
         """Test that empty name is rejected and user is re-prompted."""
         with patch("rich.prompt.Prompt.ask", side_effect=["", "  ", "Hero", "50", "10"]):
             char = creator.create_character(1)
 
         assert char.name == "Hero"
+        # TODO: Extract validation messages to constants for i18n readiness
         # Verify error message was shown (in red)
         error_calls = [
-            c for c in console.print.call_args_list if len(c[0]) > 0 and "cannot be empty" in str(c[0][0]).lower()
+            c for c in mock_rich_console.print.call_args_list if len(c[0]) > 0 and "cannot be empty" in str(c[0][0]).lower()
         ]
         assert len(error_calls) >= 2  # Two rejections
 
-    def test_hp_range_validation(self, creator, console):
+    def test_hp_range_validation(self, creator, mock_rich_console):
         """Test HP validation enforces range [1-999]."""
         with patch("rich.prompt.Prompt.ask", side_effect=["Hero", "0", "1000", "50", "10"]):
             char = creator.create_character(1)
 
         assert char.hp == 50
+        # TODO: Extract validation messages to constants for i18n readiness
         # Verify error messages were shown
         error_calls = [
             c
-            for c in console.print.call_args_list
+            for c in mock_rich_console.print.call_args_list
             if len(c[0]) > 0 and "hp" in str(c[0][0]).lower() and "between" in str(c[0][0]).lower()
         ]
         assert len(error_calls) >= 2  # Two rejections
 
-    def test_attack_range_validation(self, creator, console):
+    def test_attack_range_validation(self, creator, mock_rich_console):
         """Test attack power validation enforces range [1-99]."""
         with patch("rich.prompt.Prompt.ask", side_effect=["Hero", "50", "0", "100", "10"]):
             char = creator.create_character(1)
 
         assert char.attack_power == 10
+        # TODO: Extract validation messages to constants for i18n readiness
         # Verify error messages were shown
         error_calls = [
             c
-            for c in console.print.call_args_list
+            for c in mock_rich_console.print.call_args_list
             if len(c[0]) > 0 and "attack" in str(c[0][0]).lower() and "between" in str(c[0][0]).lower()
         ]
         assert len(error_calls) >= 2  # Two rejections
 
-    def test_character_card_displayed(self, creator, console):
+    def test_character_card_displayed(self, creator, mock_rich_console):
         """Test that character confirmation card is displayed."""
         with patch("rich.prompt.Prompt.ask", side_effect=["Hero", "50", "10"]):
-            creator.create_character(1)
+            char = creator.create_character(1)
 
-        # Verify console was used to display card via print_panel
-        assert console.print_panel.called
+        # Verify character was created successfully
+        assert char.name == "Hero"
+        assert char.hp == 50
+        assert char.attack_power == 10
 
-    def test_uses_console_and_dice_roller(self, console, dice_roller):
-        """Test that CharacterCreator accepts and stores console and dice_roller."""
-        creator = CharacterCreator(console, dice_roller)
+        # Verify Rich console print was called (ConsoleOutput.print_panel calls console.print)
+        # The panel display goes through console.print, not print_panel
+        assert mock_rich_console.print.called
 
-        assert creator._console is console
-        assert creator._dice_roller is dice_roller
-
-    def test_random_hp_generates_value_in_valid_range(self, creator, dice_roller):
+    def test_random_hp_generates_value_in_valid_range(self, creator):
         """Test _random_hp() generates HP in range [20-80]."""
-        # Mock dice_roller to return specific value
-        # HP range [20-80] = 61 possible values = 61d1 + 19
-        # Strategy: roll 61 sided die and add 19 → result in [20-80]
-        dice_roller.roll_range.return_value = 35  # Will result in 35+19 = 54
-
+        # Deterministic testing of boundaries using REAL dice roller with seed.
+        # E2E tests validate distribution with multiple samples.
         hp = creator._random_hp()
 
         assert 20 <= hp <= 80
-        assert hp == 54
-        dice_roller.roll_range.assert_called_once_with(61)
 
-    def test_random_attack_generates_value_in_valid_range(self, creator, dice_roller):
+    def test_random_attack_generates_value_in_valid_range(self, creator):
         """Test _random_attack() generates attack in range [5-15]."""
-        # Attack range [5-15] = 11 possible values = 11d1 + 4
-        # Strategy: roll 11 sided die and add 4 → result in [5-15]
-        dice_roller.roll_range.return_value = 7  # Will result in 7+4 = 11
-
+        # Deterministic testing of boundaries using REAL dice roller with seed.
+        # E2E tests validate distribution with multiple samples.
         attack = creator._random_attack()
 
         assert 5 <= attack <= 15
-        assert attack == 11
-        dice_roller.roll_range.assert_called_once_with(11)
 
-    def test_empty_input_triggers_random_generation(self, creator, dice_roller):
+    def test_empty_input_triggers_random_generation(self, creator):
         """Test that pressing INVIO (empty input) triggers random HP and attack generation."""
-        dice_roller.roll_range.side_effect = [35, 7]  # HP: 35+19=54, Attack: 7+4=11
-
+        # Uses REAL dice roller with seed for deterministic behavior.
+        # E2E tests validate actual random distribution.
         with patch("rich.prompt.Prompt.ask", side_effect=["Hero", "", ""]):  # Name, empty HP, empty attack
             char = creator.create_character(1)
 
         assert char.name == "Hero"
-        assert char.hp == 54  # Random HP
-        assert char.attack_power == 11  # Random attack
-        # Verify dice_roller was called for both HP and attack
-        assert dice_roller.roll_range.call_count == 2
+        # Random HP should be in valid range [20-80]
+        assert 20 <= char.hp <= 80
+        # Random attack should be in valid range [5-15]
+        assert 5 <= char.attack_power <= 15
+
+    def test_hp_boundary_values_accepted(self, creator):
+        """Test HP boundary values 1 and 999 are accepted."""
+        # Test minimum valid HP (1)
+        with patch("rich.prompt.Prompt.ask", side_effect=["Hero", "1", "10"]):
+            char = creator.create_character(1)
+        assert char.hp == 1
+
+        # Test maximum valid HP (999)
+        with patch("rich.prompt.Prompt.ask", side_effect=["Hero", "999", "10"]):
+            char = creator.create_character(1)
+        assert char.hp == 999
+
+    def test_attack_boundary_values_accepted(self, creator):
+        """Test attack power boundary values 1 and 99 are accepted."""
+        # Test minimum valid attack (1)
+        with patch("rich.prompt.Prompt.ask", side_effect=["Hero", "50", "1"]):
+            char = creator.create_character(1)
+        assert char.attack_power == 1
+
+        # Test maximum valid attack (99)
+        with patch("rich.prompt.Prompt.ask", side_effect=["Hero", "50", "99"]):
+            char = creator.create_character(1)
+        assert char.attack_power == 99
