@@ -70,7 +70,6 @@ Feature: Interactive CLI Combat Viewer
     When I enter "Hero" for character 1 name
     Then character creation continues successfully
 
-  @skip
   Scenario: Non-numeric HP input triggers validation error
     When I enter "Hero" for character 1 name
     And I enter "abc" for character 1 HP

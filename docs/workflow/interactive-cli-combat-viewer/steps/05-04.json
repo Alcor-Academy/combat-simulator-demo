@@ -1,0 +1,52 @@
+{
+  "task_id": "05-04",
+  "project_id": "interactive-cli-combat-viewer",
+  "execution_agent": "software-crafter",
+  "self_contained_context": {
+    "background": "Part of Phase 5: Scenario Completion - US-01 Character Creation. Enable skipped test for non-numeric HP input validation.\nEnsures robust input validation with clear error messages for type errors.\n",
+    "prerequisites_completed": [
+      "05-02"
+    ],
+    "relevant_files": [
+      "tests/e2e/features/cli_combat.feature (modify - remove @skip)",
+      "tests/e2e/test_cli_combat.py (verify step definitions exist)",
+      "modules/infrastructure/cli/character_creator.py (verify ValueError handling)"
+    ],
+    "technical_context": "Enable skipped acceptance test for non-numeric HP input validation.\n\nScenario (line 73-79 in cli_combat.feature):\n```gherkin\n@skip  # ← REMOVE THIS\nScenario: Non-numeric HP input triggers validation error\n  When I enter \"Hero\" for character 1 name\n  And I enter \"abc\" for character 1 HP\n  Then validation error is displayed\n  And error message contains \"must be a whole number\"\n  And I am re-prompted for character 1 HP\n```\n\nExpected behavior:\n- User enters non-numeric value (\"abc\") for HP\n- System catches ValueError\n- Displays error message \"HP must be a whole number\" in red\n- Re-prompts user for HP input\n- Process continues when valid input provided\n\nImplementation likely already exists in CharacterCreator._prompt_for_hp_with_validation():\n```python\ntry:\n    hp = int(hp_input)\n    if 1 <= hp <= 999:\n        return hp\n    self._console.print(\"❌ HP must be between 1 and 999.\", style=\"red\")\nexcept ValueError:\n    self._console.print(\"❌ HP must be a whole number.\", style=\"red\")  # ← This handles non-numeric\n```\n\nStep definitions should already exist from Phase 2:\n- @when('I enter \"{value}\" for character {num} {field}')\n- @then('validation error is displayed')\n- @then('error message contains \"{text}\"')\n- @then('I am re-prompted for character {num} {field}')\n\nValidation:\n- pytest tests/e2e/test_cli_combat.py::test_nonnumeric_hp_input_triggers_validation_error -v\n- Test should PASS immediately (implementation already complete)\n",
+    "tdd_phase": "GREEN",
+    "active_e2e_test": "Non-numeric HP input triggers validation error - should PASS (validation already implemented)",
+    "inactive_e2e_tests": "All other @skip scenarios remain disabled"
+  },
+  "task_specification": {
+    "name": "Enable Scenario: Non-numeric HP Input Validation",
+    "description": "Enable skipped test for non-numeric HP input validation.\n\nRemove @skip tag from scenario at line 73 of cli_combat.feature:\n- Scenario: \"Non-numeric HP input triggers validation error\"\n\nVerify step definitions exist (already implemented in Phase 2):\n- @when('I enter \"abc\" for character 1 HP')\n- @then('validation error is displayed')\n- @then('error message contains \"must be a whole number\"')\n- @then('I am re-prompted for character 1 HP')\n\nVerify CharacterCreator implementation handles ValueError:\n- try/except ValueError block in _prompt_for_hp_with_validation()\n- Error message: \"HP must be a whole number\"\n- Loop continues to re-prompt until valid input\n\nValidation:\n- pytest tests/e2e/test_cli_combat.py::test_nonnumeric_hp_input_triggers_validation_error -v\n- Test should PASS (GREEN phase - implementation exists from Phase 2)\n",
+    "motivation": "Ensures robust input validation with clear error messages for type errors. Prevents crashes when users enter non-numeric values.\nCompletes US-01 acceptance criteria.\n",
+    "commit_policy": "Commit after test PASSES. Run full test suite to ensure no regressions. Commit message: 'test(e2e): Enable non-numeric HP validation test - GREEN phase complete'",
+    "detailed_instructions": "1. Remove @skip tag from cli_combat.feature line 73\n\n2. Verify step definitions exist (should be from Phase 2):\n   - Check tests/e2e/test_cli_combat.py for:\n     - @when('I enter \"{value}\" for character {num} {field}')\n     - @then('validation error is displayed')\n     - @then('error message contains \"{text}\"')\n\n3. Verify CharacterCreator handles ValueError:\n   - Read modules/infrastructure/cli/character_creator.py\n   - Find _prompt_for_hp_with_validation() method\n   - Confirm try/except ValueError exists\n   - Confirm error message matches test expectation\n\n4. Run test:\n   ```bash\n   pytest tests/e2e/test_cli_combat.py::test_nonnumeric_hp_input_triggers_validation_error -v\n   ```\n\n5. If test PASSES:\n   - This is GREEN phase (implementation already exists)\n   - Commit: git add tests/e2e/features/cli_combat.feature\n   - Commit message: 'test(e2e): Enable non-numeric HP validation test - GREEN phase complete'\n\n6. If test FAILS:\n   - Analyze failure reason\n   - Implement missing ValueError handling in CharacterCreator\n   - Follow TDD RED→GREEN→REFACTOR cycle\n",
+    "acceptance_criteria": [
+      "@skip tag removed from scenario line 73",
+      "Test executes without errors",
+      "Test PASSES (ValueError handling works)",
+      "Error message \"must be a whole number\" displayed",
+      "Re-prompting works correctly",
+      "No regressions in other tests"
+    ],
+    "estimated_hours": 0.5
+  },
+  "dependencies": {
+    "requires": [
+      "05-02"
+    ],
+    "blocking": [
+      "05-05"
+    ]
+  },
+  "state": {
+    "status": "DONE",
+    "assigned_to": "software-crafter",
+    "started_at": "2026-01-12T00:00:00Z",
+    "completed_at": "2026-01-12T00:00:00Z",
+    "updated": "2026-01-12T00:00:00Z"
+  },
+  "phase_id": "phase-5"
+}
