@@ -42,6 +42,9 @@ from modules.infrastructure.cli.main import run_cli
 # Infrastructure Layer (REAL + NEW CLI components)
 from modules.infrastructure.random_dice_roller import RandomDiceRoller
 
+# Test Doubles (for deterministic testing)
+from tests.doubles.fixed_dice_roller import FixedDiceRoller
+
 
 # Load all scenarios from feature file
 scenarios("../features/cli_combat.feature")
@@ -531,17 +534,8 @@ def attacker_deals_damage(cli_context, production_services, attacker, damage, mo
     # Calculate required dice roll: damage = dice_roll + attack_power
     required_roll = damage - attacker_char.attack_power
 
-    # Create controlled dice roller
-    class ControlledDiceRoller:
-        """Dice roller that returns predetermined values."""
-
-        def __init__(self, roll_value):
-            self._roll_value = roll_value
-
-        def roll(self):
-            return self._roll_value
-
-    dice_roller = ControlledDiceRoller(required_roll)
+    # Create deterministic dice roller using test double
+    dice_roller = FixedDiceRoller(required_roll)
 
     # Create domain services with controlled dice roller
     attack_resolver = AttackResolver(dice_roller)
@@ -559,10 +553,9 @@ def attacker_deals_damage(cli_context, production_services, attacker, damage, mo
             chars[i] = attack_result.defender_after
             break
 
-    # Capture output using CombatRenderer
+    # Capture output for verification (no renderer needed - direct output)
     config = CLIConfig.test_mode()
     console_output = ConsoleOutput(mock_console, config)
-    renderer = CombatRenderer(console_output, config)
 
     # Store attack info for display verification
     cli_context["last_attack"] = {
@@ -573,10 +566,9 @@ def attacker_deals_damage(cli_context, production_services, attacker, damage, mo
         "damage": damage,
     }
 
-    # Render attack message (simplified - just HP change line)
-    hp_color = renderer._hp_color(new_hp, old_hp if old_hp > 0 else 50)
+    # Render attack message (simplified - just HP change line for verification)
     output_line = f"{attack_result.defender_name}: {old_hp} HP → {new_hp} HP"
-    console_output.print(output_line, style=hp_color)
+    console_output.print(output_line)
 
     # Store output for verification
     if "output" not in cli_context:
