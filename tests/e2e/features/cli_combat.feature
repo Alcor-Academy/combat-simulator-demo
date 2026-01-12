@@ -34,7 +34,6 @@ Feature: Interactive CLI Combat Viewer
     And character 2 has name "Villain", HP 40, attack power 8, agility 48
     And both character summary cards are displayed
 
-  @skip
   Scenario: User uses random defaults for character attributes
     When I enter "Hero" for character 1 name
     And I press INVIO for character 1 HP
