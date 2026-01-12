@@ -26,7 +26,8 @@
       "pytest runs test and FAILS (red phase) with clear error",
       "Error message indicates missing CLI entry point"
     ],
-    "estimated_hours": 0.5
+    "estimated_hours": 0.5,
+    "commit_policy": "NO COMMIT - RED phase. Test is expected to FAIL. Only enable test and verify failure. DO NOT commit or push until GREEN phase completes and all tests pass."
   },
   "dependencies": {
     "requires": [],
@@ -164,5 +165,6 @@
       ],
       "notes": "This is a high-quality baseline task that correctly implements Outside-In TDD principles. Tests fail as expected, providing clear direction for implementation. No blocking issues - ready for next phase execution."
     }
-  ]
+  ],
+  "phase_id": "phase-1"
 }

@@ -31,7 +31,8 @@
       "Refactoring complete (docstrings, type hints)",
       "Git commit created with detailed message"
     ],
-    "estimated_hours": 0.5
+    "estimated_hours": 0.5,
+    "commit_policy": "Commit after refactoring complete and all tests still PASS. Commit message format: 'refactor(cli): [description] - Level [X] refactoring complete'"
   },
   "dependencies": {
     "requires": [
@@ -110,5 +111,6 @@
       "db0614c - feat(cli): Wire CLI main with hardcoded characters and DI"
     ],
     "ready_for_phase_2": true
-  }
+  },
+  "phase_id": "phase-1"
 }

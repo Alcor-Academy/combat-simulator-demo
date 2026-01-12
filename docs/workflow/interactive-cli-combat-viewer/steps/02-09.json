@@ -31,7 +31,8 @@
       "Git commit created: 'feat(cli): Complete Phase 2 - Interactive character creation'",
       "Phase 2 summary documented in docs/workflow/interactive-cli-combat-viewer/PHASE-2-SUMMARY.md"
     ],
-    "estimated_hours": 0.5
+    "estimated_hours": 0.5,
+    "commit_policy": "Commit after refactoring complete and all tests still PASS. Commit message format: 'refactor(cli): [description] - Level [X] refactoring complete'"
   },
   "dependencies": {
     "requires": [
@@ -48,5 +49,6 @@
     "completed_at": "2026-01-12T11:00:00Z",
     "updated": "2026-01-12T18:00:00Z",
     "notes": "Phase 2 validation completed. All E2E tests 1-5 passing. Manual testing verified. Commit fffafcd."
-  }
+  },
+  "phase_id": "phase-2"
 }

@@ -77,5 +77,6 @@
       "test_fails_red_phase": true,
       "error_indicates_missing_logic": true
     }
-  }
+  },
+  "phase_id": "phase-2"
 }

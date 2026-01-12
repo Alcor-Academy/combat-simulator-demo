@@ -32,7 +32,8 @@
       "python -m modules.infrastructure.cli.main runs without import errors",
       "E2E test error changes (CLI exists but incomplete)"
     ],
-    "estimated_hours": 0.5
+    "estimated_hours": 0.5,
+    "commit_policy": "Commit after all tests PASS. Run full test suite to ensure no regressions. Commit message format: 'feat(cli): [description] - GREEN phase complete'"
   },
   "dependencies": {
     "requires": [
@@ -146,5 +147,6 @@
         "low_priority_issues": 2
       }
     }
-  ]
+  ],
+  "phase_id": "phase-1"
 }

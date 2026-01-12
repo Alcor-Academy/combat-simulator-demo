@@ -31,7 +31,8 @@
       "Type hints present on all public methods",
       "Git commit created with descriptive message"
     ],
-    "estimated_hours": 0.5
+    "estimated_hours": 0.5,
+    "commit_policy": "Commit after refactoring complete and all tests still PASS. Commit message format: 'refactor(cli): [description] - Level [X] refactoring complete'"
   },
   "dependencies": {
     "requires": [
@@ -61,5 +62,6 @@
     "tests_passing": true,
     "quality_gates_met": true,
     "notes": "CharacterCreator properly encapsulated and ready for Phase 2. All validation logic tested."
-  }
+  },
+  "phase_id": "phase-2"
 }

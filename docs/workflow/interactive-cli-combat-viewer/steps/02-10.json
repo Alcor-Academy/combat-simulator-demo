@@ -4,7 +4,9 @@
   "execution_agent": "software-crafter",
   "self_contained_context": {
     "background": "Corrective step for Phase 2 integration issues discovered during 02-09 validation. Two critical problems: (1) main.py still uses hardcoded characters instead of CharacterCreator, (2) E2E tests don't test complete wiring (cli.py → main.py → CharacterCreator). This violates TDD principle where tests should drive production implementation.",
-    "prerequisites_completed": ["02-09"],
+    "prerequisites_completed": [
+      "02-09"
+    ],
     "relevant_files": [
       "modules/infrastructure/cli/main.py (modify - replace hardcoded chars with CharacterCreator)",
       "tests/e2e/test_cli_combat.py (modify - call run_cli() instead of CharacterCreator directly)",
@@ -43,12 +45,23 @@
       "production_fix": 0.5,
       "validation_manual_testing": 0.3,
       "refactor_cleanup": 0.2
-    }
+    },
+    "commit_policy": "Commit after all phases complete (RED → GREEN → REFACTOR) and all tests PASS."
   },
   "dependencies": {
-    "requires": ["02-09"],
-    "blocks": ["03-01"],
-    "related": ["02-03", "02-04", "02-05", "02-06", "02-07"]
+    "requires": [
+      "02-09"
+    ],
+    "blocks": [
+      "03-01"
+    ],
+    "related": [
+      "02-03",
+      "02-04",
+      "02-05",
+      "02-06",
+      "02-07"
+    ]
   },
   "state": {
     "status": "DONE",
@@ -80,5 +93,6 @@
     "prevention": "Add explicit AC requiring removal of hardcoded data and verification that E2E tests exercise complete production path.",
     "reviewer_feedback_incorporated": "Revision 1 addresses 6 issues found by software-crafter-reviewer: (1) stdin mocking approach specified, (2) exact wiring code shown, (3) manual test scenarios detailed, (4) import uncomment explicit, (5) coverage metric clarified, (6) port boundary policy reminder added.",
     "testing_strategy_rationale": "Hybrid approach chosen for performance: Only Scenario #1 tests through run_cli() (validates complete wiring). Scenarios #2-5 remain component tests (validation logic already unit-tested, no benefit from CLI overhead). This keeps test suite fast while ensuring production wiring is validated."
-  }
+  },
+  "phase_id": "phase-2"
 }

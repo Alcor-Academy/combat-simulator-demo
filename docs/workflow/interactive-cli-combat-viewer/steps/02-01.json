@@ -91,5 +91,6 @@
       "test_passes_green_phase": true,
       "no_regressions": true
     }
-  }
+  },
+  "phase_id": "phase-2"
 }

@@ -26,11 +26,12 @@
     "acceptance_criteria": [
       "Random generation logic reviewed for correctness",
       "dice_roller integration verified via unit tests",
-      "Statistical test: 100 iterations, min HP \u2265 20, max HP \u2264 80, min attack \u2265 5, max attack \u2264 15",
+      "Statistical test: 100 iterations, min HP ≥ 20, max HP ≤ 80, min attack ≥ 5, max attack ≤ 15",
       "All values within specified ranges",
       "Git commit created after E2E test #2 passes"
     ],
-    "estimated_hours": 0.5
+    "estimated_hours": 0.5,
+    "commit_policy": "Commit after refactoring complete and all tests still PASS. Commit message format: 'refactor(cli): [description] - Level [X] refactoring complete'"
   },
   "dependencies": {
     "requires": [
@@ -46,5 +47,6 @@
     "started_at": null,
     "completed_at": "2026-01-12T11:16:57.661676+00:00",
     "updated": "2026-01-12T11:16:57.661734+00:00"
-  }
+  },
+  "phase_id": "phase-2"
 }

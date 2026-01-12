@@ -31,7 +31,8 @@
       "Manual test: python cli.py completes successfully",
       "E2E Test 1.1 PASSES (green phase)"
     ],
-    "estimated_hours": 1.0
+    "estimated_hours": 1.0,
+    "commit_policy": "Commit after all tests PASS. Run full test suite to ensure no regressions. Commit message format: 'feat(cli): [description] - GREEN phase complete'"
   },
   "dependencies": {
     "requires": [
@@ -86,5 +87,6 @@
       "Pre-commit hooks now pass - all 49 tests passing with WIP tests excluded"
     ],
     "commit": "db0614c"
-  }
+  },
+  "phase_id": "phase-1"
 }

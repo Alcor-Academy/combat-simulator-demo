@@ -29,7 +29,8 @@
       "Testing results documented",
       "Fallback mode tested explicitly"
     ],
-    "estimated_hours": 2.0
+    "estimated_hours": 2.0,
+    "commit_policy": "Commit after all tests PASS. Run full test suite to ensure no regressions. Commit message format: 'feat(cli): [description] - GREEN phase complete'"
   },
   "dependencies": {
     "requires": [
@@ -45,5 +46,6 @@
     "started_at": null,
     "completed_at": null,
     "updated": "2026-01-10T12:41:07.248054+00:00"
-  }
+  },
+  "phase_id": "phase-5"
 }

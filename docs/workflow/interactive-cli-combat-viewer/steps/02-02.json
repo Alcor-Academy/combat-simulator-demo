@@ -83,5 +83,6 @@
       "dependency_injection": "ConsoleOutput and RandomDiceRoller"
     },
     "notes": "pytest-bdd module not available in environment, so E2E test could not be run directly. Created integration test that verifies same E2E behavior without BDD framework. All acceptance criteria met through unit + integration tests."
-  }
+  },
+  "phase_id": "phase-2"
 }

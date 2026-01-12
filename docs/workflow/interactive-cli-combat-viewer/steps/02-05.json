@@ -128,5 +128,6 @@
       "no_regressions": true,
       "critical_bug_fixed": true
     }
-  }
+  },
+  "phase_id": "phase-2"
 }

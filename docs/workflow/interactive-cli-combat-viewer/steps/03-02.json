@@ -26,7 +26,8 @@
       "get_symbol() method returns emoji or fallback",
       "Unit tests pass (3 tests)"
     ],
-    "estimated_hours": 0.5
+    "estimated_hours": 0.5,
+    "commit_policy": "Commit after all tests PASS. Run full test suite to ensure no regressions. Commit message format: 'feat(cli): [description] - GREEN phase complete'"
   },
   "dependencies": {
     "requires": [
@@ -42,5 +43,6 @@
     "started_at": "2026-01-12T10:30:00.000000+00:00",
     "completed_at": "2026-01-12T11:00:00.000000+00:00",
     "updated": "2026-01-12T11:00:00.000000+00:00"
-  }
+  },
+  "phase_id": "phase-3"
 }

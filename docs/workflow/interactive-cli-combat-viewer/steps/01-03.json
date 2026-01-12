@@ -30,7 +30,8 @@
       "Test mode validation: zero delays confirmed",
       "Code coverage > 90%"
     ],
-    "estimated_hours": 1.5
+    "estimated_hours": 1.5,
+    "commit_policy": "Commit after all tests PASS. Run full test suite to ensure no regressions. Commit message format: 'feat(cli): [description] - GREEN phase complete'"
   },
   "dependencies": {
     "requires": [
@@ -177,5 +178,6 @@
       "Task 01-04: CharacterCreator implementation can now proceed",
       "ConsoleOutput ready for use by all CLI visualization components"
     ]
-  }
+  },
+  "phase_id": "phase-1"
 }
