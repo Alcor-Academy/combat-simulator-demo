@@ -1232,46 +1232,137 @@ def no_attack_outside_bounds(cli_context):
 # Combat Display Assertions
 
 
+def _render_combat_if_needed(cli_context, mock_console):
+    """
+    Render combat output if not already captured.
+
+    L2 Refactoring: Extract Method - eliminates duplication across initiative assertions.
+    Ensures combat visualization rendered exactly once per test.
+    """
+    if not mock_console.output_buffer:
+        config = CLIConfig.test_mode()
+        console_output = ConsoleOutput(mock_console, config)
+        renderer = CombatRenderer(console_output, config)
+        combat_result = cli_context["combat_result"]
+        renderer.render_combat(combat_result)
+
+
 @then(parsers.parse("initiative roll is displayed with {emoji} emoji"))
-def initiative_shows_emoji(cli_context, emoji):
-    """Verify initiative display includes specified emoji."""
-    # Check output for emoji or fallback
-    output_str = " ".join(str(o) for o in cli_context.get("output", []))
-    assert emoji in output_str or "[D6]" in output_str or "[DICE]" in output_str
+def initiative_shows_emoji(cli_context, mock_console, emoji):
+    """
+    Verify initiative display includes dice emoji or explicit fallback.
+
+    Renders combat to capture output, validates emoji or fallback present.
+    Cross-platform: accepts emoji OR bracketed fallback text [D6]/[INIT].
+    """
+    _render_combat_if_needed(cli_context, mock_console)
+
+    # Collect all output
+    output_text = " ".join(str(call) for call in mock_console.output_buffer)
+
+    # Check for emoji OR explicit fallback format
+    has_dice_indicator = (
+        emoji in output_text or "[D6]" in output_text or "[DICE]" in output_text or "[INIT]" in output_text
+    )
+    assert has_dice_indicator, f"Expected dice emoji '{emoji}' or fallback '[D6]/[INIT]' in output: {output_text[:500]}"
 
 
 @then(parsers.parse("initiative shows {char_name} agility value"))
-def initiative_shows_agility(cli_context, char_name):
-    """Verify initiative display includes character agility."""
+def initiative_shows_agility(cli_context, mock_console, char_name):
+    """
+    Verify initiative display includes character agility value.
+
+    Renders combat if not already rendered, validates agility value appears in output.
+    """
     combat_result = cli_context["combat_result"]
-    # Initiative result should show agility values
     assert combat_result.initiative_result is not None
+
+    _render_combat_if_needed(cli_context, mock_console)
+
+    # Find character in combat participants
+    char = next((c for c in cli_context["characters"] if c.name == char_name), None)
+    assert char is not None, f"Character {char_name} not found in test context"
+
+    # Verify agility value appears in output
+    output_text = " ".join(str(call) for call in mock_console.output_buffer)
+    agility_str = str(char.agility)
+    assert agility_str in output_text, f"Expected {char_name} agility {agility_str} in output: {output_text[:500]}"
 
 
 @then("initiative shows dice rolls for both characters")
-def initiative_shows_dice_rolls(cli_context):
-    """Verify initiative shows both dice roll values."""
+def initiative_shows_dice_rolls(cli_context, mock_console):
+    """
+    Verify initiative shows both dice roll values.
+
+    Validates initiative result data and checks rendered output displays dice rolls.
+    """
     combat_result = cli_context["combat_result"]
     init_result = combat_result.initiative_result
     assert init_result.attacker_roll is not None
     assert init_result.defender_roll is not None
 
+    _render_combat_if_needed(cli_context, mock_console)
+
+    # Verify dice roll values appear in output
+    output_text = " ".join(str(call) for call in mock_console.output_buffer)
+    attacker_roll_str = str(init_result.attacker_roll)
+    defender_roll_str = str(init_result.defender_roll)
+
+    # At least one of the rolls should appear (may be formatted differently)
+    has_rolls = attacker_roll_str in output_text or defender_roll_str in output_text
+    assert has_rolls, f"Expected dice rolls {attacker_roll_str}/{defender_roll_str} in output: {output_text[:500]}"
+
 
 @then("initiative shows calculated totals for both characters")
-def initiative_shows_totals(cli_context):
-    """Verify initiative shows total values (agility + roll)."""
+def initiative_shows_totals(cli_context, mock_console):
+    """
+    Verify initiative shows total values (agility + roll).
+
+    Validates initiative result data and checks rendered output displays totals.
+    """
     combat_result = cli_context["combat_result"]
     init_result = combat_result.initiative_result
     assert init_result.attacker_total is not None
     assert init_result.defender_total is not None
 
+    _render_combat_if_needed(cli_context, mock_console)
+
+    # Verify total values appear in output
+    output_text = " ".join(str(call) for call in mock_console.output_buffer)
+    attacker_total_str = str(init_result.attacker_total)
+    defender_total_str = str(init_result.defender_total)
+
+    # At least one of the totals should appear
+    has_totals = attacker_total_str in output_text or defender_total_str in output_text
+    assert has_totals, f"Expected totals {attacker_total_str}/{defender_total_str} in output: {output_text[:500]}"
+
 
 @then(parsers.parse("initiative announces who attacks first with {emoji} emoji"))
-def initiative_announces_winner(cli_context, emoji):
-    """Verify initiative winner announcement."""
+def initiative_announces_winner(cli_context, mock_console, emoji):
+    """
+    Verify initiative winner announcement with emoji or fallback.
+
+    Validates initiative winner determined and announcement includes emoji/fallback.
+    Cross-platform: accepts emoji OR bracketed fallback text [INIT].
+    """
     combat_result = cli_context["combat_result"]
     init_result = combat_result.initiative_result
     assert init_result.attacker is not None
+
+    _render_combat_if_needed(cli_context, mock_console)
+
+    # Verify winner announcement with emoji or fallback
+    output_text = " ".join(str(call) for call in mock_console.output_buffer)
+    winner_name = init_result.attacker.name
+
+    # Check for emoji OR explicit fallback format
+    has_init_indicator = emoji in output_text or "[INIT]" in output_text
+    has_winner_name = winner_name in output_text
+
+    assert has_init_indicator, (
+        f"Expected initiative emoji '{emoji}' or fallback '[INIT]' in output: {output_text[:500]}"
+    )
+    assert has_winner_name, f"Expected winner name '{winner_name}' in initiative announcement: {output_text[:500]}"
 
 
 @then("each combat round displays round number")

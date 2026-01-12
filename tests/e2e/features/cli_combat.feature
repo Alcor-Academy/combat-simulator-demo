@@ -91,7 +91,6 @@ Feature: Interactive CLI Combat Viewer
   # US-02: Visual Combat Progress Display
   # ============================================================================
 
-  @skip
   Scenario: Complete combat displays initiative with dice emoji and calculations
     Given two characters are created: Hero (HP 50, attack 10) and Villain (HP 40, attack 8)
     When combat starts
