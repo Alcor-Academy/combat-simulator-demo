@@ -477,6 +477,29 @@ def combat_executes(cli_context, production_services):
     cli_context["combat_result"] = combat_result
 
 
+def _ensure_default_characters(cli_context):
+    """Create default characters if not already present (for cross-platform tests).
+
+    This helper ensures characters exist before running combat-related steps,
+    supporting test scenarios that skip character creation.
+    """
+    if "characters" not in cli_context or not cli_context["characters"]:
+        char1 = Character(name="Hero", hp=50, attack_power=10)
+        char2 = Character(name="Villain", hp=40, attack_power=8)
+        cli_context["characters"] = [char1, char2]
+
+
+@when("combat runs")
+def combat_runs(cli_context, production_services):
+    """Execute combat (creates default characters if needed for emoji tests)."""
+    _ensure_default_characters(cli_context)
+
+    # Execute combat
+    char1, char2 = cli_context["characters"]
+    combat_result = production_services["combat_simulator"].run_combat(char1, char2)
+    cli_context["combat_result"] = combat_result
+
+
 @when(parsers.parse("combat runs for {rounds:d} rounds"))
 def combat_runs_for_rounds(cli_context, production_services, rounds):
     """Execute combat and verify round count."""
@@ -699,6 +722,8 @@ def victory_banner_displayed(cli_context):
 @when("combat visualization displays events")
 def combat_displays_events(cli_context, production_services):
     """Display combat events (for emoji fallback testing)."""
+    _ensure_default_characters(cli_context)
+
     char1, char2 = cli_context["characters"]
     combat_result = production_services["combat_simulator"].run_combat(char1, char2)
     cli_context["combat_result"] = combat_result

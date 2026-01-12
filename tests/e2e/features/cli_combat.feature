@@ -273,7 +273,6 @@ Feature: Interactive CLI Combat Viewer
   # US-06: Cross-Platform Experience
   # ============================================================================
 
-  @skip
   Scenario: Emoji display correctly on Unicode-capable terminals
     Given terminal supports Unicode emoji
     When combat runs
@@ -290,7 +289,6 @@ Feature: Interactive CLI Combat Viewer
     And HP values display with health-based color gradient
     And combat events use appropriate colors
 
-  @skip
   Scenario: Graceful degradation for terminals without emoji support
     Given terminal does not support emoji
     When CLI runs
@@ -306,7 +304,6 @@ Feature: Interactive CLI Combat Viewer
     And no functionality is lost
     And text remains readable
 
-  @skip
   Scenario: Cross-platform emoji fallback mapping
     Given terminal does not support emoji
     When combat visualization displays events
