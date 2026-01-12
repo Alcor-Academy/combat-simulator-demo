@@ -582,26 +582,48 @@ def user_enters_value_for_field(cli_context, input_value, field):
 
 
 @when(parsers.parse("I create {count:d} characters using random HP defaults"))
-def create_multiple_random_hp(cli_context, production_services, count):
+def create_multiple_random_hp(cli_context, production_services, mock_console, count):
     """Create multiple characters to test random HP distribution."""
+    # CRITICAL FIX: Call REAL CharacterCreator instead of duplicating logic
+    # This ensures tests validate actual production behavior
+    config = CLIConfig.test_mode()
+    console_output = ConsoleOutput(mock_console, config)
+    creator = CharacterCreator(console_output, production_services["dice_roller"])
+
     random_characters = []
+    cli_context["random_hp_values"] = []
+
     for i in range(count):
-        # Simulate random HP generation using REAL dice roller
-        hp = sum(production_services["dice_roller"].roll() for _ in range(10)) + 20
-        char = Character(name=f"Char{i}", hp=hp, attack_power=10)
-        random_characters.append(char)
+        with patch("rich.prompt.Prompt.ask") as mock_prompt:
+            # Simulate user input: name, HP="" (random), attack=10
+            mock_prompt.side_effect = [f"TestChar{i}", "", "10"]
+            char = creator.create_character(i + 1)
+            random_characters.append(char)
+            cli_context["random_hp_values"].append(char.hp)
+
     cli_context["random_characters"] = random_characters
 
 
 @when(parsers.parse("I create {count:d} characters using random attack defaults"))
-def create_multiple_random_attack(cli_context, production_services, count):
+def create_multiple_random_attack(cli_context, production_services, mock_console, count):
     """Create multiple characters to test random attack distribution."""
+    # CRITICAL FIX: Call REAL CharacterCreator instead of duplicating logic
+    # This ensures tests validate actual production behavior
+    config = CLIConfig.test_mode()
+    console_output = ConsoleOutput(mock_console, config)
+    creator = CharacterCreator(console_output, production_services["dice_roller"])
+
     random_characters = []
+    cli_context["random_attack_values"] = []
+
     for i in range(count):
-        # Simulate random attack generation using REAL dice roller
-        attack = sum(production_services["dice_roller"].roll() for _ in range(2)) + 4
-        char = Character(name=f"Char{i}", hp=50, attack_power=attack)
-        random_characters.append(char)
+        with patch("rich.prompt.Prompt.ask") as mock_prompt:
+            # Simulate user input: name, HP=50, attack="" (random)
+            mock_prompt.side_effect = [f"TestChar{i}", "50", ""]
+            char = creator.create_character(i + 1)
+            random_characters.append(char)
+            cli_context["random_attack_values"].append(char.attack_power)
+
     cli_context["random_characters"] = random_characters
 
 
