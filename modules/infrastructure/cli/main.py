@@ -53,11 +53,22 @@ def run_cli() -> None:
         # Display combat
         renderer.render_combat(result)
 
+        # Normal exit (after user presses ENTER in prompt_continue)
+        sys.exit(0)
+
     except KeyboardInterrupt:
+        # User pressed CTRL-C during character creation, combat, or exit confirmation
         console.print("\n⚠️  Combat interrupted by user. Exiting...", style="yellow")
-        sys.exit(130)
+        sys.exit(130)  # Unix convention for SIGINT
+    except ValueError as e:
+        # Domain validation error (defensive - should be caught by CharacterCreator)
+        console.print(f"\n❌ Invalid input: {e}", style="red")
+        console.print("Please try again.", style="dim")
+        sys.exit(1)
     except Exception as e:
-        console.print(f"\n❌ Unexpected error: {e}", style="red")
+        # Unexpected error
+        console.print(f"\n❌ Unexpected error occurred: {e}", style="red")
+        console.print("Please report this issue.", style="dim")
         sys.exit(1)
 
 
