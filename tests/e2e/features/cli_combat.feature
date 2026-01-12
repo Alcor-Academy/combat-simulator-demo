@@ -168,7 +168,6 @@ Feature: Interactive CLI Combat Viewer
     And delays are consistent across all rounds
     And timing accuracy is within ±0.2 second tolerance
 
-  @skip
   Scenario: Test mode disables delays for rapid execution
     Given CLI is launched in test mode
     When combat executes

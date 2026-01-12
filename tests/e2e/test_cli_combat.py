@@ -471,10 +471,16 @@ def combat_with_default_timing(cli_context, production_services):
 
 @when("combat executes")
 def combat_executes(cli_context, production_services):
-    """Execute combat (generic action)."""
+    """Execute combat (generic action) - creates default characters if needed."""
+    _ensure_default_characters(cli_context)
+
     char1, char2 = cli_context["characters"]
+    start_time = time.time()
     combat_result = production_services["combat_simulator"].run_combat(char1, char2)
+    end_time = time.time()
+
     cli_context["combat_result"] = combat_result
+    cli_context["execution_time"] = end_time - start_time
 
 
 def _ensure_default_characters(cli_context):
