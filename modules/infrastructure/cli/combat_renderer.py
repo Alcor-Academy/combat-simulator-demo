@@ -40,10 +40,13 @@ class CombatRenderer:
         Args:
             init_result: InitiativeResult containing roll details
         """
-        self._console.print("Rolling Initiative...")
+        dice = self._config.get_symbol("dice")
+        init_symbol = self._config.get_symbol("initiative")
+
+        self._console.print(f"{dice} Rolling Initiative...")
         self._console.print(f"{init_result.attacker.name}: {init_result.attacker_total}")
         self._console.print(f"{init_result.defender.name}: {init_result.defender_total}")
-        self._console.print(f"{init_result.attacker.name} attacks first!")
+        self._console.print(f"{init_symbol} {init_result.attacker.name} attacks first!")
         self._console.display_with_delay("", self._config.initiative_winner_delay)
 
     def _render_round(self, round_result: RoundResult) -> None:
@@ -63,7 +66,8 @@ class CombatRenderer:
             self._render_attack_action(round_result.defender_action, is_counter=True)
         else:
             defender_name = round_result.attacker_action.defender_name
-            self._console.print(f"{defender_name} has been defeated!")
+            death = self._config.get_symbol("death")
+            self._console.print(f"{death} {defender_name} has been defeated!")
             self._console.display_with_delay("", self._config.death_delay)
 
     def _render_attack_action(self, action: AttackResult, is_counter: bool) -> None:
@@ -73,10 +77,21 @@ class CombatRenderer:
             action: AttackResult containing attack details
             is_counter: Whether this is a counter-attack
         """
+        attack_symbol = self._config.get_symbol("attack")
+        defend_symbol = self._config.get_symbol("defend")
+        damage_symbol = self._config.get_symbol("damage")
+        hp_symbol = self._config.get_symbol("hp")
+        dice_symbol = self._config.get_symbol("dice")
+
+        action_symbol = defend_symbol if is_counter else attack_symbol
         attack_verb = "counter-attacks" if is_counter else "attacks"
-        self._console.print(f"{action.attacker_name} {attack_verb}!")
-        self._console.print(f"  Damage: {action.total_damage}")
-        self._console.print(f"  {action.defender_name}: {action.defender_old_hp} HP -> {action.defender_new_hp} HP")
+
+        self._console.print(f"{action_symbol} {action.attacker_name} {attack_verb}!")
+        self._console.print(f"  {dice_symbol} Roll: {action.dice_roll}")
+        self._console.print(f"  {damage_symbol} Damage: {action.total_damage}")
+        self._console.print(
+            f"  {hp_symbol} {action.defender_name}: {action.defender_old_hp} HP -> {action.defender_new_hp} HP"
+        )
         self._console.display_with_delay("", self._config.attack_delay)
 
     def _render_victory(self, result: CombatResult) -> None:
@@ -85,10 +100,14 @@ class CombatRenderer:
         Args:
             result: Complete CombatResult with winner information
         """
-        self._console.print(f"\n=== {result.winner.name.upper()} WINS! ===")
+        victory_symbol = self._config.get_symbol("victory")
+        hp_symbol = self._config.get_symbol("hp")
+        death_symbol = self._config.get_symbol("death")
+
+        self._console.print(f"\n{victory_symbol} === {result.winner.name.upper()} WINS! === {victory_symbol}")
         self._console.print(f"Combat lasted {result.total_rounds} rounds")
-        self._console.print(f"{result.winner.name}: {result.winner.hp} HP remaining")
-        self._console.print(f"{result.loser.name}: 0 HP (defeated)")
+        self._console.print(f"{hp_symbol} {result.winner.name}: {result.winner.hp} HP remaining")
+        self._console.print(f"{death_symbol} {result.loser.name}: 0 HP (defeated)")
 
         if self._config.prompt_for_exit:
             self._console.prompt_continue("\nPress ENTER to exit...")

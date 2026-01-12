@@ -105,7 +105,6 @@ Feature: Interactive CLI Combat Viewer
     And initiative shows calculated totals for both characters
     And initiative announces who attacks first with ⚡ emoji
 
-  @skip
   Scenario: Combat round displays all event details with emoji
     Given two characters are created: Hero (HP 50, attack 10) and Villain (HP 40, attack 8)
     When combat starts

@@ -1031,14 +1031,59 @@ def rounds_display_numbers(cli_context):
 
 
 @then(parsers.parse("attacker action shows {emoji} emoji"))
-def attacker_shows_emoji(cli_context, emoji):
-    """Verify attacker action includes emoji."""
-    # Output verification
+def attacker_shows_emoji(cli_context, mock_console, production_services, emoji):
+    """
+    Verify attacker action includes emoji or explicit fallback.
+
+    Renders combat to capture output, then checks for emoji OR explicit fallback format.
+    Cross-platform: accepts emoji OR bracketed fallback text [ATK].
+    STRICT: Does NOT accept plain text like "attacks" - requires visual indicator.
+    """
+    # Import here to avoid circular imports
+    from modules.infrastructure.cli.combat_renderer import CombatRenderer
+
+    # Capture output through renderer
+    config = CLIConfig.test_mode()
+    console_output = ConsoleOutput(mock_console, config)
+    renderer = CombatRenderer(console_output, config)
+
+    combat_result = cli_context["combat_result"]
+    renderer.render_combat(combat_result)
+
+    # Collect all output
+    output_text = " ".join(str(call) for call in mock_console.output_buffer)
+
+    # Check for emoji OR explicit fallback format (STRICT - no plain text)
+    has_attack_indicator = emoji in output_text or "[ATK]" in output_text
+    assert has_attack_indicator, f"Expected attack emoji '{emoji}' or fallback '[ATK]' in output: {output_text[:500]}"
 
 
 @then(parsers.parse("attack details show dice roll with {emoji} emoji"))
-def attack_shows_dice_emoji(cli_context, emoji):
-    """Verify attack details include dice emoji."""
+def attack_shows_dice_emoji(cli_context, mock_console, emoji):
+    """
+    Verify attack details include dice emoji or explicit fallback.
+
+    Cross-platform: accepts emoji OR bracketed fallback text [D6].
+    STRICT: Requires visual indicator of dice roll in output.
+    """
+    from modules.infrastructure.cli.combat_renderer import CombatRenderer
+
+    combat_result = cli_context["combat_result"]
+    # Verify dice roll data exists
+    for round_result in combat_result.rounds:
+        assert round_result.attacker_action.dice_roll >= 1, "Dice roll should be at least 1"
+
+    # Render combat to capture output
+    config = CLIConfig.test_mode()
+    console_output = ConsoleOutput(mock_console, config)
+    renderer = CombatRenderer(console_output, config)
+    renderer.render_combat(combat_result)
+
+    output_text = " ".join(str(call) for call in mock_console.output_buffer)
+
+    # Check for emoji OR explicit fallback format (STRICT)
+    has_dice_indicator = emoji in output_text or "[D6]" in output_text or "[DICE]" in output_text
+    assert has_dice_indicator, f"Expected dice emoji '{emoji}' or fallback '[D6]' in output: {output_text[:500]}"
 
 
 @then("attack details show attack power")
@@ -1050,39 +1095,118 @@ def attack_shows_power(cli_context):
 
 
 @then(parsers.parse("attack details show total damage with {emoji} emoji"))
-def attack_shows_damage(cli_context, emoji):
-    """Verify attack details show total damage."""
+def attack_shows_damage(cli_context, mock_console, emoji):
+    """
+    Verify attack details show total damage with emoji or explicit fallback.
+
+    Cross-platform: accepts emoji OR bracketed fallback text [DMG].
+    STRICT: Requires visual indicator of damage in output.
+    """
+    from modules.infrastructure.cli.combat_renderer import CombatRenderer
+
+    # Get combat result data
     combat_result = cli_context["combat_result"]
     for round_result in combat_result.rounds:
         assert round_result.attacker_action.total_damage >= 0
 
+    # Render combat to capture output
+    config = CLIConfig.test_mode()
+    console_output = ConsoleOutput(mock_console, config)
+    renderer = CombatRenderer(console_output, config)
+    renderer.render_combat(combat_result)
+
+    # Collect output
+    output_text = " ".join(str(call) for call in mock_console.output_buffer)
+
+    # Check for damage indicator (emoji or explicit fallback - STRICT)
+    has_damage_indicator = emoji in output_text or "[DMG]" in output_text
+    assert has_damage_indicator, f"Expected damage emoji '{emoji}' or fallback '[DMG]' in output: {output_text[:500]}"
+
 
 @then(parsers.parse("HP change shows old HP → new HP with {emoji} emoji"))
-def hp_change_displayed(cli_context, emoji):
-    """Verify HP change shows old → new format."""
+def hp_change_displayed(cli_context, mock_console, emoji):
+    """
+    Verify HP change shows old to new format with emoji or explicit fallback.
+
+    Cross-platform: accepts emoji OR bracketed fallback text [HP].
+    STRICT: Requires visual indicator of HP in output.
+    """
+    from modules.infrastructure.cli.combat_renderer import CombatRenderer
+
+    # Verify data exists
     combat_result = cli_context["combat_result"]
     for round_result in combat_result.rounds:
         assert round_result.attacker_action.defender_old_hp >= 0
         assert round_result.attacker_action.defender_new_hp >= 0
 
+    # Render combat to capture output
+    config = CLIConfig.test_mode()
+    console_output = ConsoleOutput(mock_console, config)
+    renderer = CombatRenderer(console_output, config)
+    renderer.render_combat(combat_result)
+
+    # Collect output
+    output_text = " ".join(str(call) for call in mock_console.output_buffer)
+
+    # Check for HP indicator (emoji or explicit fallback - STRICT)
+    has_hp_indicator = emoji in output_text or "[HP]" in output_text
+    assert has_hp_indicator, f"Expected HP emoji '{emoji}' or fallback '[HP]' in output: {output_text[:500]}"
+
 
 @then(parsers.parse("defender counter-attack shows {emoji} emoji if defender survives"))
-def defender_counter_attack(cli_context, emoji):
-    """Verify defender counter-attack shown if alive."""
+def defender_counter_attack(cli_context, mock_console, emoji):
+    """
+    Verify defender counter-attack shown with emoji or explicit fallback if alive.
+
+    Cross-platform: accepts emoji OR bracketed fallback text [DEF].
+    STRICT: Requires visual indicator of defend in output.
+    """
+    from modules.infrastructure.cli.combat_renderer import CombatRenderer
+
     combat_result = cli_context["combat_result"]
+    # Check if any round has defender action (survived)
+    has_counter_attack = False
     for round_result in combat_result.rounds:
         if round_result.defender_action is not None:
-            # Defender survived, should show counter-attack
+            has_counter_attack = True
             assert round_result.defender_action.attacker_name is not None
+
+    # If there's a counter-attack, verify output
+    if has_counter_attack:
+        config = CLIConfig.test_mode()
+        console_output = ConsoleOutput(mock_console, config)
+        renderer = CombatRenderer(console_output, config)
+        renderer.render_combat(combat_result)
+
+        output_text = " ".join(str(call) for call in mock_console.output_buffer)
+        has_defend_indicator = emoji in output_text or "[DEF]" in output_text
+        assert has_defend_indicator, f"Expected defend emoji '{emoji}' or fallback '[DEF]' in output: {output_text[:500]}"
 
 
 @then(parsers.parse("death announcement shows {emoji} emoji when character dies"))
-def death_announcement(cli_context, emoji):
-    """Verify death announcement for defeated character."""
+def death_announcement(cli_context, mock_console, emoji):
+    """
+    Verify death announcement with emoji or explicit fallback for defeated character.
+
+    Cross-platform: accepts emoji OR bracketed fallback text [DEAD].
+    STRICT: Requires visual indicator of death in output.
+    """
+    from modules.infrastructure.cli.combat_renderer import CombatRenderer
+
     combat_result = cli_context["combat_result"]
     # Final round should have combat_ended=True
     final_round = combat_result.rounds[-1]
     assert final_round.combat_ended
+
+    # Render combat to capture output
+    config = CLIConfig.test_mode()
+    console_output = ConsoleOutput(mock_console, config)
+    renderer = CombatRenderer(console_output, config)
+    renderer.render_combat(combat_result)
+
+    output_text = " ".join(str(call) for call in mock_console.output_buffer)
+    has_death_indicator = emoji in output_text or "[DEAD]" in output_text
+    assert has_death_indicator, f"Expected death emoji '{emoji}' or fallback '[DEAD]' in output: {output_text[:500]}"
 
 
 @then(parsers.parse("{char_name} HP changes from {old_hp:d} to {new_hp:d}"))
