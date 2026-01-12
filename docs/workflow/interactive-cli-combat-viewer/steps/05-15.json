@@ -1,0 +1,50 @@
+{
+  "task_id": "05-15",
+  "project_id": "interactive-cli-combat-viewer",
+  "execution_agent": "software-crafter",
+  "self_contained_context": {
+    "background": "Part of Phase 5: Scenario Completion. Enable skipped test: User interrupts CLI with CTRL-C during combat",
+    "prerequisites_completed": [
+      "05-14"
+    ],
+    "relevant_files": [
+      "tests/e2e/features/cli_combat.feature (modify - remove @skip)",
+      "tests/e2e/test_cli_combat.py (verify/implement step definitions)"
+    ],
+    "technical_context": "Enable skipped acceptance test.\n\nScenario (line 226 in cli_combat.feature):\nRemove @skip tag and verify/implement step definitions as needed.\n\nComplexity: MEDIUM\nRequires new step definitions: True\n",
+    "tdd_phase": "RED",
+    "active_e2e_test": "User interrupts CLI with CTRL-C during combat - 05-15",
+    "inactive_e2e_tests": "All other @skip scenarios remain disabled"
+  },
+  "task_specification": {
+    "name": "Enable Scenario: User interrupts CLI with CTRL-C during combat",
+    "description": "Remove @skip tag from line 226 and implement/verify step definitions.",
+    "motivation": "Complete E2E test coverage for: User interrupts CLI with CTRL-C during combat",
+    "commit_policy": "Commit after ALL 11 PHASES complete. AUTO-PUSH after commit.",
+    "detailed_instructions": "MANDATORY 11-PHASE TDD LOOP:\n\nPhase 1: PREPARE - Remove @skip, verify only 1 scenario enabled\nPhase 2: RED (Acceptance) - Test must FAIL initially\nPhase 3-5: RED/GREEN (Unit) - Implement step definitions if needed\nPhase 6: GREEN (Acceptance) - All tests PASS\nPhase 7: REVIEW - Execute /dw:review @software-crafter-reviewer (MANDATORY)\nPhase 8: REFACTOR - Apply L1\u2192L4 with validation (MANDATORY)\nPhase 9: POST-REFACTOR REVIEW - Execute /dw:review again (MANDATORY)\nPhase 10: FINAL VALIDATE - Document full test results (MANDATORY)\nPhase 11: COMMIT - Commit with detailed message\n\nALL 11 PHASES MUST BE EXECUTED AND DOCUMENTED.",
+    "acceptance_criteria": [
+      "@skip removed",
+      "Step definitions verified/implemented",
+      "Test PASSES",
+      "ALL 11 PHASES documented in execution_result",
+      "No regressions"
+    ],
+    "estimated_hours": 1.0
+  },
+  "dependencies": {
+    "requires": [
+      "05-14"
+    ],
+    "blocking": [
+      "05-16"
+    ]
+  },
+  "state": {
+    "status": "TODO",
+    "assigned_to": null,
+    "started_at": null,
+    "completed_at": null,
+    "updated": null
+  },
+  "phase_id": "phase-5"
+}

@@ -1555,43 +1555,136 @@ def display_shows_text(cli_context, text):
 
 
 @then(parsers.parse("victory banner is displayed with {emoji} emoji"))
-def victory_banner_with_emoji(cli_context, emoji):
-    """Verify victory banner includes trophy emoji."""
+def victory_banner_with_emoji(cli_context, mock_console, emoji):
+    """
+    Verify victory banner includes trophy emoji.
+
+    Renders complete combat including victory summary, then validates
+    banner contains emoji or fallback and winner name.
+    """
+    combat_result = cli_context["combat_result"]
+    assert combat_result.winner is not None, "Combat should have winner for victory banner"
+
+    # Render combat to capture victory output
+    config = CLIConfig.test_mode()
+    console_output = ConsoleOutput(mock_console, config)
+    renderer = CombatRenderer(console_output, config)
+    renderer.render_combat(combat_result)
+
+    # Collect output
+    output_text = " ".join(str(call) for call in mock_console.output_buffer)
+
+    # Victory banner should contain emoji or fallback
+    has_victory_indicator = emoji in output_text or "[VICTORY]" in output_text or "🏆" in output_text
+    assert has_victory_indicator, f"Expected victory emoji '{emoji}' or fallback in output: {output_text[:500]}"
+
+    # Should contain "WINS" announcement
+    assert "WINS" in output_text.upper(), f"Expected 'WINS' in victory banner: {output_text[:500]}"
 
 
 @then("winner name is shown in victory message")
-def winner_name_shown(cli_context):
-    """Verify winner name in victory output."""
+def winner_name_shown(cli_context, mock_console):
+    """
+    Verify winner name displayed in victory message.
+
+    Note: This step runs AFTER victory_banner_with_emoji, so rendering
+    already occurred. We just need to validate winner name in output.
+    """
     combat_result = cli_context["combat_result"]
-    assert combat_result.winner is not None
+    assert combat_result.winner is not None, "Combat should have winner"
+
+    # Output already captured by previous step (victory_banner_with_emoji)
+    output_text = " ".join(str(call) for call in mock_console.output_buffer)
+
+    # Winner name should appear in victory message
+    winner_name = combat_result.winner.name
+    assert winner_name.upper() in output_text.upper(), (
+        f"Expected winner name '{winner_name}' in victory message: {output_text[:500]}"
+    )
 
 
 @then(parsers.parse("loser name is shown with {emoji} emoji"))
-def loser_with_emoji(cli_context, emoji):
-    """Verify loser shown with death emoji."""
+def loser_with_emoji(cli_context, mock_console, emoji):
+    """
+    Verify loser shown with death emoji in victory summary.
+
+    Validates that loser name appears with death emoji or fallback.
+    """
     combat_result = cli_context["combat_result"]
-    assert combat_result.loser is not None
+    assert combat_result.loser is not None, "Combat should have loser"
+
+    # Output already captured by victory_banner_with_emoji step
+    output_text = " ".join(str(call) for call in mock_console.output_buffer)
+
+    # Loser name should appear in output
+    loser_name = combat_result.loser.name
+    assert loser_name in output_text, f"Expected loser name '{loser_name}' in output: {output_text[:500]}"
+
+    # Should have death emoji or fallback
+    has_death_indicator = (
+        emoji in output_text or "[DEAD]" in output_text or "☠️" in output_text or "defeated" in output_text.lower()
+    )
+    assert has_death_indicator, f"Expected death indicator (emoji '{emoji}' or fallback) for loser: {output_text[:500]}"
 
 
 @then("total rounds fought is displayed")
-def total_rounds_displayed(cli_context):
-    """Verify total round count shown."""
+def total_rounds_displayed(cli_context, mock_console):
+    """
+    Verify total round count shown in victory summary.
+
+    Validates that combat duration (total rounds) appears in output.
+    """
     combat_result = cli_context["combat_result"]
-    assert combat_result.total_rounds > 0
+    assert combat_result.total_rounds > 0, "Combat should have at least one round"
+
+    # Output already captured by victory_banner_with_emoji step
+    output_text = " ".join(str(call) for call in mock_console.output_buffer)
+
+    # Should show total rounds count
+    rounds_str = str(combat_result.total_rounds)
+    has_rounds = rounds_str in output_text and ("round" in output_text.lower() or "rounds" in output_text.lower())
+    assert has_rounds, f"Expected total rounds '{rounds_str}' with 'round(s)' in output: {output_text[:500]}"
 
 
 @then("winner final HP is displayed")
-def winner_hp_displayed(cli_context):
-    """Verify winner final HP shown."""
+def winner_hp_displayed(cli_context, mock_console):
+    """
+    Verify winner final HP shown in victory summary.
+
+    Validates that winner's remaining HP is displayed.
+    """
     combat_result = cli_context["combat_result"]
-    assert combat_result.winner.hp > 0
+    assert combat_result.winner.hp > 0, "Winner should have HP remaining"
+
+    # Output already captured by victory_banner_with_emoji step
+    output_text = " ".join(str(call) for call in mock_console.output_buffer)
+
+    # Winner HP should appear in output
+    winner_name = combat_result.winner.name
+    winner_hp = str(combat_result.winner.hp)
+
+    # Should show winner name with HP value
+    has_winner_hp = winner_name in output_text and winner_hp in output_text and "HP" in output_text
+    assert has_winner_hp, f"Expected winner '{winner_name}' with '{winner_hp} HP' in output: {output_text[:500]}"
 
 
 @then("loser final HP shows 0 HP")
-def loser_hp_zero(cli_context):
-    """Verify loser HP is 0."""
+def loser_hp_zero(cli_context, mock_console):
+    """
+    Verify loser final HP shows 0 in victory summary.
+
+    Validates that loser HP is displayed as 0 HP.
+    """
     combat_result = cli_context["combat_result"]
-    assert combat_result.loser.hp == 0
+    assert combat_result.loser.hp == 0, "Loser should have 0 HP"
+
+    # Output already captured by victory_banner_with_emoji step
+    output_text = " ".join(str(call) for call in mock_console.output_buffer)
+
+    # Loser should show 0 HP
+    loser_name = combat_result.loser.name
+    has_zero_hp = loser_name in output_text and "0 HP" in output_text
+    assert has_zero_hp, f"Expected loser '{loser_name}' with '0 HP' in output: {output_text[:500]}"
 
 
 @then(parsers.parse("all {count:d} rounds are displayed with consistent formatting"))

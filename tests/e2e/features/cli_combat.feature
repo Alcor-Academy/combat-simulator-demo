@@ -123,7 +123,6 @@ Feature: Interactive CLI Combat Viewer
     Then Hero HP changes from 50 to 38
     And display shows "Hero: 50 HP → 38 HP"
 
-  @skip
   Scenario: Victory announcement displays complete combat summary
     Given combat completes with Hero as winner
     Then victory banner is displayed with 🏆 emoji
