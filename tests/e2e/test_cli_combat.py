@@ -213,6 +213,14 @@ def character_starts_with_hp(cli_context, char_name, hp):
     cli_context[f"{char_name}_initial_hp"] = hp
 
 
+@given("two characters are created")
+def create_two_generic_characters(cli_context):
+    """Create two generic characters for testing."""
+    char1 = Character(name="Fighter1", hp=50, attack_power=10)
+    char2 = Character(name="Fighter2", hp=40, attack_power=8)
+    cli_context["characters"] = [char1, char2]
+
+
 @given("two balanced characters are created")
 def create_balanced_characters(cli_context):
     """Create two characters with balanced stats for extended combat."""
@@ -498,11 +506,88 @@ def create_multiple_random_attack(cli_context, production_services, count):
 
 
 @when(parsers.parse("{attacker} attacks and deals {damage:d} damage"))
-def attacker_deals_damage(cli_context, production_services, attacker, damage):
-    """Simulate specific attack with known damage."""
-    # This requires controlling dice rolls for exact damage
-    # Store for HP tracking validation
-    cli_context["last_attack"] = {"attacker": attacker, "damage": damage}
+def attacker_deals_damage(cli_context, production_services, attacker, damage, mock_console):
+    """
+    Execute combat action with controlled dice roll for exact damage.
+
+    Calculates required dice roll: dice_roll = damage - attack_power
+    Creates controlled dice roller, executes combat round, captures output.
+    """
+    # Create characters if not already created
+    if "characters" not in cli_context or not cli_context["characters"]:
+        hero = Character(name="Hero", hp=50, attack_power=10)
+        villain = Character(name="Villain", hp=40, attack_power=8)
+        cli_context["characters"] = [hero, villain]
+
+    # Identify attacker and defender
+    chars = cli_context["characters"]
+    if attacker == "Hero":
+        attacker_char = next(c for c in chars if c.name == "Hero")
+        defender_char = next(c for c in chars if c.name == "Villain")
+    else:
+        attacker_char = next(c for c in chars if c.name == "Villain")
+        defender_char = next(c for c in chars if c.name == "Hero")
+
+    # Calculate required dice roll: damage = dice_roll + attack_power
+    required_roll = damage - attacker_char.attack_power
+
+    # Create controlled dice roller
+    class ControlledDiceRoller:
+        """Dice roller that returns predetermined values."""
+
+        def __init__(self, roll_value):
+            self._roll_value = roll_value
+
+        def roll(self):
+            return self._roll_value
+
+    dice_roller = ControlledDiceRoller(required_roll)
+
+    # Create domain services with controlled dice roller
+    attack_resolver = AttackResolver(dice_roller)
+
+    # Execute single attack action
+    attack_result = attack_resolver.resolve_attack(attacker_char, defender_char)
+
+    # Update character in context with result
+    old_hp = attack_result.defender_old_hp
+    new_hp = attack_result.defender_new_hp
+
+    # Replace defender in characters list with updated version
+    for i, char in enumerate(chars):
+        if char.name == defender_char.name:
+            chars[i] = attack_result.defender_after
+            break
+
+    # Capture output using CombatRenderer
+    config = CLIConfig.test_mode()
+    console_output = ConsoleOutput(mock_console, config)
+    renderer = CombatRenderer(console_output, config)
+
+    # Store attack info for display verification
+    cli_context["last_attack"] = {
+        "attacker": attacker,
+        "defender": attack_result.defender_name,
+        "old_hp": old_hp,
+        "new_hp": new_hp,
+        "damage": damage,
+    }
+
+    # Render attack message (simplified - just HP change line)
+    hp_color = renderer._hp_color(new_hp, old_hp if old_hp > 0 else 50)
+    output_line = f"{attack_result.defender_name}: {old_hp} HP → {new_hp} HP"
+    console_output.print(output_line, style=hp_color)
+
+    # Store output for verification
+    if "output" not in cli_context:
+        cli_context["output"] = []
+    cli_context["output"].extend(mock_console.output_buffer)
+
+
+@when(parsers.parse("{attacker} counter-attacks and deals {damage:d} damage"))
+def attacker_counter_attacks(cli_context, production_services, attacker, damage, mock_console):
+    """Counter-attack is same as attack - delegate to attack step."""
+    attacker_deals_damage(cli_context, production_services, attacker, damage, mock_console)
 
 
 @when("initiative is rolled with identical dice results")

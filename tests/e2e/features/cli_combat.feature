@@ -117,7 +117,6 @@ Feature: Interactive CLI Combat Viewer
     And defender counter-attack shows 🛡️ emoji if defender survives
     And death announcement shows ☠️ emoji when character dies
 
-  @skip
   Scenario: HP tracking accuracy throughout combat
     Given Hero starts with HP 50
     And Villain starts with HP 40
@@ -170,7 +169,6 @@ Feature: Interactive CLI Combat Viewer
   # US-03: Combat Pacing Control (Fixed Timing)
   # ============================================================================
 
-  @skip
   Scenario: Combat uses fixed timing delays between rounds
     Given two characters are created
     When combat executes with default timing configuration
