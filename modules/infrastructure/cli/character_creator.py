@@ -36,7 +36,7 @@ class CharacterCreator:
         self._console = console
         self._dice_roller = dice_roller
 
-    def create_character(self, num: int) -> Character:  # noqa: C901
+    def create_character(self, num: int) -> Character:
         """
         Create a character through interactive prompts with validation.
 
@@ -48,34 +48,63 @@ class CharacterCreator:
         """
         self._console.print(f"\n--- Create Character {num} ---")
 
-        # Name input (with validation)
+        name = self._prompt_for_name_with_validation(num)
+        hp = self._prompt_for_hp_with_validation()
+        attack = self._prompt_for_attack_with_validation()
+
+        char = Character(name, hp, attack)
+        self._display_character_card(char)
+
+        return char
+
+    def _prompt_for_name_with_validation(self, num: int) -> str:
+        """
+        Prompt for character name with validation loop.
+
+        Args:
+            num: Character number for display
+
+        Returns:
+            Valid non-empty character name
+        """
         while True:
             name = Prompt.ask(f"Nome personaggio {num}").strip()
             if name:
-                break
+                return name
             self._console.print(
                 "❌ Name cannot be empty. Please enter a name.",
                 style="red",
             )
 
-        # HP input (with validation, allow empty for random)
+    def _prompt_for_hp_with_validation(self) -> int:
+        """
+        Prompt for HP with validation loop, supporting random generation.
+
+        Returns:
+            Valid HP value (1-999) or randomly generated value
+        """
         while True:
             hp_prompt = f"HP [1-999] (INVIO per random [{MIN_RANDOM_HEALTH_POINTS}-{MAX_RANDOM_HEALTH_POINTS}])"
             hp_input = Prompt.ask(hp_prompt, default="")
             if hp_input == "":
-                # Empty input → random HP
                 hp = self._random_hp()
                 self._console.print(f"🎲 Random HP: {hp}", style="cyan")
-                break
+                return hp
             try:
                 hp = int(hp_input)
                 if 1 <= hp <= 999:
-                    break
+                    return hp
                 self._console.print("❌ HP must be between 1 and 999.", style="red")
             except ValueError:
                 self._console.print("❌ HP must be a whole number.", style="red")
 
-        # Attack input (with validation, allow empty for random)
+    def _prompt_for_attack_with_validation(self) -> int:
+        """
+        Prompt for attack power with validation loop, supporting random generation.
+
+        Returns:
+            Valid attack power (1-99) or randomly generated value
+        """
         while True:
             attack_prompt = (
                 f"Potere d'attacco [1-99] (INVIO per random "
@@ -84,28 +113,19 @@ class CharacterCreator:
             )
             attack_input = Prompt.ask(attack_prompt, default="")
             if attack_input == "":
-                # Empty input → random attack
                 attack = self._random_attack()
                 self._console.print(f"🎲 Random Attack: {attack}", style="cyan")
-                break
+                return attack
             try:
                 attack = int(attack_input)
                 if 1 <= attack <= 99:
-                    break
+                    return attack
                 self._console.print(
                     "❌ Attack power must be between 1 and 99.",
                     style="red",
                 )
             except ValueError:
                 self._console.print("❌ Attack power must be a whole number.", style="red")
-
-        # Create Character
-        char = Character(name, hp, attack)
-
-        # Display confirmation
-        self._display_character_card(char)
-
-        return char
 
     def _random_hp(self) -> int:
         """

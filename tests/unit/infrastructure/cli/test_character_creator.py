@@ -163,3 +163,39 @@ class TestCharacterCreator:
         with patch("rich.prompt.Prompt.ask", side_effect=["Hero", "50", "99"]):
             char = creator.create_character(1)
         assert char.attack_power == 99
+
+    def test_non_numeric_hp_input_triggers_validation_error(self, creator, mock_rich_console):
+        """Test that non-numeric HP input shows error and re-prompts."""
+        with patch("rich.prompt.Prompt.ask", side_effect=["Hero", "invalid_hp", "50", "10"]):
+            char = creator.create_character(1)
+
+        assert char.name == "Hero"
+        assert char.hp == 50
+        assert char.attack_power == 10
+
+        # Verify console printed error message for non-numeric input
+        # (The ValueError exception path in _prompt_for_hp_with_validation is exercised)
+        error_calls = [
+            c
+            for c in mock_rich_console.print.call_args_list
+            if len(c[0]) > 0 and "whole number" in str(c[0][0]).lower() and "hp" in str(c[0][0]).lower()
+        ]
+        assert len(error_calls) >= 1  # At least one rejection for non-numeric input
+
+    def test_non_numeric_attack_input_triggers_validation_error(self, creator, mock_rich_console):
+        """Test that non-numeric attack input shows error and re-prompts."""
+        with patch("rich.prompt.Prompt.ask", side_effect=["Hero", "50", "abc", "10"]):
+            char = creator.create_character(1)
+
+        assert char.name == "Hero"
+        assert char.hp == 50
+        assert char.attack_power == 10
+
+        # Verify console printed error message for non-numeric input
+        # (The ValueError exception path in _prompt_for_attack_with_validation is exercised)
+        error_calls = [
+            c
+            for c in mock_rich_console.print.call_args_list
+            if len(c[0]) > 0 and "whole number" in str(c[0][0]).lower() and "attack" in str(c[0][0]).lower()
+        ]
+        assert len(error_calls) >= 1  # At least one rejection for non-numeric input

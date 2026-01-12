@@ -1,0 +1,93 @@
+MANUAL TESTING SCRIPT - PHASE 2
+================================
+
+Execute: python cli.py
+
+SCENARIO 1: Manual Valid Input
+-------------------------------
+Character 1:
+- Name: Hero
+- HP: 50
+- Attack: 10
+
+Character 2:
+- Name: Warrior
+- HP: 60
+- Attack: 12
+
+Expected: Combat runs successfully
+
+---
+
+SCENARIO 2: Random Defaults
+----------------------------
+Character 1:
+- Name: Wizard
+- HP: [PRESS ENTER - accept random]
+- Attack: [PRESS ENTER - accept random]
+
+Character 2:
+- Name: Mage
+- HP: [PRESS ENTER - accept random]
+- Attack: [PRESS ENTER - accept random]
+
+Expected: Random values shown, combat runs
+
+---
+
+SCENARIO 3: Invalid HP Retry
+-----------------------------
+Character 1:
+- Name: Knight
+- HP: 1500 [SHOULD SHOW ERROR IN RED]
+- HP: 80 [RETRY - ACCEPTED]
+- Attack: 15
+
+Character 2:
+- Name: Guard
+- HP: 70
+- Attack: 11
+
+Expected: Error message in red, re-prompt, combat runs
+
+---
+
+SCENARIO 4: Invalid Attack Retry
+---------------------------------
+Character 1:
+- Name: Rogue
+- HP: 60
+- Attack: 150 [SHOULD SHOW ERROR IN RED]
+- Attack: 12 [RETRY - ACCEPTED]
+
+Character 2:
+- Name: Thief
+- HP: 55
+- Attack: 13
+
+Expected: Error message in red, re-prompt, combat runs
+
+---
+
+SCENARIO 5: Empty Name Retry
+-----------------------------
+Character 1:
+- Name: [PRESS ENTER - EMPTY] [SHOULD SHOW ERROR IN RED]
+- Name: Paladin [RETRY - ACCEPTED]
+- HP: 75
+- Attack: 14
+
+Character 2:
+- Name: Cleric
+- HP: 65
+- Attack: 10
+
+Expected: Error message in red, re-prompt, combat runs
+
+---
+
+SUCCESS CRITERIA:
+- All 5 scenarios complete without crashes
+- Error messages display in RED
+- Re-prompts work correctly
+- Combat simulation runs for all scenarios

@@ -1,0 +1,83 @@
+{
+  "task_id": "02-10",
+  "project_id": "interactive-cli-combat-viewer",
+  "execution_agent": "software-crafter",
+  "self_contained_context": {
+    "background": "Corrective step for Phase 2 integration issues discovered during 02-09 validation. Two critical problems: (1) main.py still uses hardcoded characters instead of CharacterCreator, (2) E2E tests don't test complete wiring (cli.py → main.py → CharacterCreator). This violates TDD principle where tests should drive production implementation.",
+    "prerequisites_completed": ["02-09"],
+    "relevant_files": [
+      "modules/infrastructure/cli/main.py (modify - replace hardcoded chars with CharacterCreator)",
+      "tests/e2e/test_cli_combat.py (modify - call run_cli() instead of CharacterCreator directly)",
+      "tests/e2e/features/cli_combat.feature (review - may need adjustments)"
+    ],
+    "technical_context": "Root cause: Step 02-03 had ambiguous acceptance criteria ('integrate CharacterCreator into main.py') which was interpreted as 'create instance' instead of 'use for character creation'. This resulted in mock integration where CharacterCreator was instantiated but never called. E2E tests didn't catch this because they test CharacterCreator in isolation, not through run_cli().\n\nFix strategy:\n1. Replace hardcoded Character instantiation in main.py with CharacterCreator.create_character() calls\n2. Modify E2E tests to call run_cli() with simulated input stream\n3. Ensure true end-to-end testing: cli.py → main.py → CharacterCreator → CombatSimulator → Domain\n\nCurrent state:\n- main.py line 45-47: Hardcoded Character('Hero', 50, 10) and Character('Villain', 40, 8)\n- main.py line 40: Unused CharacterCreator instance assigned to _\n- test_cli_combat.py: Tests call CharacterCreator directly, not through run_cli()\n- test_cli_combat.py line 42: run_cli import commented out\n\nTest Flow Diagram:\n  run_cli()\n    ↓\n  creator.create_character(1)  ← prompts via Rich.Prompt\n    ↓\n  stdin mock provides: 'Hero\\n50\\n10\\n'\n    ↓\n  Character('Hero', 50, 10) created ✅\n    ↓\n  run_combat(char1, char2) ← REAL CombatSimulator\n    ↓\n  CombatRenderer.render_combat() ← displays result",
+    "tdd_phase": "RED → GREEN → REFACTOR",
+    "active_e2e_test": "ALL Phase 2 E2E tests (scenarios 1-5) must PASS after integration fix",
+    "inactive_e2e_tests": "Phase 3-5 tests remain disabled with @skip decorator"
+  },
+  "implementation_approach": {
+    "test_stdin_mocking": "Use monkeypatch with sys.stdin + io.StringIO (integrates cleanly with pytest fixtures)",
+    "wiring_style": "Replace hardcoded Character() calls with creator.create_character(1/2) which prompts interactively",
+    "integration_point": "main.py run_cli() calls creator.create_character() which blocks on stdin for user input",
+    "port_boundary_policy": "Mock ONLY I/O boundaries (sys.stdin, Rich Console). Use REAL domain/application classes (Character, CharacterCreator, CombatSimulator, domain services). Any mock of domain/application classes violates port boundary policy.",
+    "test_coverage_strategy": "Hybrid approach: TRUE E2E only for Scenario #1 (manual input - validates complete wiring). Scenarios #2-5 (validations) remain component integration tests (CharacterCreator direct) for performance. Rationale: Validation logic covered by unit tests, no need to test through full CLI stack."
+  },
+  "task_specification": {
+    "name": "Fix Production Wiring + True E2E Testing",
+    "description": "Corrective step: Replace hardcoded characters with CharacterCreator in main.py and fix E2E tests to test complete wiring from cli.py entry point",
+    "motivation": "Critical integration gap: Production code doesn't use CharacterCreator (still hardcoded), and E2E tests don't verify the complete production path. This violates TDD principle where tests should drive production implementation and E2E tests should test the actual user journey.",
+    "detailed_instructions": "Follow strict TDD discipline with RED → GREEN → REFACTOR cycle:\n\n### Part 1: Fix E2E Tests - RED Phase\n\n1. Un-comment import of run_cli in tests/e2e/test_cli_combat.py line 42:\n   \n   BEFORE:\n   # from modules.infrastructure.cli.main import run_cli\n   \n   AFTER:\n   from modules.infrastructure.cli.main import run_cli\n\n2. Mock stdin for simulating user input interactively FOR SCENARIO #1 ONLY.\n   \n   SCOPE: Only modify test for \"User creates both characters with manual input\"\n   KEEP AS-IS: Scenarios #2-5 (validations) - these remain component integration tests\n   \n   RECOMMENDED APPROACH: Use monkeypatch with sys.stdin + io.StringIO\n   \n   Example implementation for Scenario #1 step definition:\n   ```python\n   import io\n   import sys\n   from unittest.mock import patch\n   \n   @when('I enter \"Hero\" for character 1 name')  # Scenario #1 only\n   def step_impl_via_run_cli(context, monkeypatch):\n       # Simulate COMPLETE user input for both characters\n       full_input = io.StringIO(\"Hero\\\\n50\\\\n10\\\\nVillain\\\\n40\\\\n8\\\\n\")\n       monkeypatch.setattr('sys.stdin', full_input)\n       \n       # Call REAL production entry point\n       from modules.infrastructure.cli.main import run_cli\n       \n       # Capture output\n       with patch('sys.stdout', new_callable=io.StringIO) as mock_stdout:\n           run_cli()\n           context.output = mock_stdout.getvalue()\n       \n       # Store for assertions\n       context.run_cli_executed = True\n   ```\n   \n   NOTE: Scenarios #2-5 KEEP existing implementation (CharacterCreator direct call).\n\n3. Update step definitions:\n   \n   MODIFY: Only step definitions for Scenario #1 to call run_cli()\n   KEEP: Scenarios #2-5 use existing CharacterCreator direct approach\n   \n   Ensure Scenario #1 tests complete path:\n   cli.py → main.py → CharacterCreator (prompts stdin) → CombatSimulator → Domain\n\n4. Run pytest tests/e2e/test_cli_combat.py::test_user_creates_both_characters_with_manual_input\n   \n   EXPECT: FAILURE (hardcoded chars \"Hero\"/\"Villain\" don't match test input expectations)\n   \n   Run pytest tests/e2e/test_cli_combat.py -k \"validation or random\"\n   \n   EXPECT: PASS (these tests unchanged, still use CharacterCreator directly)\n\n### CRITICAL TEST POLICY REMINDER:\n- Mock ONLY I/O boundaries: sys.stdin (user input), sys.stdout/Rich Console (output)\n- Use REAL domain/application: Character, CharacterCreator, CombatSimulator, domain services\n- Use REAL infrastructure adapters: RandomDiceRoller, ConsoleOutput\n- Any mock of domain/application classes = TEST VIOLATION, will fail reviewer approval\n\n### Part 2: Fix Production Code - GREEN Phase\n\n5. Modify modules/infrastructure/cli/main.py lines 40-50:\n   \n   BEFORE:\n   ```python\n   creator = CharacterCreator(console, dice_roller)  # Line 40: unused instance\n   \n   # Hardcoded characters (Phase 1 baseline)\n   char1 = Character(\"Hero\", 50, 10)        # Line 46\n   char2 = Character(\"Villain\", 40, 8)     # Line 47\n   ```\n   \n   AFTER:\n   ```python\n   creator = CharacterCreator(console, dice_roller)  # Line 40: now used\n   \n   # Characters created through interactive CLI (Phase 2)\n   char1 = creator.create_character(1)      # Prompts user interactively for name, HP, attack\n   char2 = creator.create_character(2)      # Prompts user interactively for name, HP, attack\n   ```\n   \n   CRITICAL RATIONALE (AC-1):\n   - Current: creator instance created but UNUSED → hardcoded chars used\n   - Fixed: creator.create_character() called → characters created via CLI prompts\n   - Why it matters: Validates that production wiring is ACTIVE, not just scaffolded\n   \n   IMPORTANT: CharacterCreator.create_character() will BLOCK on input from stdin.\n   This is the production wiring - tests must mock stdin (see Part 1, Step 2).\n\n6. Run pytest tests/e2e/test_cli_combat.py\n   \n   EXPECT: ALL PASS (5/5 scenarios) - stdin mock provides input, tests verify output\n\n7. Run full test suite:\n   \n   pytest tests/unit/ tests/e2e/\n   \n   EXPECT: 100% PASS (no regressions)\n\n### Part 3: Validation & Refactor\n\n8. Manual testing with python cli.py (verify interactive flow works end-to-end):\n   \n   **Test Scenario 1: Valid names and stats**\n   ```\n   Input sequence: Hero<ENTER> 50<ENTER> 10<ENTER> Villain<ENTER> 40<ENTER> 8<ENTER>\n   Expected: Both characters created, combat starts, victory banner shown\n   Verify: No validation errors, no crashes\n   ```\n   \n   **Test Scenario 2: Empty character name (validation error)**\n   ```\n   Input: <ENTER> Hero<ENTER> 50<ENTER> 10<ENTER> Villain<ENTER> 40<ENTER> 8<ENTER>\n   Expected: Validation error \"Name cannot be empty\" (in RED)\n   Verify: Re-prompt for name, then continues successfully\n   ```\n   \n   **Test Scenario 3: Non-numeric HP (validation error)**\n   ```\n   Input: Hero<ENTER> abc<ENTER> 50<ENTER> 10<ENTER> Villain<ENTER> 40<ENTER> 8<ENTER>\n   Expected: Validation error for non-numeric input (in RED)\n   Verify: Re-prompt for HP, then continues successfully\n   ```\n   \n   **Test Scenario 4: Invalid HP range (validation error)**\n   ```\n   Input: Hero<ENTER> 1500<ENTER> 50<ENTER> 10<ENTER> Villain<ENTER> 40<ENTER> 8<ENTER>\n   Expected: Validation error \"HP must be between 1 and 999\" (in RED)\n   Verify: Re-prompt for HP, then continues successfully\n   ```\n   \n   **Test Scenario 5: Invalid attack range (validation error)**\n   ```\n   Input: Hero<ENTER> 50<ENTER> 150<ENTER> 10<ENTER> Villain<ENTER> 40<ENTER> 8<ENTER>\n   Expected: Validation error \"Attack must be between 1 and 99\" (in RED)\n   Verify: Re-prompt for attack, then continues successfully\n   ```\n\n9. Verify coverage maintained:\n   \n   pytest --cov=modules.infrastructure.cli tests/e2e/ tests/unit/infrastructure/cli/\n   \n   EXPECT: Coverage ≥85% (CLI infrastructure + E2E test coverage maintained)\n\n10. Refactor if needed:\n    - Extract common patterns\n    - Improve naming clarity\n    - Remove dead code\n\n11. Create git commit:\n    \n    git commit -m \"fix(phase-2): Wire CharacterCreator into main.py production flow\n    \n    CRITICAL FIX: main.py now uses CharacterCreator instead of hardcoded characters\n    \n    Problems Fixed:\n    - main.py line 40: CharacterCreator now actively used (was unused)\n    - main.py lines 46-47: Replaced Character('Hero', 50, 10) with creator.create_character(1)\n    - E2E tests now call run_cli() to test complete wiring (cli.py → main.py → CharacterCreator)\n    \n    Tests:\n    - E2E tests: 5/5 PASS (all Phase 2 scenarios)\n    - Unit tests: 100% PASS (no regressions)\n    - Manual testing: All 5 scenarios verified\n    \n    Coverage: ≥85% maintained\n    \n    Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\"\n",
+    "acceptance_criteria": [
+      "AC-1: main.py uses CharacterCreator.create_character() instead of hardcoded Character instantiation (lines 40-50 modified). RATIONALE: Validates production wiring is ACTIVE, not just scaffolded.",
+      "AC-2: TRUE E2E test (Scenario #1: Manual input) calls run_cli() to test complete production wiring (cli.py → main.py → CharacterCreator). Scenarios #2-5 remain component integration tests (CharacterCreator direct) for performance. Import uncommented at line 42.",
+      "AC-3: Manual test: python cli.py executes interactive character creation successfully for all 5 scenarios (valid input + 4 validation errors)",
+      "AC-4: pytest tests/e2e/test_cli_combat.py passes 100% (all Phase 2 tests: scenario #1 via run_cli(), scenarios #2-5 via CharacterCreator direct)",
+      "AC-5: pytest tests/unit/ passes 100% (no regression in unit tests)",
+      "AC-6: pytest --cov=modules.infrastructure.cli tests/e2e/ tests/unit/infrastructure/cli/ shows coverage ≥85% (CLI infrastructure + E2E coverage maintained)",
+      "AC-7: Git commit created with message: 'fix(phase-2): Wire CharacterCreator into main.py production flow'",
+      "AC-8: No unused variables or commented-out code remains in production files (main.py line 40 now used, no _ assignment)"
+    ],
+    "estimated_hours": 2.0,
+    "breakdown": {
+      "test_modification": 1.0,
+      "production_fix": 0.5,
+      "validation_manual_testing": 0.3,
+      "refactor_cleanup": 0.2
+    }
+  },
+  "dependencies": {
+    "requires": ["02-09"],
+    "blocks": ["03-01"],
+    "related": ["02-03", "02-04", "02-05", "02-06", "02-07"]
+  },
+  "state": {
+    "status": "TODO",
+    "assigned_to": null,
+    "started_at": null,
+    "completed_at": null,
+    "updated": "2026-01-12T20:15:00Z",
+    "iteration": 2
+  },
+  "quality_gates": {
+    "pre_execution": [
+      "All Phase 2 E2E tests currently passing (baseline established)",
+      "Production code structure understood (main.py, cli.py, CharacterCreator)",
+      "Reviewer approval obtained for step specification"
+    ],
+    "post_execution": [
+      "TRUE E2E test (Scenario #1) calls run_cli() and validates complete wiring. Component tests (Scenarios #2-5) remain fast.",
+      "main.py uses CharacterCreator for character creation (no hardcoded chars)",
+      "All tests pass (E2E + unit)",
+      "Manual testing confirms interactive flow works for all 5 scenarios",
+      "No code quality regressions",
+      "Port boundary testing policy maintained (only I/O mocked)"
+    ]
+  },
+  "notes": {
+    "root_cause_analysis": "Step 02-03 AC was ambiguous: 'integrate CharacterCreator' was interpreted as instantiation, not usage. Future steps should specify 'use CharacterCreator.create_character() to replace hardcoded Character instantiation'.",
+    "testing_gap": "E2E tests tested CharacterCreator in isolation, not through CLI entry point. This missed the integration gap. Future E2E tests must start from actual entry point (run_cli).",
+    "prevention": "Add explicit AC requiring removal of hardcoded data and verification that E2E tests exercise complete production path.",
+    "reviewer_feedback_incorporated": "Revision 1 addresses 6 issues found by software-crafter-reviewer: (1) stdin mocking approach specified, (2) exact wiring code shown, (3) manual test scenarios detailed, (4) import uncomment explicit, (5) coverage metric clarified, (6) port boundary policy reminder added.",
+    "testing_strategy_rationale": "Hybrid approach chosen for performance: Only Scenario #1 tests through run_cli() (validates complete wiring). Scenarios #2-5 remain component tests (validation logic already unit-tested, no benefit from CLI overhead). This keeps test suite fast while ensuring production wiring is validated."
+  }
+}
