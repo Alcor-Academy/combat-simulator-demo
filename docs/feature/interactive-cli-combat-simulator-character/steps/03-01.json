@@ -1,0 +1,334 @@
+{
+  "task_id": "03-01",
+  "project_id": "interactive-cli-combat-simulator-character",
+  "phase": 3,
+  "phase_name": "Application Layer - Combat Orchestration",
+  "step_name": "Implement CombatResult and CombatSimulator",
+  "execution_agent": "software-crafter",
+  "is_walking_skeleton": false,
+  "self_contained_context": {
+    "background": "CombatSimulator is the main use case orchestrating full combat: (1) Roll initiative ONCE at start, (2) Execute rounds until victory, (3) Return CombatResult with winner, loser, all rounds. This makes E2E walking skeleton test pass.",
+    "business_rules": {
+      "initiative_once": "Initiative rolled ONCE at combat start (DR-04). Roles persist entire combat.",
+      "game_loop": "Execute rounds while both characters alive. Each round: attacker attacks, defender counter-attacks if alive.",
+      "victory_condition": "Combat ends when either character reaches HP = 0",
+      "immutable_result": "CombatResult.rounds is tuple (immutable), not list"
+    },
+    "architecture_context": {
+      "layer": "Application Service (src/application/combat_simulator.py)",
+      "value_object": "CombatResult (src/domain/model/combat_result.py)",
+      "dependencies": "InitiativeResolver, CombatRound (domain services)"
+    },
+    "e2e_scenarios_enabled": [
+      {"id": "Scenario 1", "name": "Full combat with attacker advantage enforcement"},
+      {"id": "ALL 9 scenarios", "name": "All E2E tests should PASS after this step"}
+    ],
+    "prerequisites": ["02-01 InitiativeResolver", "02-03 CombatRound"]
+  },
+  "task_specification": {
+    "name": "Implement CombatResult and CombatSimulator",
+    "motivation": "Main use case. Orchestrates all domain services. Makes E2E walking skeleton test pass. Demonstrates complete Outside-In TDD flow.",
+    "detailed_instructions": [
+      "Create src/domain/model/combat_result.py as frozen dataclass",
+      "Fields: winner, loser (Characters), total_rounds (int), rounds (Tuple[RoundResult, ...])",
+      "Create src/application/combat_simulator.py",
+      "Inject InitiativeResolver and CombatRound in constructor",
+      "Implement run_combat(char1, char2) -> CombatResult",
+      "Roll initiative ONCE at start to determine attacker/defender",
+      "Loop: while both alive, execute round via combat_round.execute_round()",
+      "Update character states after each round (immutability: assign returned instances)",
+      "Break loop if combat_ended (someone died)",
+      "Determine winner/loser based on who's alive",
+      "Return CombatResult with tuple(rounds) for immutability",
+      "Create tests/unit/application/test_combat_simulator.py",
+      "Test: initiative once, round loop, victory detection, all rounds recorded",
+      "Run E2E tests - ALL 9 scenarios should PASS"
+    ],
+    "acceptance_criteria": [
+      {"criterion": "Initiative rolled once at combat start", "test_command": "pytest tests/unit/application/test_combat_simulator.py::test_initiative_once -v"},
+      {"criterion": "Round loop continues until someone dies", "test_command": "pytest tests/unit/application/test_combat_simulator.py::test_game_loop -v"},
+      {"criterion": "Combat ends when HP = 0", "test_command": "pytest tests/unit/application/test_combat_simulator.py::test_victory_condition -v"},
+      {"criterion": "CombatResult contains winner, loser, total_rounds, all rounds", "test_command": "pytest tests/unit/application/test_combat_simulator.py::test_combat_result_complete -v"},
+      {"criterion": "rounds is immutable tuple", "test_command": "pytest tests/unit/application/test_combat_simulator.py::test_rounds_immutable -v"},
+      {"criterion": "E2E Scenario 1 passes", "test_command": "pytest tests/e2e/test_combat_simulation.py::test_full_combat_with_attacker_advantage_enforcement -v"},
+      {"criterion": "ALL 9 E2E scenarios PASS", "test_command": "pytest tests/e2e/ -v"}
+    ],
+    "estimated_hours": 0.17
+  },
+  "dependencies": {"requires": ["02-01", "02-03"], "blocking": ["04-01"]},
+  "deliverables": [
+    {"type": "source_file", "path": "src/domain/model/combat_result.py"},
+    {"type": "source_file", "path": "src/application/combat_simulator.py"},
+    {"type": "test_file", "path": "tests/unit/application/test_combat_simulator.py"}
+  ],
+  "state": {"status": "TODO", "assigned_to": null, "tdd_phase": "NOT_STARTED"},
+  "review_metadata": {
+    "review_timestamp": "2026-01-13T22:45:00Z",
+    "reviewer": "software-crafter-reviewer",
+    "review_type": "STEP_FILE_BATCH_REVIEW",
+    "batch_position": "6/8",
+    "overall_status": "APPROVED",
+    "findings": {
+      "critical_issues": [],
+      "high_priority_issues": [],
+      "medium_priority_issues": [],
+      "validation_checks": {
+        "no_dependency_on_deleted_01_00": {
+          "required": false,
+          "actual": false,
+          "status": "PASS",
+          "note": "Step correctly requires ['02-01', '02-03'] only. No reference to deleted 01-00."
+        },
+        "dependency_chain_completeness": {
+          "requires": ["02-01", "02-03"],
+          "business_context": "02-01 InitiativeResolver provides attacker/defender role determination ONCE at combat start. 02-03 CombatRound orchestrates individual rounds with attacker advantage. CombatSimulator orchestrates full combat loop until victory.",
+          "status": "PASS",
+          "note": "Dependencies are complete and correct. CombatSimulator depends on both domain services that it uses."
+        },
+        "self_contained_context": {
+          "background_clarity": "EXCELLENT - Explains that CombatSimulator orchestrates full combat: (1) Roll initiative ONCE, (2) Execute rounds until victory, (3) Return CombatResult. Clear business flow.",
+          "business_rules_completeness": "EXCELLENT - All four business rules present: initiative_once, game_loop, victory_condition, immutable_result",
+          "architecture_context": "EXCELLENT - Layer, value object, dependencies all specified",
+          "status": "PASS",
+          "note": "Developer has everything needed without external references"
+        },
+        "e2e_scenario_validation": {
+          "scenarios_should_pass": [
+            "Scenario 1: Full combat with attacker advantage enforcement",
+            "Scenario 2: Character with higher agility wins initiative",
+            "Scenario 3: Attacker kills defender - no counter-attack occurs",
+            "Scenario 4: Defender survives and counter-attacks",
+            "Scenario 5: Character immutability during combat",
+            "Scenario 6: Derived agility reflects current health",
+            "Scenario 7: Character creation fails with empty name (ERROR PATH)",
+            "Scenario 8: Dead character cannot initiate attack (ERROR PATH)",
+            "Scenario 9: Initiative tie resolved by first character rule"
+          ],
+          "total_scenarios": 9,
+          "all_scenarios_covered": true,
+          "status": "PASS",
+          "note": "Step correctly identifies that ALL 9 E2E scenarios (including error paths) should pass after CombatSimulator implementation. This is the walking skeleton completion."
+        },
+        "walking_skeleton_validation": {
+          "is_walking_skeleton": false,
+          "purpose": "Application layer orchestration (not infrastructure)",
+          "e2e_test_activation": "ALL 9 scenarios should be enabled and PASSING after this step",
+          "walking_skeleton_impact": "This step completes Outside-In TDD flow: E2E tests drove all implementation from Scenario 1 through all 9 scenarios",
+          "status": "PASS",
+          "note": "While not marked is_walking_skeleton=true, this step enables the complete walking skeleton. E2E tests become the success metric."
+        },
+        "acceptance_criteria_completeness": {
+          "count": 7,
+          "all_testable": true,
+          "all_specific": true,
+          "criteria_coverage": [
+            "AC #1: Initiative rolled once at combat start - testable",
+            "AC #2: Round loop continues until someone dies - testable",
+            "AC #3: Combat ends when HP = 0 - testable",
+            "AC #4: CombatResult contains winner, loser, total_rounds, all rounds - testable",
+            "AC #5: rounds is immutable tuple - testable",
+            "AC #6: E2E Scenario 1 passes - testable",
+            "AC #7: ALL 9 E2E scenarios PASS - testable (CRITICAL)"
+          ],
+          "status": "PASS",
+          "note": "All acceptance criteria are concrete, measurable, and have explicit test commands. AC #7 is the critical success metric."
+        },
+        "detailed_instructions_quality": {
+          "step_count": 13,
+          "implementation_clarity": "EXCELLENT - Clear, sequential steps from creation through victory detection",
+          "resource_creation": "PASS - Three files specified: combat_result.py, combat_simulator.py, test file",
+          "business_rule_enforcement": [
+            "Initiative ONCE at start via InitiativeResolver dependency - specified line 37",
+            "Round loop while both alive - specified line 38",
+            "Character state updates with immutability - specified line 39",
+            "Combat end detection - specified line 40",
+            "Winner/loser determination - specified line 41",
+            "Immutable rounds tuple - specified line 42"
+          ],
+          "status": "PASS",
+          "note": "Instructions comprehensively cover all business rules and implementation details"
+        },
+        "application_layer_orchestration": {
+          "layer_compliance": "EXCELLENT - CombatSimulator in src/application/ is correct location",
+          "dependency_injection": "EXCELLENT - Constructor injection of InitiativeResolver and CombatRound",
+          "orchestration_pattern": "EXCELLENT - run_combat orchestrates domain services in proper sequence",
+          "business_flow": [
+            "Step 1: Roll initiative ONCE (InitiativeResolver.roll_initiative)",
+            "Step 2: Assign attacker/defender roles from initiative result",
+            "Step 3: Loop while both alive (Execute CombatRound.execute_round)",
+            "Step 4: Update character states from round results",
+            "Step 5: Check victory condition (combat_ended flag)",
+            "Step 6: Determine winner and return CombatResult"
+          ],
+          "status": "PASS",
+          "note": "Application layer correctly orchestrates domain services. No business logic in orchestration layer."
+        },
+        "value_object_immutability": {
+          "class": "CombatResult",
+          "specification": "frozen dataclass",
+          "fields": ["winner", "loser", "total_rounds", "rounds (Tuple)"],
+          "immutability_requirement": "rounds MUST be Tuple[RoundResult, ...] (immutable), not list",
+          "status": "PASS",
+          "note": "Immutability constraint properly specified and critical for value object contract"
+        },
+        "tdd_strategy": {
+          "approach": "Classical TDD with real domain services",
+          "domain_service_usage": "REAL InitiativeResolver, REAL CombatRound instances",
+          "port_boundary_strategy": "FixedDiceRoller test double injected at port boundary",
+          "status": "PASS",
+          "note": "Test strategy consistent with 02-01, 02-02, 02-03 pattern: Real domain services, test double at ports"
+        },
+        "mock_boundaries": {
+          "acceptable_mocks": ["FixedDiceRoller (port) - injected for deterministic combat"],
+          "forbidden_mocks": ["InitiativeResolver", "CombatRound", "Character"],
+          "policy_compliance": "PASS",
+          "note": "Port-boundary test doubles policy correctly applied. Domain services are REAL."
+        },
+        "business_rule_coverage": {
+          "initiative_once": "COVERED - 'Initiative rolled once at combat start' (AC #1)",
+          "game_loop": "COVERED - 'Round loop continues until someone dies' (AC #2)",
+          "victory_condition": "COVERED - 'Combat ends when HP = 0' (AC #3)",
+          "immutable_result": "COVERED - 'rounds is immutable tuple' (AC #5)",
+          "attacker_advantage": "COVERED - Enforced through CombatRound.execute_round (dependency)",
+          "status": "PASS",
+          "note": "All business rules from self_contained_context are testable and covered"
+        },
+        "estimated_effort_analysis": {
+          "hours": 0.17,
+          "effort_breakdown": "10 minutes for straightforward application layer orchestration",
+          "complexity_factors": [
+            "Simple orchestration pattern (no complex logic)",
+            "Relies on well-tested domain services (02-01, 02-03)",
+            "Clear control flow (roll initiative → loop rounds → return result)",
+            "3-4 unit tests for orchestration",
+            "1 major E2E validation (all 9 scenarios)"
+          ],
+          "assessment": "REASONABLE - Estimate is realistic for straightforward orchestration layer implementation"
+        },
+        "architecture_compliance": {
+          "hexagonal_architecture": "EXCELLENT - CombatSimulator in application layer, uses domain services, delegates to domain",
+          "separation_of_concerns": "EXCELLENT - No business logic in orchestration, all logic in domain services",
+          "dependency_injection": "EXCELLENT - Constructor injection enables testability",
+          "status": "PASS",
+          "note": "Clean hexagonal architecture maintained throughout application layer"
+        },
+        "blocking_dependencies": {
+          "blocks": ["04-01 (CLI would depend on CombatSimulator)"],
+          "status": "PASS",
+          "note": "Correctly positioned as final step before CLI implementation"
+        },
+        "wow_moment_validation": {
+          "trigger": "E2E walking skeleton test turns GREEN",
+          "demonstration": "Run pytest tests/e2e/ -v and show all 9 scenarios PASSING",
+          "audience_value": "EXCELLENT - Outside-In TDD completes: E2E test driven entire implementation from acceptance test to orchestration",
+          "status": "PASS",
+          "note": "Powerful culmination of Outside-In TDD approach. Complete system implementation driven by E2E test requirements."
+        },
+        "quality_gates": {
+          "required_before_commit": [
+            "Unit tests PASS (3-4 tests)",
+            "ALL 9 E2E scenarios PASS",
+            "CombatResult.rounds is tuple"
+          ],
+          "test_pass_rate": "100%",
+          "critical_validation": "ALL 9 E2E SCENARIOS must PASS - not just scenario 1",
+          "status": "PASS",
+          "note": "Quality gates are well-defined and critical success metric is ALL scenarios passing"
+        },
+        "yagni_compliance": {
+          "over_engineering_detected": false,
+          "speculative_generality_detected": false,
+          "unnecessary_complexity_detected": false,
+          "status": "PASS",
+          "note": "Implementation scope matches acceptance criteria exactly. No gold-plating or over-engineering."
+        },
+        "dependency_completeness_cross_check": {
+          "check_1": "Does 03-01 depend on all domain services it uses? YES - 02-01 (InitiativeResolver), 02-03 (CombatRound)",
+          "check_2": "Are there implicit dependencies not declared? NO - All domain services explicitly listed in requires",
+          "check_3": "Could step execute without dependencies? NO - Both dependencies are essential for orchestration",
+          "check_4": "Are dependencies sufficient? YES - Contains InitiativeResolver and CombatRound",
+          "note": "Dependencies are complete, sufficient, and necessary. No implicit dependencies.",
+          "status": "PASS"
+        }
+      }
+    },
+    "quality_assessment": {
+      "application_layer_design": {
+        "rating": "EXCELLENT",
+        "note": "Clean orchestration layer that properly delegates to domain services. No business logic duplication."
+      },
+      "acceptance_criteria_clarity": {
+        "rating": "EXCELLENT",
+        "note": "Seven criteria with specific pytest commands. AC #7 (ALL 9 scenarios) is the critical success metric."
+      },
+      "dependency_management": {
+        "rating": "EXCELLENT",
+        "note": "Complete dependency chain specified. Depends on exactly the domain services needed."
+      },
+      "business_value": {
+        "rating": "EXCELLENT",
+        "note": "Completes Outside-In TDD flow. E2E walking skeleton test validates entire system implementation."
+      },
+      "tdd_strategy": {
+        "rating": "EXCELLENT",
+        "note": "Classical TDD approach with real domain services and FixedDiceRoller at port boundary."
+      },
+      "self_contained_context": {
+        "rating": "EXCELLENT",
+        "note": "Developer has all needed information. Context includes business flow, rules, and architecture."
+      },
+      "architecture_compliance": {
+        "rating": "EXCELLENT",
+        "note": "Hexagonal architecture properly maintained. Clear separation between orchestration and domain logic."
+      },
+      "implementation_completeness": {
+        "rating": "EXCELLENT",
+        "note": "All deliverables specified. Detailed instructions cover all implementation steps. Business rules comprehensive."
+      }
+    },
+    "recommendations": [],
+    "sign_off": {
+      "reviewer": "software-crafter-reviewer",
+      "review_date": "2026-01-13",
+      "approval_decision": "APPROVED",
+      "critical_success_metrics": [
+        "ALL 9 E2E scenarios must PASS (Scenario 1-9 in feature file)",
+        "CombatResult.rounds must be immutable tuple",
+        "Initiative rolled ONCE at combat start, roles persist through combat",
+        "Victory condition properly detected (either character reaches 0 HP)"
+      ],
+      "approval_criteria_met": [
+        "No dependency on deleted step 01-00 - uses only 02-01 and 02-03",
+        "Correctly depends on 02-01 (InitiativeResolver) and 02-03 (CombatRound) - ALL domain services needed",
+        "Step is self-contained with complete business context",
+        "All acceptance criteria testable with explicit pytest commands",
+        "AC #7 specifies ALL 9 E2E scenarios must PASS",
+        "TDD strategy appropriate: Classical with real domain services",
+        "Mock boundaries correct: FixedDiceRoller (port), InitiativeResolver/CombatRound/Character (real)",
+        "All business rules covered: Initiative once, game loop, victory condition, immutable result",
+        "Deliverables clearly specified and scoped",
+        "Application layer orchestration properly designed",
+        "Walks skeleton completeness: ALL 9 scenarios (including error paths) should pass",
+        "Quality gates well-defined with critical metric: ALL scenarios passing"
+      ],
+      "blocking_issues": "NONE",
+      "ready_for_execution": true,
+      "execution_note": "This is the final application layer step. After successful execution, the complete Outside-In TDD flow will be demonstrated with all 9 E2E scenarios passing, including error paths. The walking skeleton will be complete."
+    }
+  },
+  "tdd_cycle": {
+    "current_phase": "NOT_STARTED",
+    "acceptance_test_scenario": "Scenario 1: Full combat simulation AND all 9 scenarios",
+    "unit_test_strategy": "Classical TDD with real domain services. Use FixedDiceRoller for deterministic combat.",
+    "mock_boundaries": ["DiceRoller (port) - inject FixedDiceRoller", "All domain services - use REAL instances"]
+  },
+  "quality_gates": {
+    "required_before_commit": ["Unit tests PASS (3-4 tests)", "ALL 9 E2E scenarios PASS", "CombatResult.rounds is tuple"],
+    "test_pass_rate": "100%"
+  },
+  "wow_moment": {
+    "trigger": "E2E walking skeleton test turns GREEN",
+    "demonstration": "Run pytest tests/e2e/ -v and show all 9 scenarios PASSING",
+    "audience_value": "Outside-In TDD completes - E2E test driven entire implementation"
+  }
+}
