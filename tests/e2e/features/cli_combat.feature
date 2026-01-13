@@ -283,7 +283,6 @@ Feature: Interactive CLI Combat Viewer
     And combat remains fully functional
     And all information is conveyed through text symbols
 
-  @skip
   Scenario: CLI works on terminals with limited color support
     Given terminal supports only 16 colors
     When CLI runs
