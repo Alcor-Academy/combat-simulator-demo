@@ -5,6 +5,8 @@ combat_simulation.feature, calling REAL PRODUCTION SERVICES (not mocks).
 
 CRITICAL: All step methods must call production services via GetRequiredService pattern.
 This ensures acceptance tests validate actual business logic, not test doubles.
+
+NOTE: Character class now implemented in src/domain/model/character.py
 """
 
 import pytest
@@ -14,14 +16,17 @@ from pytest_bdd import given, parsers, scenarios, then, when
 # Import production services (these will be implemented in DEVELOP wave)
 # Following Outside-In TDD: These imports will fail initially, driving implementation
 try:
-    from src.application.combat_simulator import CombatSimulator
     from src.domain.model.character import Character
+except ImportError:
+    Character = None
+
+try:
+    from src.application.combat_simulator import CombatSimulator
     from src.domain.services.attack_resolver import AttackResolver
     from src.domain.services.combat_round import CombatRound
     from src.domain.services.initiative_resolver import InitiativeResolver
 except ImportError:
     # Expected to fail initially - Outside-In TDD starts with failing E2E test
-    Character = None
     InitiativeResolver = None
     AttackResolver = None
     CombatRound = None
@@ -261,7 +266,7 @@ def check_agility(combat_context):
     combat_context["original_agility"] = character.agility
 
 
-@when("the character receives {damage:d} damage")
+@when(parsers.parse("the character receives {damage:d} damage"))
 def character_receives_damage(damage: int, combat_context):
     """Apply damage using production Character.receive_damage.
 
@@ -509,7 +514,7 @@ def verify_new_character_created(hp: int, combat_context):
     assert damaged.hp == hp, f"Expected {hp} HP, got {damaged.hp}"
 
 
-@then("the original character has agility {agility:d}")
+@then(parsers.parse("the original character has agility {agility:d}"))
 def verify_original_agility(agility: int, combat_context):
     """Validate original character agility.
 
@@ -519,7 +524,7 @@ def verify_original_agility(agility: int, combat_context):
     assert original.agility == agility, f"Expected original agility {agility}, got {original.agility}"
 
 
-@then("the damaged character has agility {agility:d}")
+@then(parsers.parse("the damaged character has agility {agility:d}"))
 def verify_damaged_agility(agility: int, combat_context):
     """Validate damaged character agility.
 
