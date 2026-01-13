@@ -80,7 +80,7 @@ class CharacterCreator:
             Valid non-empty character name
         """
         while True:
-            name = Prompt.ask(f"Nome personaggio {num}").strip()
+            name = Prompt.ask(f"Character {num} name").strip()
             if name:
                 return name
             self._console.print(
@@ -96,7 +96,7 @@ class CharacterCreator:
             Valid HP value (1-999) or randomly generated value
         """
         while True:
-            hp_prompt = f"HP [1-999] (INVIO per random [{MIN_RANDOM_HEALTH_POINTS}-{MAX_RANDOM_HEALTH_POINTS}])"
+            hp_prompt = f"HP [1-999] (Press ENTER for random [{MIN_RANDOM_HEALTH_POINTS}-{MAX_RANDOM_HEALTH_POINTS}])"
             hp_input = Prompt.ask(hp_prompt, default="")
             if hp_input == "":
                 hp = self._random_hp()
@@ -119,7 +119,7 @@ class CharacterCreator:
         """
         while True:
             attack_prompt = (
-                f"Potere d'attacco [1-99] (INVIO per random "
+                f"Attack power [1-99] (Press ENTER for random "
                 f"[{MIN_RANDOM_ATTACK_STRENGTH}-"
                 f"{MAX_RANDOM_ATTACK_STRENGTH}])"
             )

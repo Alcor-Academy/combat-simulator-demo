@@ -188,4 +188,4 @@ class CombatRenderer:
         self._console.print(f"{result.loser.name}: 0 HP {death_symbol} (defeated)", style="red dim")
 
         if self._config.prompt_for_exit:
-            self._console.prompt_continue("\nPremi INVIO per uscire (o CTRL-C per terminare)")
+            self._console.prompt_continue("\nPress ENTER to exit (or CTRL-C to terminate)")
