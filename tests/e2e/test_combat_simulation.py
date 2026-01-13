@@ -20,16 +20,25 @@ try:
 except ImportError:
     Character = None
 
+# Import services individually to allow partial implementation
 try:
-    from src.application.combat_simulator import CombatSimulator
-    from src.domain.services.attack_resolver import AttackResolver
-    from src.domain.services.combat_round import CombatRound
     from src.domain.services.initiative_resolver import InitiativeResolver
 except ImportError:
-    # Expected to fail initially - Outside-In TDD starts with failing E2E test
     InitiativeResolver = None
+
+try:
+    from src.domain.services.attack_resolver import AttackResolver
+except ImportError:
     AttackResolver = None
+
+try:
+    from src.domain.services.combat_round import CombatRound
+except ImportError:
     CombatRound = None
+
+try:
+    from src.application.combat_simulator import CombatSimulator
+except ImportError:
     CombatSimulator = None
 
 # Import test double for deterministic testing
@@ -642,7 +651,7 @@ def verify_first_character_tie_breaker(name: str, combat_context):
     assert init_result.attacker.name == name, f"Expected {name} to win tie-breaker, got {init_result.attacker.name}"
 
 
-@then("both characters have initiative total {total:d}")
+@then(parsers.parse("both characters have initiative total {total:d}"))
 def verify_both_initiative_totals(total: int, combat_context):
     """Validate both characters have same initiative total (tie).
 
@@ -653,7 +662,7 @@ def verify_both_initiative_totals(total: int, combat_context):
     assert init_result.defender_total == total, f"Defender initiative {init_result.defender_total} != {total}"
 
 
-@then("both characters have base agility {agility:d}")
+@then(parsers.parse("both characters have base agility {agility:d}"))
 def verify_both_base_agility(agility: int, combat_context):
     """Validate both characters have same base agility.
 
