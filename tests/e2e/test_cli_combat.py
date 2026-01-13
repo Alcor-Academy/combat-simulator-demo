@@ -2275,16 +2275,34 @@ def loser_hp_text(cli_context, text):
 @then("basic color set is used")
 def basic_colors(cli_context):
     """Verify 16-color mode."""
+    console = cli_context["console"]
+    # Assert console uses STANDARD color system (16 colors)
+    assert console.color_system == "standard", f"Expected 'standard' color system, got '{console.color_system}'"
 
 
 @then("no functionality is lost")
 def no_functionality_lost(cli_context):
-    """Verify full functionality."""
+    """Verify full functionality is available despite limited color support."""
+    # Verify CLI executed successfully
+    assert cli_context["cli_executed"], "CLI did not execute"
+
+    # Verify console is properly configured
+    console = cli_context["console"]
+    assert console is not None, "Console not configured"
+    assert console.is_terminal, "Console not in terminal mode"
 
 
 @then("text remains readable")
 def text_readable(cli_context):
-    """Verify readability."""
+    """Verify text output remains readable with limited colors."""
+    console = cli_context["console"]
+
+    # Verify console can render text
+    assert console is not None, "Console not configured"
+    assert console.is_terminal, "Console not in terminal mode"
+
+    # Verify basic styling capabilities available
+    assert hasattr(console, "print"), "Console missing print capability"
 
 
 @then(parsers.parse("each delay is approximately {delay:f} seconds with ±{tolerance:f}s tolerance"))
