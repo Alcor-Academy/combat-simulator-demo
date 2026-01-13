@@ -137,6 +137,31 @@ class TestInitiativeResolver:
         assert result.attacker_total == 30
         assert result.defender_total == 30
 
+    def test_tie_breaker_second_char_higher_agility(self):
+        """When totals equal, char2 with higher agility wins.
+
+        Business rule: Tests the else branch where char2.agility > char1.agility
+        in tie-breaking logic (for 100% coverage).
+        """
+        # Create characters where totals will match but char2 has higher agility
+        dwarf = Character(name="Dwarf", hp=20, attack_power=3)  # agility=23
+        elf = Character(name="Elf", hp=18, attack_power=7)  # agility=25
+
+        # Dwarf rolls 5 → total 28, Elf rolls 3 → total 28 (TIED)
+        dice_roller = FixedDiceRoller([5, 3])
+        resolver = InitiativeResolver(dice_roller=dice_roller)
+
+        result = resolver.roll_initiative(dwarf, elf)
+
+        # Elf (char2) has higher base agility (25 > 23) → wins tie
+        assert result.attacker.name == "Elf"
+        assert result.defender.name == "Dwarf"
+        assert result.attacker_total == 28
+        assert result.defender_total == 28
+        # Verify agility difference
+        assert result.attacker.agility == 25
+        assert result.defender.agility == 23
+
     def test_lower_total_character_becomes_defender(self):
         """Character with lower initiative total becomes defender.
 
