@@ -1,0 +1,205 @@
+{
+  "task_id": "04-02",
+  "project_id": "interactive-cli-combat-simulator-character",
+  "phase": 4,
+  "phase_name": "Validation and Quality Gates",
+  "step_name": "Architecture Compliance Validation",
+  "execution_agent": "software-crafter",
+  "is_walking_skeleton": false,
+  "self_contained_context": {
+    "background": "Validate Hexagonal Architecture implementation against design specification. Ensures: (1) Folder structure matches hexagonal design, (2) Immutability enforced, (3) Dependencies flow inward, (4) Domain layer has zero external dependencies.",
+    "architecture_validation_checklist": [
+      "Hexagonal folder structure: domain/model, domain/services, domain/ports, infrastructure, application",
+      "All value objects use @dataclass(frozen=True)",
+      "Character.agility is @property (not field)",
+      "DiceRoller is Protocol in domain/ports/",
+      "FixedDiceRoller in tests/doubles/ (not src/)",
+      "Dependencies flow inward (no infrastructure imports in domain)"
+    ],
+    "prerequisites": ["04-01 Complete test suite passed"]
+  },
+  "task_specification": {
+    "name": "Architecture Compliance Validation",
+    "motivation": "Ensures architecture quality: (1) Folder structure matches hexagonal design, (2) Immutability enforced, (3) Dependencies flow inward.",
+    "detailed_instructions": [
+      "Verify hexagonal folder structure exists",
+      "Check all value objects use @dataclass(frozen=True)",
+      "Verify Character.agility is @property (grep for decorator)",
+      "Verify DiceRoller is Protocol (grep for Protocol class)",
+      "Verify FixedDiceRoller in tests/doubles/",
+      "Check domain layer has no infrastructure imports",
+      "Run: grep -r 'from src.infrastructure' src/domain/ (should find nothing)",
+      "Document architecture compliance in validation report"
+    ],
+    "acceptance_criteria": [
+      {"criterion": "Hexagonal Architecture folder structure", "test_command": "ls -d src/domain/{model,services,ports} src/infrastructure src/application"},
+      {"criterion": "All value objects frozen", "test_command": "grep -r '@dataclass(frozen=True)' src/domain/model/"},
+      {"criterion": "Character.agility is @property", "test_command": "grep '@property' src/domain/model/character.py | grep -A 1 agility"},
+      {"criterion": "DiceRoller is Protocol", "test_command": "grep 'class DiceRoller(Protocol)' src/domain/ports/dice_roller.py"},
+      {"criterion": "FixedDiceRoller in tests/doubles/", "test_command": "ls tests/doubles/fixed_dice_roller.py"},
+      {"criterion": "Domain has zero infrastructure imports", "test_command": "! grep -r 'from src.infrastructure' src/domain/"}
+    ],
+    "estimated_hours": 0.08
+  },
+  "dependencies": {"requires": ["04-01"], "blocking": []},
+  "deliverables": [],
+  "state": {"status": "NEEDS_REVISION", "assigned_to": null, "tdd_phase": "NOT_STARTED"},
+  "review_metadata": {
+    "review_timestamp": "2026-01-13T23:45:00Z",
+    "reviewer": "software-crafter-reviewer",
+    "review_type": "STEP_FILE_BATCH_REVIEW",
+    "batch_position": "8/8 (FINAL STEP)",
+    "overall_status": "NEEDS_REVISION",
+    "critical_findings": {
+      "path_structure_mismatch": {
+        "severity": "CRITICAL",
+        "issue": "Step validation references 'src/' directory structure, but project uses 'modules/'",
+        "examples": [
+          "AC criterion checks: 'src/domain/model/' (should be 'modules/domain/model/')",
+          "Infrastructure import check: 'from src.infrastructure' (should be 'from modules.infrastructure')",
+          "DiceRoller port: 'src/domain/ports/dice_roller.py' (should be 'modules/domain/ports/dice_roller.py')"
+        ],
+        "impact": "All 6 acceptance criteria commands will fail due to wrong paths",
+        "status": "MUST_FIX"
+      },
+      "missing_implementation": {
+        "severity": "CRITICAL",
+        "issue": "Production code directories exist but are empty - no code to validate",
+        "missing_classes": [
+          "Character (domain/model/)",
+          "InitiativeResolver (domain/services/)",
+          "AttackResolver (domain/services/)",
+          "CombatRound (domain/services/)",
+          "CombatSimulator (application/)",
+          "DiceRoller (domain/ports/ - Protocol)"
+        ],
+        "current_state": "modules/domain/model/ and modules/domain/services/ contain only __pycache__",
+        "impact": "Step cannot validate architecture of non-existent code",
+        "status": "ARCHITECTURAL_BLOCKER"
+      },
+      "prerequisite_chain_broken": {
+        "severity": "MEDIUM-HIGH",
+        "issue": "Step depends on 04-01 (test execution PASS), but tests will skip if implementation missing",
+        "logic_issue": "04-01 expects 100% test PASS rate. Tests will skip due to ImportError. Tests ≠ PASS.",
+        "prerequisite_conflict": "Cannot have architecture validation (04-02) pass when prerequisite validation (04-01) is expected to PASS but actually SKIPS",
+        "status": "LOGIC_ERROR"
+      }
+    },
+    "validation_check_results": {
+      "check_1_path_references": {
+        "criterion": "Hexagonal folder structure",
+        "test_command": "ls -d src/domain/{model,services,ports} src/infrastructure src/application",
+        "status": "FAIL",
+        "reason": "Project uses 'modules/' not 'src/'. Command references wrong directory."
+      },
+      "check_2_frozen_dataclass": {
+        "criterion": "All value objects frozen",
+        "test_command": "grep -r '@dataclass(frozen=True)' src/domain/model/",
+        "status": "FAIL",
+        "reason": "Wrong path (src/ instead of modules/) AND directory is empty - no files to grep"
+      },
+      "check_3_agility_property": {
+        "criterion": "Character.agility is @property",
+        "test_command": "grep '@property' src/domain/model/character.py",
+        "status": "FAIL",
+        "reason": "Wrong path AND character.py doesn't exist"
+      },
+      "check_4_diceroller_protocol": {
+        "criterion": "DiceRoller is Protocol",
+        "test_command": "grep 'class DiceRoller(Protocol)' src/domain/ports/dice_roller.py",
+        "status": "FAIL",
+        "reason": "Wrong path AND dice_roller.py doesn't exist (ports directory is empty)"
+      },
+      "check_5_test_double_location": {
+        "criterion": "FixedDiceRoller in tests/doubles/",
+        "test_command": "ls tests/doubles/fixed_dice_roller.py",
+        "status": "PASS",
+        "reason": "This file exists and is in correct location"
+      },
+      "check_6_infrastructure_imports": {
+        "criterion": "Domain has zero infrastructure imports",
+        "test_command": "! grep -r 'from src.infrastructure' src/domain/",
+        "status": "FAIL",
+        "reason": "Wrong path prefix. Should check 'from modules.infrastructure'. Also, domain layer is empty so nothing to check."
+      }
+    },
+    "acceptance_criteria_assessment": {
+      "total_criteria": 6,
+      "pass_criteria": 1,
+      "fail_criteria": 5,
+      "blocker_criteria": [1, 2, 3, 4, 6],
+      "assessment": "5 of 6 acceptance criteria will FAIL due to path mismatch and missing implementation"
+    },
+    "recommendations": [
+      {
+        "priority": "CRITICAL_FIX_1",
+        "title": "Update all 'src/' path references to 'modules/'",
+        "scope": "All 6 acceptance criteria and detailed instructions",
+        "changes": [
+          "Criterion 1: 'src/domain/' → 'modules/domain/', 'src/infrastructure' → 'modules/infrastructure', 'src/application' → 'modules/application'",
+          "Criterion 2: 'src/domain/model/' → 'modules/domain/model/'",
+          "Criterion 3: 'src/domain/model/character.py' → 'modules/domain/model/character.py'",
+          "Criterion 4: 'src/domain/ports/dice_roller.py' → 'modules/domain/ports/dice_roller.py'",
+          "Criterion 6: 'from src.infrastructure' → 'from modules.infrastructure'"
+        ],
+        "verification": "All grep/ls commands should reference 'modules/' directory structure that actually exists"
+      },
+      {
+        "priority": "CRITICAL_FIX_2",
+        "title": "Add execution blocker note about missing implementation",
+        "scope": "task_specification.detailed_instructions and quality_gates",
+        "changes": [
+          "Add check: 'Verify production classes exist: Character, InitiativeResolver, AttackResolver, CombatRound, CombatSimulator'",
+          "Add prerequisite: 'All domain/application classes must be implemented before this validation can complete'",
+          "Add blocker gate: 'Cannot validate architecture when implementation is missing'"
+        ],
+        "verification": "Step should clearly document that architecture validation requires complete implementation"
+      },
+      {
+        "priority": "HIGH",
+        "title": "Clarify step execution timing relative to 04-01",
+        "scope": "self_contained_context.prerequisites",
+        "issue": "04-01 test execution will SKIP (not PASS) until 03-01 implementation complete",
+        "recommendation": "Update prerequisite: '04-01 test suite validation indicates implementation complete and tested' instead of requiring specific pass rate"
+      }
+    ],
+    "quality_assessment": {
+      "dependency_chain_analysis": {
+        "phase_sequence": "Phase 3 (Implement) → Phase 4 (Validate)",
+        "step_sequence": "03-01 (CombatSimulator) → 04-01 (Test Suite) → 04-02 (Architecture Validation)",
+        "issue": "Step 04-02 assumes 04-01 and 03-01 are complete, but references non-existent code"
+      },
+      "architecture_alignment": {
+        "specified_structure": "src/domain, src/infrastructure, src/application",
+        "actual_structure": "modules/domain, modules/infrastructure, modules/application",
+        "alignment_status": "MISALIGNED",
+        "root_cause": "Step file created with hypothetical target structure, not actual project structure"
+      },
+      "implementation_readiness": {
+        "code_status": "Empty directories created but no implementation",
+        "validation_status": "Cannot validate non-existent code",
+        "readiness": "NOT_READY - requires 03-01 implementation complete"
+      }
+    },
+    "blocking_issues": [
+      "Path structure mismatch: All acceptance criteria reference 'src/' but project uses 'modules/'",
+      "Missing implementation: Domain classes, services, and ports not created - cannot validate architecture of non-existent code",
+      "Prerequisite logic error: Step cannot execute successfully because implementation is incomplete"
+    ],
+    "sign_off": {
+      "reviewer": "software-crafter-reviewer",
+      "review_date": "2026-01-13",
+      "approval_decision": "NEEDS_REVISION",
+      "approval_reasoning": "This is the FINAL step in Phase 4. Architecture validation cannot proceed when: (1) acceptance criteria reference wrong directory structure, (2) production code is not implemented, (3) step assumes complete implementation but references empty directories. Step requires alignment with actual project structure and implementation status before execution.",
+      "blocking_issues_count": 3,
+      "critical_fixes_required": 2,
+      "ready_for_execution": false,
+      "execution_note": "Step file must be revised before attempting execution. Update path references (src/ → modules/) and acknowledge architecture validation is blocked until 03-01 implementation is complete."
+    }
+  },
+  "quality_gates": {
+    "required_before_commit": ["All architecture validation checks PASS", "Domain layer has zero external dependencies"],
+    "test_pass_rate": "N/A - Architecture validation",
+    "architecture_compliance": "VALIDATED"
+  }
+}
