@@ -4,3 +4,5 @@ omit =
     tests/*
     # omit the semantic-release setup
     __version__.py
+    # omit manual test scripts
+    manual_test.py
