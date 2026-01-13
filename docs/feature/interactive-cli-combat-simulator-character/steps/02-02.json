@@ -1,0 +1,249 @@
+{
+  "task_id": "02-02",
+  "project_id": "interactive-cli-combat-simulator-character",
+  "phase": 2,
+  "phase_name": "Domain Services - Combat Mechanics",
+  "step_name": "Implement AttackResult and AttackResolver",
+  "execution_agent": "software-crafter",
+  "is_walking_skeleton": false,
+  "self_contained_context": {
+    "background": "AttackResolver calculates damage for single attack: attack_power + D6 roll. Enforces business rule: dead characters cannot attack. Returns AttackResult with damage and updated defender.",
+    "business_rules": {
+      "damage_calculation": "Total damage = attacker.attack_power + D6 roll",
+      "dead_attacker_validation": "If attacker.is_alive == False, raise ValueError with message 'Dead character cannot attack'",
+      "hp_flooring": "Defender HP floors at 0 via Character.receive_damage()",
+      "immutability": "AttackResult contains NEW defender Character instance (original unchanged)"
+    },
+    "architecture_context": {
+      "layer": "Domain Services (src/domain/services/attack_resolver.py)",
+      "value_object": "AttackResult (src/domain/model/attack_result.py)",
+      "dependencies": "Character.receive_damage(), DiceRoller.roll()"
+    },
+    "e2e_scenarios_enabled": [{"id": "Scenario 8", "name": "Dead character cannot initiate attack"}],
+    "prerequisites": ["01-01 Character", "01-02 DiceRoller"]
+  },
+  "task_specification": {
+    "name": "Implement AttackResult and AttackResolver",
+    "motivation": "Core combat mechanic. Calculates damage, validates business rules (no dead attackers), applies damage immutably.",
+    "detailed_instructions": [
+      "Create src/domain/model/attack_result.py as frozen dataclass",
+      "Fields: attacker_name, defender_name, dice_roll, attack_power, total_damage, defender_old_hp, defender_new_hp, defender_after",
+      "Create src/domain/services/attack_resolver.py",
+      "Inject DiceRoller in constructor",
+      "Implement resolve_attack(attacker, defender) -> AttackResult",
+      "Validate: if not attacker.is_alive, raise ValueError('Dead character cannot attack')",
+      "Roll dice, calculate damage = attack_power + roll",
+      "Call defender.receive_damage(damage) to get new instance",
+      "Return AttackResult with all combat details",
+      "Create tests/unit/domain/services/test_attack_resolver.py",
+      "Test: damage calculation, HP reduction, HP flooring, dead attacker error"
+    ],
+    "acceptance_criteria": [
+      {"criterion": "Damage = attack_power + dice_roll", "test_command": "pytest tests/unit/domain/services/test_attack_resolver.py::test_damage_calculation -v"},
+      {"criterion": "Defender HP reduced correctly", "test_command": "pytest tests/unit/domain/services/test_attack_resolver.py::test_hp_reduction -v"},
+      {"criterion": "HP floors at 0", "test_command": "pytest tests/unit/domain/services/test_attack_resolver.py::test_hp_flooring -v"},
+      {"criterion": "Dead attacker raises ValueError('Dead character cannot attack')", "test_command": "pytest tests/unit/domain/services/test_attack_resolver.py::test_dead_attacker_error -v"},
+      {"criterion": "defender_after is new instance", "test_command": "pytest tests/unit/domain/services/test_attack_resolver.py::test_immutability -v"},
+      {"criterion": "E2E Scenario 8 passes", "test_command": "pytest tests/e2e/test_combat_simulation.py::test_dead_character_cannot_initiate_attack -v"}
+    ],
+    "estimated_hours": 0.25
+  },
+  "dependencies": {"requires": ["01-01", "01-02"], "blocking": ["02-03"], "parallel_with": ["02-01"]},
+  "deliverables": [
+    {"type": "source_file", "path": "src/domain/model/attack_result.py"},
+    {"type": "source_file", "path": "src/domain/services/attack_resolver.py"},
+    {"type": "test_file", "path": "tests/unit/domain/services/test_attack_resolver.py"}
+  ],
+  "state": {"status": "TODO", "assigned_to": null, "tdd_phase": "NOT_STARTED"},
+  "tdd_cycle": {
+    "current_phase": "NOT_STARTED",
+    "acceptance_test_scenario": "Scenario 8: Dead character cannot attack",
+    "unit_test_strategy": "Classical TDD with real Characters. Mock DiceRoller using FixedDiceRoller.",
+    "mock_boundaries": ["DiceRoller (port)", "Character - use REAL instances"]
+  },
+  "quality_gates": {
+    "required_before_commit": ["Unit tests PASS (4-5 tests)", "E2E Scenario 8 PASS", "Error message exact: 'Dead character cannot attack'"],
+    "test_pass_rate": "100%"
+  },
+  "review_metadata": {
+    "review_timestamp": "2026-01-13T16:00:00Z",
+    "reviewer": "software-crafter-reviewer",
+    "review_type": "STEP_FILE_BATCH_REVIEW",
+    "batch_position": "4/8",
+    "overall_status": "APPROVED",
+
+    "findings": {
+      "critical_issues": [],
+
+      "high_priority_issues": [],
+
+      "medium_priority_issues": [
+        {
+          "id": "EST-001",
+          "severity": "LOW",
+          "title": "Estimated hours may be optimistic",
+          "description": "estimated_hours: 0.25 (15 minutes) for 5+ unit tests + E2E test + implementation. Actual complexity may require 0.33-0.5 hours.",
+          "location": "Line 49 - task_specification.estimated_hours",
+          "impact": "Planning accuracy - not blocking",
+          "resolution": "OPTIONAL - Consider updating to 0.33-0.5 hours for more realistic planning",
+          "status": "DOCUMENTED_FOR_AWARENESS"
+        }
+      ],
+
+      "validation_checks": {
+        "dependency_reference_to_01_00": {
+          "required": false,
+          "actual": false,
+          "status": "PASS",
+          "note": "Dependencies correctly require only [01-01, 01-02] - no reference to deleted 01-00"
+        },
+
+        "dependency_chain": {
+          "requires": ["01-01", "01-02"],
+          "blocks": ["02-03"],
+          "parallel_with": ["02-01"],
+          "status": "PASS",
+          "note": "Dependency graph correct. 02-02 depends on Character (01-01) and DiceRoller (01-02). Blocks CombatTurnResolver (02-03)."
+        },
+
+        "domain_layer_location": {
+          "required": "src/domain/services/attack_resolver.py",
+          "actual": "src/domain/services/attack_resolver.py",
+          "status": "PASS",
+          "note": "Correct Hexagonal Architecture domain services layer"
+        },
+
+        "value_object_immutability": {
+          "required": "AttackResult as frozen dataclass",
+          "actual": "Specified in detailed_instructions",
+          "status": "PASS",
+          "note": "AttackResult immutability constraint properly specified"
+        },
+
+        "dead_attacker_validation": {
+          "business_rule": "If attacker.is_alive == False, raise ValueError('Dead character cannot attack')",
+          "test_coverage": "test_dead_attacker_error (AC criterion #4)",
+          "error_message_exactness": "Required - verified in quality_gates",
+          "status": "PASS",
+          "note": "Critical business rule explicitly specified and testable"
+        },
+
+        "damage_calculation": {
+          "formula": "Total damage = attack_power + D6 roll",
+          "test_coverage": "test_damage_calculation (AC criterion #1)",
+          "status": "PASS",
+          "note": "Formula clear and testable"
+        },
+
+        "hp_flooring": {
+          "requirement": "Defender HP floors at 0 via Character.receive_damage()",
+          "test_coverage": "test_hp_flooring (AC criterion #3)",
+          "status": "PASS",
+          "note": "Correctly delegates to Character.receive_damage() which handles flooring"
+        },
+
+        "immutability": {
+          "requirement": "AttackResult contains NEW defender Character instance",
+          "test_coverage": "test_immutability (AC criterion #5)",
+          "status": "PASS",
+          "note": "Immutability constraint properly enforced and testable"
+        },
+
+        "tdd_strategy": {
+          "approach": "Classical TDD with real Characters",
+          "mock_policy": "Mock DiceRoller (port), use real Character (domain)",
+          "status": "PASS",
+          "note": "Correct adherence to port-boundary test doubles policy. NO mocking of domain objects."
+        },
+
+        "e2e_scenario_mapping": {
+          "scenario_id": "Scenario 8",
+          "scenario_name": "Dead character cannot initiate attack",
+          "test_command": "pytest tests/e2e/test_combat_simulation.py::test_dead_character_cannot_initiate_attack -v",
+          "status": "PASS",
+          "note": "E2E scenario clearly mapped and testable"
+        },
+
+        "acceptance_criteria_completeness": {
+          "count": 6,
+          "all_testable": true,
+          "all_specific": true,
+          "status": "PASS",
+          "note": "All 6 acceptance criteria are concrete, measurable, and have explicit test commands"
+        },
+
+        "quality_gates": {
+          "test_pass_rate": "100%",
+          "quality_gates_specified": ["Unit tests PASS (4-5 tests)", "E2E Scenario 8 PASS", "Error message exact"],
+          "status": "PASS",
+          "note": "All quality gates clearly specified before commit"
+        },
+
+        "self_contained_context": {
+          "status": "PASS",
+          "note": "Background, business rules, architecture context, prerequisites all comprehensive and self-contained"
+        }
+      }
+    },
+
+    "quality_assessment": {
+      "domain_logic_correctness": {
+        "rating": "EXCELLENT",
+        "note": "Dead character validation, damage calculation, HP flooring all correctly specified and testable"
+      },
+
+      "architecture_compliance": {
+        "rating": "EXCELLENT",
+        "note": "Hexagonal architecture properly applied: AttackResolver in domain/services, DiceRoller injected as port, Character used as real domain object"
+      },
+
+      "test_strategy_appropriateness": {
+        "rating": "EXCELLENT",
+        "note": "Classical TDD with real Characters and mocked DiceRoller port is correct approach. No domain object mocking."
+      },
+
+      "acceptance_criteria_quality": {
+        "rating": "EXCELLENT",
+        "note": "All 6 criteria are testable, specific, and have explicit test commands"
+      },
+
+      "business_value": {
+        "rating": "EXCELLENT",
+        "note": "Core combat mechanic. Validates critical business rule: dead characters cannot attack. Essential for combat simulation."
+      },
+
+      "implementation_complexity": {
+        "rating": "REASONABLE",
+        "note": "Moderate complexity: AttackResolver service with DiceRoller injection, error handling, immutability enforcement"
+      }
+    },
+
+    "recommendations": [
+      {
+        "priority": "LOW",
+        "title": "Consider updating estimated hours",
+        "description": "0.25 hours (15 minutes) may be optimistic for implementation + 5+ unit tests + E2E test",
+        "suggested_action": "Optional: Update estimated_hours from 0.25 to 0.33-0.5 hours for more realistic planning"
+      }
+    ],
+
+    "sign_off": {
+      "reviewer": "software-crafter-reviewer",
+      "review_date": "2026-01-13",
+      "approval_decision": "APPROVED",
+      "approval_criteria_met": [
+        "No dependency on deleted step 01-00 (verified: requires [01-01, 01-02])",
+        "Dependencies are correct: Character (01-01) and DiceRoller (01-02)",
+        "Domain logic properly specified: damage calculation, dead attacker validation, HP flooring, immutability",
+        "Test strategy correct: Classical TDD with real Characters, mock DiceRoller port only",
+        "All acceptance criteria are testable and specific (6/6 criteria with test commands)",
+        "E2E scenario integration complete: Scenario 8 mapped and testable",
+        "Quality gates clearly specified for commit readiness",
+        "Business rules comprehensive and properly enforced",
+        "No implementation bias detected (YAGNI satisfied, no premature optimization)"
+      ],
+      "blocking_issues": "NONE",
+      "ready_for_execution": true
+    }
+  }
+}
