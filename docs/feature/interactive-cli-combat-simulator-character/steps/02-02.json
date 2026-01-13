@@ -54,12 +54,107 @@
     {"type": "source_file", "path": "src/domain/services/attack_resolver.py"},
     {"type": "test_file", "path": "tests/unit/domain/services/test_attack_resolver.py"}
   ],
-  "state": {"status": "TODO", "assigned_to": null, "tdd_phase": "NOT_STARTED"},
+  "state": {"status": "DONE", "assigned_to": "software-crafter", "tdd_phase": "COMMITTED"},
   "tdd_cycle": {
-    "current_phase": "NOT_STARTED",
+    "current_phase": "COMMITTED",
     "acceptance_test_scenario": "Scenario 8: Dead character cannot attack",
     "unit_test_strategy": "Classical TDD with real Characters. Mock DiceRoller using FixedDiceRoller.",
-    "mock_boundaries": ["DiceRoller (port)", "Character - use REAL instances"]
+    "mock_boundaries": ["DiceRoller (port)", "Character - use REAL instances"],
+    "tdd_phase_tracking": {
+      "phase_execution_log": [
+        {
+          "phase_name": "PHASE 1: PREPARE",
+          "timestamp": "2026-01-13T16:30:00Z",
+          "duration_minutes": 2,
+          "outcome": "PASS",
+          "notes": "E2E Scenario 8 already enabled in feature file",
+          "artifacts": ["tests/e2e/features/combat_simulation.feature"],
+          "validation_result": "Scenario 8 found and enabled"
+        },
+        {
+          "phase_name": "PHASE 2: RED (Acceptance)",
+          "timestamp": "2026-01-13T16:32:00Z",
+          "duration_minutes": 1,
+          "outcome": "PASS",
+          "notes": "E2E test skipped (AttackResolver not implemented) - correct RED state",
+          "artifacts": ["tests/e2e/test_combat_simulation.py::test_dead_character_cannot_initiate_attack"],
+          "validation_result": "Test skipped as expected - Outside-In TDD driving implementation"
+        },
+        {
+          "phase_name": "PHASE 3: RED (Unit)",
+          "timestamp": "2026-01-13T16:33:00Z",
+          "duration_minutes": 8,
+          "outcome": "PASS",
+          "notes": "Created 6 unit tests - all fail with ModuleNotFoundError (correct RED)",
+          "artifacts": ["tests/unit/domain/services/test_attack_resolver.py"],
+          "validation_result": "All 6 unit tests fail on import as expected"
+        },
+        {
+          "phase_name": "PHASE 4: GREEN (Unit)",
+          "timestamp": "2026-01-13T16:41:00Z",
+          "duration_minutes": 12,
+          "outcome": "PASS",
+          "notes": "Implemented AttackResult (frozen dataclass) and AttackResolver service - all unit tests pass",
+          "artifacts": ["src/domain/model/attack_result.py", "src/domain/services/attack_resolver.py"],
+          "validation_result": "All 6 unit tests PASS (100%)"
+        },
+        {
+          "phase_name": "PHASE 5: CHECK",
+          "timestamp": "2026-01-13T16:53:00Z",
+          "duration_minutes": 1,
+          "outcome": "PASS",
+          "notes": "E2E Scenario 8 now PASSES",
+          "artifacts": [],
+          "validation_result": "E2E test PASS - dead character attack validation working"
+        },
+        {
+          "phase_name": "PHASE 6: GREEN (Acceptance)",
+          "timestamp": "2026-01-13T16:54:00Z",
+          "duration_minutes": 1,
+          "outcome": "PASS",
+          "notes": "All tests pass: 6 unit + 1 E2E",
+          "artifacts": [],
+          "validation_result": "7/7 tests PASS (100%)"
+        },
+        {
+          "phase_name": "PHASE 7: REVIEW",
+          "timestamp": "2026-01-13T16:55:00Z",
+          "duration_minutes": 5,
+          "outcome": "APPROVED",
+          "notes": "Self-review: No issues detected. Classical TDD followed, no port-boundary violations, clean code",
+          "artifacts": [],
+          "validation_result": "Implementation approved - all quality criteria met"
+        },
+        {
+          "phase_name": "PHASE 8: REFACTOR",
+          "timestamp": "2026-01-13T17:00:00Z",
+          "duration_minutes": 2,
+          "outcome": "SKIPPED",
+          "notes": "No refactoring needed - code already clean (Level 1-2 satisfied)",
+          "artifacts": [],
+          "validation_result": "Code quality satisfactory - no refactoring required"
+        },
+        {
+          "phase_name": "PHASE 9: POST-REFACTOR REVIEW",
+          "timestamp": "2026-01-13T17:02:00Z",
+          "duration_minutes": 0,
+          "outcome": "NOT_APPLICABLE",
+          "notes": "No refactoring performed",
+          "artifacts": [],
+          "validation_result": "N/A"
+        },
+        {
+          "phase_name": "PHASE 10: FINAL VALIDATE",
+          "timestamp": "2026-01-13T17:02:00Z",
+          "duration_minutes": 1,
+          "outcome": "PASS",
+          "notes": "Final validation: All 7 tests PASS (100%)",
+          "artifacts": [],
+          "validation_result": "7/7 tests PASS - ready for commit"
+        }
+      ],
+      "commit_policy": "All 11 phases documented, ready for PHASE 11: COMMIT"
+    }
   },
   "quality_gates": {
     "required_before_commit": ["Unit tests PASS (4-5 tests)", "E2E Scenario 8 PASS", "Error message exact: 'Dead character cannot attack'"],
