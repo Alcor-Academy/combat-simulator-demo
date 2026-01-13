@@ -7,26 +7,21 @@
 
 ## Overview
 
-Successfully decomposed roadmap into **9 atomic, self-contained task files** following Outside-In TDD methodology.
+Successfully decomposed roadmap into **8 atomic, self-contained task files** following Outside-In TDD methodology.
 
 ## Generated Task Files
 
 ### Phase 1: Domain Model Foundation (25 minutes)
 
-1. **01-00.json** - Setup Hexagonal Architecture Folder Structure
-   - **Type**: Setup (not walking skeleton)
-   - **Duration**: ~2 minutes
-   - **Deliverables**: Complete folder structure for src/domain/, src/infrastructure/, src/application/, tests/
-   - **Dependencies**: None (foundation step)
-
-2. **01-01.json** - Implement Character Value Object
+1. **01-01.json** - Implement Character Value Object (+ Folder Structure Setup)
    - **Type**: Walking Skeleton (first implementation)
    - **Duration**: ~20 minutes
-   - **Deliverables**: Character frozen dataclass with agility property, unit tests
+   - **Deliverables**: Complete folder structure (modules/domain/, modules/application/, modules/infrastructure/), Character frozen dataclass with agility property, unit tests, __init__.py files
    - **E2E Scenarios**: 5, 6, 7 (immutability, derived agility, validation)
    - **Wow Moment**: Derived agility property automatically updates
+   - **Note**: Includes folder creation delegated from eliminated step 01-00
 
-3. **01-02.json** - Implement DiceRoller Port and RandomDiceRoller Adapter
+2. **01-02.json** - Implement DiceRoller Port and RandomDiceRoller Adapter
    - **Type**: Port/Adapter implementation
    - **Duration**: ~10 minutes
    - **Deliverables**: DiceRoller Protocol, RandomDiceRoller adapter, unit tests
@@ -34,41 +29,50 @@ Successfully decomposed roadmap into **9 atomic, self-contained task files** fol
 
 ### Phase 2: Domain Services (25 minutes)
 
-4. **02-01.json** - Implement InitiativeResult and InitiativeResolver
+3. **02-01.json** - Implement InitiativeResult and InitiativeResolver
    - **Duration**: ~10 minutes
    - **Deliverables**: Initiative calculation service with tie-breaker logic
    - **E2E Scenarios**: 2, 9 (initiative calculation, tie-breaking)
    - **Parallel**: Can start with 02-02
 
-5. **02-02.json** - Implement AttackResult and AttackResolver
+4. **02-02.json** - Implement AttackResult and AttackResolver
    - **Duration**: ~15 minutes
    - **Deliverables**: Attack damage calculation with validation
    - **E2E Scenarios**: 8 (dead character cannot attack)
    - **Parallel**: Can start with 02-01
 
-6. **02-03.json** - Implement RoundResult and CombatRound
+5. **02-03.json** - Implement RoundResult and CombatRound
    - **Duration**: ~15 minutes
    - **Deliverables**: Combat round orchestration with attacker advantage
    - **E2E Scenarios**: 3, 4 (attacker advantage enforcement)
    - **Wow Moment**: Attacker advantage business rule
 
-### Phase 3: Application Layer (10 minutes)
+### Phase 3: Application Layer + CLI Infrastructure (10 minutes)
 
-7. **03-01.json** - Implement CombatResult and CombatSimulator
+6. **03-01.json** - Implement CombatSimulator + CLI Output (Walking Skeleton)
+   - **Type**: Walking Skeleton Finale (is_walking_skeleton: true)
    - **Duration**: ~10 minutes
-   - **Deliverables**: Main use case orchestrating full combat
+   - **Deliverables**:
+     - CombatResult frozen dataclass
+     - CombatSimulator application service
+     - CombatRenderer CLI infrastructure with rich.console.Console
+     - Unit tests for application and infrastructure layers
    - **E2E Scenarios**: 1 (full combat) + ALL 9 scenarios should PASS
-   - **Wow Moment**: E2E walking skeleton turns GREEN
+   - **Acceptance Criteria**: 9 total (7 logic + 2 CLI output)
+   - **CLI Output**:
+     - Full combat rounds display with damage and HP updates
+     - Rich formatting: green for winner, red for loser, yellow for damage
+   - **Wow Moment**: CLI displays full combat with colored output + all 9 E2E tests GREEN (complete vertical slice demonstration)
 
 ### Phase 4: Validation (10 minutes)
 
-8. **04-01.json** - Run Complete Test Suite and Coverage Analysis
+7. **04-01.json** - Run Complete Test Suite and Coverage Analysis
    - **Duration**: ~5 minutes
    - **Deliverables**: Coverage report (100% domain coverage)
    - **Quality Gates**: 9/9 E2E pass, 20-25 unit tests pass
    - **Wow Moment**: 100% coverage demonstration
 
-9. **04-02.json** - Architecture Compliance Validation
+8. **04-02.json** - Architecture Compliance Validation
    - **Duration**: ~5 minutes
    - **Deliverables**: Architecture validation report
    - **Quality Gates**: Hexagonal Architecture compliance verified
@@ -142,65 +146,69 @@ Each task file contains:
 ### Dependency Management
 - **Acyclic dependency graph** (no circular dependencies)
 - **Parallelization opportunities**: 02-01 and 02-02 can run simultaneously
-- **Critical path**: 01-00 → 01-01 → 02-02 → 02-03 → 03-01 → 04-01 → 04-02
+- **Critical path**: 01-01 → 01-02 → 02-02 → 02-03 → 03-01 → 04-01 → 04-02
+- **Note**: Step 01-00 eliminated - folder setup delegated to 01-01
 
 ## E2E Scenario Coverage Map
 
-| Step   | E2E Scenarios Enabled | Total Passing |
-|--------|----------------------|---------------|
-| 01-00  | N/A (setup)          | 0/9           |
-| 01-01  | 5, 6, 7              | 3/9           |
-| 01-02  | N/A (infrastructure) | 3/9           |
-| 02-01  | 2, 9                 | 5/9           |
-| 02-02  | 8                    | 6/9           |
-| 02-03  | 3, 4                 | 8/9           |
-| 03-01  | 1 + ALL              | 9/9 ✅        |
-| 04-01  | Validation           | 9/9 ✅        |
-| 04-02  | Validation           | 9/9 ✅        |
+| Step   | E2E Scenarios Enabled | Total Passing | Notes |
+|--------|----------------------|---------------|-------|
+| 01-01  | 5, 6, 7              | 3/9           | Includes folder structure setup (delegated from eliminated 01-00) |
+| 01-02  | N/A (infrastructure) | 3/9           | Port/Adapter pattern implementation |
+| 02-01  | 2, 9                 | 5/9           | Initiative calculation with tie-breaker |
+| 02-02  | 8                    | 6/9           | Attack damage calculation |
+| 02-03  | 3, 4                 | 8/9           | Combat round orchestration |
+| 03-01  | 1 + ALL              | 9/9 ✅        | **Walking Skeleton** - Full vertical slice with CLI output |
+| 04-01  | Validation           | 9/9 ✅        | Test suite and coverage analysis |
+| 04-02  | Validation           | 9/9 ✅        | Architecture compliance validation |
 
 ## Timeline Summary
 
-- **Phase 1**: 25 minutes (3 steps)
-- **Phase 2**: 25 minutes (3 steps)
-- **Phase 3**: 10 minutes (1 step)
-- **Phase 4**: 10 minutes (2 steps)
-- **Total**: 70 minutes (9 steps)
+- **Phase 1**: 25 minutes (2 steps: 01-01, 01-02)
+- **Phase 2**: 25 minutes (3 steps: 02-01, 02-02, 02-03)
+- **Phase 3**: 10 minutes (1 step: 03-01 - Walking Skeleton with CLI)
+- **Phase 4**: 10 minutes (2 steps: 04-01, 04-02)
+- **Total**: 70 minutes (8 steps)
+- **Note**: Original step 01-00 eliminated - functionality delegated to 01-01
 
 ## Next Steps
 
-**BEFORE COMMITTING**, please review:
+**Review Status**: ✅ COMPLETED
 
-1. Review task file structure and completeness
-2. Verify all 9 task files generated correctly
-3. Confirm self-contained context is comprehensive
-4. Approve or request revisions
+1. ✅ Task file structure reviewed and approved
+2. ✅ All 8 task files validated (01-00 eliminated, 01-01 through 04-02)
+3. ✅ Self-contained context comprehensive
+4. ✅ All revisions applied (path corrections, dependency fixes, CLI addition)
+5. ✅ All task files committed to repository
 
-**After approval**:
-- Commit all task files to repository
-- software-crafter can execute tasks in sequence
+**Next Phase**:
+- Phase 7: Execute all 8 steps in dependency order with 11-phase TDD
 - Each task is fully autonomous and executable
+- Walking skeleton (03-01) will demonstrate complete vertical slice with CLI output
 
 ## File Locations
 
 ```
 docs/feature/interactive-cli-combat-simulator-character/
-├── roadmap.yaml (source)
+├── baseline.yaml (source - approved)
+├── roadmap.yaml (source - approved)
 └── steps/
-    ├── 01-00.json (7.6 KB)
-    ├── 01-01.json (12 KB)
-    ├── 01-02.json (8.9 KB)
-    ├── 02-01.json (4.8 KB)
-    ├── 02-02.json (4.3 KB)
-    ├── 02-03.json (5.0 KB)
-    ├── 03-01.json (5.1 KB)
-    ├── 04-01.json (2.8 KB)
-    ├── 04-02.json (3.1 KB)
+    ├── 01-01.json (Character + Folder Setup)
+    ├── 01-02.json (DiceRoller Port/Adapter)
+    ├── 02-01.json (InitiativeResolver)
+    ├── 02-02.json (AttackResolver)
+    ├── 02-03.json (CombatRound)
+    ├── 03-01.json (CombatSimulator + CLI - Walking Skeleton)
+    ├── 04-01.json (Test Suite & Coverage)
+    ├── 04-02.json (Architecture Validation)
+    ├── DEPENDENCY_GRAPH.txt
     └── SUMMARY.md (this file)
 ```
 
-**Total Size**: ~53 KB of atomic, self-contained task specifications
+**Total**: 8 atomic, self-contained task specifications
+**Note**: Step 01-00 eliminated during review phase
 
 ---
 
-**Status**: AWAITING USER APPROVAL
-**Action Required**: Review and approve task files for commit
+**Status**: ✅ ALL STEPS REVIEWED AND COMMITTED
+**Next Action**: Execute Phase 7 - Run all 8 steps with 11-phase TDD
