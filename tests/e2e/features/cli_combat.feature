@@ -213,7 +213,6 @@ Feature: Interactive CLI Combat Viewer
     And no stack trace is shown
     And exit code is 130
 
-  @skip
   Scenario: User interrupts CLI with CTRL-C during combat
     Given combat is in progress
     When I press CTRL-C during combat visualization
