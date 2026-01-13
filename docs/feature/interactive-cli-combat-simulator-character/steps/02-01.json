@@ -1,0 +1,190 @@
+{
+  "task_id": "02-01",
+  "project_id": "interactive-cli-combat-simulator-character",
+  "phase": 2,
+  "phase_name": "Domain Services - Combat Mechanics",
+  "step_name": "Implement InitiativeResult and InitiativeResolver",
+  "execution_agent": "software-crafter",
+  "is_walking_skeleton": false,
+  "self_contained_context": {
+    "background": "Initiative determines who attacks first for entire combat. Calculated once at combat start as agility + D6 roll. Higher total wins. Attacker strikes first every round (attacker advantage rule).",
+    "business_rules": {
+      "initiative_calculation": "Initiative = Character.agility + D6 roll. Higher total becomes attacker.",
+      "tie_breaker_rules": "If totals equal: (1) higher base agility wins, (2) if still tied, first character wins",
+      "attacker_role_persistence": "Attacker/defender roles determined ONCE by initiative, persist through entire combat"
+    },
+    "architecture_context": {
+      "layer": "Domain Services (src/domain/services/initiative_resolver.py)",
+      "value_object": "InitiativeResult (src/domain/model/initiative_result.py)",
+      "dependencies": "Character (domain model), DiceRoller (port interface)"
+    },
+    "e2e_scenarios_enabled": [
+      {"id": "Scenario 2", "name": "Character with higher agility wins initiative"},
+      {"id": "Scenario 9", "name": "Initiative tie resolved by first character rule"}
+    ],
+    "prerequisites": ["01-01 Character", "01-02 DiceRoller port"]
+  },
+  "task_specification": {
+    "name": "Implement InitiativeResult and InitiativeResolver",
+    "motivation": "Initiative sets combat order for entire fight. Demonstrates domain service with dependency injection and business rule enforcement (tie-breaker logic).",
+    "detailed_instructions": [
+      "Create src/domain/model/initiative_result.py as frozen dataclass",
+      "Fields: attacker, defender (Characters), attacker_roll, defender_roll, attacker_total, defender_total",
+      "Create src/domain/services/initiative_resolver.py",
+      "Inject DiceRoller in constructor",
+      "Implement roll_initiative(char1, char2) -> InitiativeResult",
+      "Roll D6 for each character, calculate totals (agility + roll)",
+      "Determine winner with tie-breaker: higher total → higher agility → char1",
+      "Return InitiativeResult with attacker/defender assigned",
+      "Create tests/unit/domain/services/test_initiative_resolver.py",
+      "Test: higher initiative wins, tie-breaker by agility, tie-breaker by first character",
+      "Use FixedDiceRoller for deterministic tests"
+    ],
+    "acceptance_criteria": [
+      {"criterion": "InitiativeResult captures attacker and defender", "test_command": "pytest tests/unit/domain/services/test_initiative_resolver.py::test_initiative_result_creation -v"},
+      {"criterion": "Initiative = agility + dice roll", "test_command": "pytest tests/unit/domain/services/test_initiative_resolver.py::test_initiative_calculation -v"},
+      {"criterion": "Higher initiative total determines attacker", "test_command": "pytest tests/unit/domain/services/test_initiative_resolver.py::test_higher_total_wins -v"},
+      {"criterion": "Tie-breaker: higher agility wins", "test_command": "pytest tests/unit/domain/services/test_initiative_resolver.py::test_tie_breaker_agility -v"},
+      {"criterion": "Tie-breaker: equal agility, char1 wins", "test_command": "pytest tests/unit/domain/services/test_initiative_resolver.py::test_tie_breaker_first_char -v"},
+      {"criterion": "E2E Scenario 2 passes", "test_command": "pytest tests/e2e/test_combat_simulation.py::test_character_with_higher_agility_wins_initiative -v"},
+      {"criterion": "E2E Scenario 9 passes", "test_command": "pytest tests/e2e/test_combat_simulation.py::test_initiative_tie_resolved_by_first_character_rule -v"}
+    ],
+    "estimated_hours": 0.17
+  },
+  "dependencies": {"requires": ["01-01", "01-02"], "blocking": ["03-01"], "parallel_with": ["02-02"]},
+  "deliverables": [
+    {"type": "source_file", "path": "src/domain/model/initiative_result.py"},
+    {"type": "source_file", "path": "src/domain/services/initiative_resolver.py"},
+    {"type": "test_file", "path": "tests/unit/domain/services/test_initiative_resolver.py"}
+  ],
+  "state": {"status": "TODO", "assigned_to": null, "tdd_phase": "NOT_STARTED"},
+  "tdd_cycle": {
+    "current_phase": "NOT_STARTED",
+    "acceptance_test_scenario": "Scenario 2, 9: Initiative calculation and tie-breaking",
+    "unit_test_strategy": "Classical TDD with real Character instances. Mock DiceRoller using FixedDiceRoller for deterministic rolls.",
+    "mock_boundaries": ["DiceRoller (port) - use FixedDiceRoller in tests", "Character - use REAL instances (domain entity)"]
+  },
+  "quality_gates": {
+    "required_before_commit": ["Unit tests PASS (3-4 tests)", "E2E Scenarios 2, 9 PASS", "InitiativeResolver uses dependency injection"],
+    "test_pass_rate": "100%"
+  },
+  "review_metadata": {
+    "review_timestamp": "2026-01-13T20:15:00Z",
+    "reviewer": "software-crafter-reviewer",
+    "review_type": "STEP_FILE_BATCH_REVIEW",
+    "batch_position": "3/8",
+    "overall_status": "APPROVED",
+    "findings": {
+      "critical_issues": [],
+      "high_priority_issues": [],
+      "medium_priority_issues": [],
+      "validation_checks": {
+        "no_dependency_on_deleted_01_00": {
+          "required": false,
+          "actual": false,
+          "status": "PASS",
+          "note": "Step correctly requires ['01-01', '01-02'] only. No reference to deleted 01-00."
+        },
+        "dependency_on_01_02_diceroller": {
+          "required": "01-02 (DiceRoller port)",
+          "actual": "Listed in prerequisites line 25 and dependencies.requires line 54",
+          "status": "PASS",
+          "note": "Correctly depends on DiceRoller port for dependency injection pattern"
+        },
+        "self_contained_context": {
+          "status": "PASS",
+          "note": "Background, business rules, architecture context all comprehensive and self-contained"
+        },
+        "acceptance_criteria_completeness": {
+          "count": 7,
+          "status": "PASS",
+          "note": "All acceptance criteria testable with explicit pytest commands. Covers happy path (2 tests) and tie-breakers (2 tests) plus E2E scenarios (2 tests)"
+        },
+        "e2e_scenario_mapping": {
+          "status": "PASS",
+          "note": "E2E Scenario 2 (higher agility wins) and Scenario 9 (first character tie-breaker) mapped to specific test assertions in combat_simulation feature file"
+        },
+        "tdd_strategy": {
+          "status": "PASS",
+          "note": "Classical TDD approach: Real Character instances (domain entities), FixedDiceRoller for port boundary testing"
+        },
+        "mock_boundaries": {
+          "status": "PASS",
+          "note": "Correctly specifies: DiceRoller (port) mocked with FixedDiceRoller. Character (domain entity) uses real instances. Port-boundary test doubles policy compliant."
+        },
+        "implementation_pattern": {
+          "status": "PASS",
+          "note": "Clear value object design (frozen dataclass), service pattern with constructor injection, deterministic testing approach"
+        },
+        "business_rule_coverage": {
+          "initiative_calculation": "COVERED - 'Initiative = agility + dice roll' AC criterion",
+          "higher_total_wins": "COVERED - 'Higher initiative total determines attacker' AC criterion",
+          "tie_breaker_agility": "COVERED - 'Tie-breaker: higher agility wins' AC criterion",
+          "tie_breaker_first_char": "COVERED - 'Tie-breaker: equal agility, char1 wins' AC criterion",
+          "attacker_role_persistence": "COVERED - E2E scenarios verify attacker designated for all rounds",
+          "status": "PASS"
+        },
+        "blocking_dependencies": {
+          "blocks": ["03-01 (CombatRound depends on InitiativeResolver)"],
+          "status": "PASS",
+          "note": "Correctly blocking downstream combat mechanics"
+        },
+        "deliverables_specificity": {
+          "status": "PASS",
+          "note": "Three clear deliverables: InitiativeResult value object, InitiativeResolver service, unit test file"
+        },
+        "estimated_effort": {
+          "hours": 0.17,
+          "status": "REASONABLE",
+          "note": "10 minutes estimated - realistic for straightforward domain service with 3-4 unit tests and 2 E2E validations"
+        }
+      }
+    },
+    "quality_assessment": {
+      "architecture_compliance": {
+        "rating": "EXCELLENT",
+        "note": "Clean hexagonal architecture: InitiativeResolver as domain service, DiceRoller as port, InitiativeResult as value object"
+      },
+      "test_strategy": {
+        "rating": "EXCELLENT",
+        "note": "Appropriate use of classical TDD with real domain objects and port-boundary test doubles. Deterministic testing with FixedDiceRoller."
+      },
+      "acceptance_criteria_clarity": {
+        "rating": "EXCELLENT",
+        "note": "Seven criteria with specific pytest commands. Covers calculation logic (1), happy path (2), tie-breakers (2), and E2E validation (2)"
+      },
+      "dependency_management": {
+        "rating": "EXCELLENT",
+        "note": "Clean dependency chain: 01-01 (Character) + 01-02 (DiceRoller) → 02-01 (InitiativeResolver). No orphaned references."
+      },
+      "business_value_clarity": {
+        "rating": "EXCELLENT",
+        "note": "Motivation clearly explains that initiative determines combat order for entire fight. Demonstrates domain service, DI, and business rule enforcement."
+      },
+      "self_contained_context": {
+        "rating": "EXCELLENT",
+        "note": "Comprehensive background, business rules, and architecture context. Developer has everything needed without external references."
+      }
+    },
+    "recommendations": [],
+    "sign_off": {
+      "reviewer": "software-crafter-reviewer",
+      "review_date": "2026-01-13",
+      "approval_decision": "APPROVED",
+      "approval_criteria_met": [
+        "No dependency on deleted step 01-00 - uses only 01-01 and 01-02",
+        "Correctly depends on 01-02 (DiceRoller port) as prerequisite",
+        "Step is self-contained with complete business context",
+        "All acceptance criteria testable with explicit pytest commands",
+        "E2E scenarios (2, 9) properly mapped and enabled in step definition",
+        "TDD strategy appropriate: Classical with port-boundary test doubles",
+        "Mock boundaries correct: DiceRoller (port) mocked, Character (domain) real",
+        "All business rules covered: Calculation, winner determination, tie-breakers",
+        "Deliverables clearly specified and scoped",
+        "Architecture compliance verified (domain service, value object, port injection)"
+      ],
+      "blocking_issues": "NONE",
+      "ready_for_execution": true
+    }
+  }
+}

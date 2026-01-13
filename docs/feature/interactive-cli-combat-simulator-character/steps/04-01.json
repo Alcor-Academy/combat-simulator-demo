@@ -1,0 +1,271 @@
+{
+  "task_id": "04-01",
+  "project_id": "interactive-cli-combat-simulator-character",
+  "phase": 4,
+  "phase_name": "Validation and Quality Gates",
+  "step_name": "Run Complete Test Suite and Coverage Analysis",
+  "execution_agent": "software-crafter",
+  "is_walking_skeleton": false,
+  "self_contained_context": {
+    "background": "Final validation step. Execute all tests (unit + E2E), generate coverage report, validate 100% domain coverage. Ensures implementation completeness and TDD rigor.",
+    "quality_metrics": {
+      "e2e_tests": "All 9 scenarios must PASS",
+      "unit_tests": "20-25 unit tests must PASS",
+      "domain_coverage": "100% line coverage for modules/domain/",
+      "test_execution_time": "< 5 seconds (fast feedback loop)"
+    },
+    "prerequisites": ["03-01 CombatSimulator complete", "All implementation steps finished"]
+  },
+  "task_specification": {
+    "name": "Run Complete Test Suite and Coverage Analysis",
+    "motivation": "Validates implementation completeness: (1) All 9 E2E scenarios PASS, (2) All unit tests PASS, (3) 100% domain coverage (TDD rigor).",
+    "detailed_instructions": [
+      "Run pytest tests/ -v to execute all tests",
+      "Verify: All tests PASS, 0 failures, 0 skipped",
+      "Run pytest tests/e2e/ -v specifically",
+      "Verify: 9/9 scenarios PASS",
+      "Run pytest tests/unit/ -v",
+      "Verify: 20-25 unit tests PASS",
+      "Run pytest --cov=modules/domain --cov-report=term --cov-report=html",
+      "Verify: 100% coverage for modules/domain/",
+      "Run pytest tests/ --durations=10",
+      "Verify: Total execution time < 5 seconds",
+      "Review htmlcov/index.html for visual coverage report"
+    ],
+    "acceptance_criteria": [
+      {"criterion": "All 9 E2E scenarios PASS", "test_command": "pytest tests/e2e/ -v"},
+      {"criterion": "All unit tests PASS (20-25 tests)", "test_command": "pytest tests/unit/ -v"},
+      {"criterion": "100% line coverage for modules/domain/", "test_command": "pytest --cov=modules/domain --cov-report=term-missing"},
+      {"criterion": "Test execution time < 5 seconds", "test_command": "pytest tests/ --durations=10"}
+    ],
+    "estimated_hours": 0.08
+  },
+  "dependencies": {"requires": ["03-01"], "blocking": ["04-02"]},
+  "deliverables": [
+    {"type": "coverage_report", "path": "htmlcov/index.html", "description": "Coverage report showing 100% domain coverage"}
+  ],
+  "state": {"status": "TODO", "assigned_to": null, "tdd_phase": "NOT_STARTED"},
+  "review_metadata": {
+    "review_timestamp": "2026-01-13T23:15:00Z",
+    "reviewer": "software-crafter-reviewer",
+    "review_type": "STEP_FILE_BATCH_REVIEW",
+    "batch_position": "7/8",
+    "overall_status": "APPROVED",
+    "findings": {
+      "critical_issues": [],
+      "high_priority_issues": [],
+      "medium_priority_issues": [],
+      "validation_checks": {
+        "no_dependency_on_deleted_01_00": {
+          "required": false,
+          "actual": false,
+          "status": "PASS",
+          "note": "Step correctly depends on ['03-01'] only. No reference to deleted 01-00."
+        },
+        "dependency_chain_completeness": {
+          "requires": ["03-01"],
+          "business_context": "03-01 (CombatSimulator implementation) must complete before validation. This step validates implementation completeness: all tests PASS, coverage 100%, execution fast.",
+          "status": "PASS",
+          "note": "Dependency is correct and sufficient. 03-01 is final implementation step, 04-01 is validation step."
+        },
+        "phase_positioning": {
+          "phase": 4,
+          "phase_name": "Validation and Quality Gates",
+          "purpose": "Quality gate validation (not implementation)",
+          "blocks": ["04-02 Architecture Compliance Validation"],
+          "status": "PASS",
+          "note": "Correctly positioned as Phase 4 validation step. Ensures implementation ready for architecture compliance check."
+        },
+        "self_contained_context": {
+          "background_clarity": "EXCELLENT - Clear purpose: validate all tests pass, coverage complete, execution fast",
+          "quality_metrics_specificity": "EXCELLENT - E2E 9/9, Unit 20-25, Domain 100% coverage, Time <5s",
+          "prerequisites_clarity": "CLEAR - States 03-01 must be complete",
+          "status": "PASS",
+          "note": "Developer has everything needed to execute validation step"
+        },
+        "test_execution_commands": {
+          "command_1": "pytest tests/ -v - Validates all tests execution",
+          "command_2": "pytest tests/e2e/ -v - Validates 9 E2E scenarios PASS",
+          "command_3": "pytest tests/unit/ -v - Validates 20-25 unit tests PASS",
+          "command_4": "pytest --cov=modules/domain --cov-report=term --cov-report=html - Validates 100% domain coverage",
+          "command_5": "pytest tests/ --durations=10 - Validates <5s execution time",
+          "all_commands_practical": true,
+          "status": "PASS",
+          "note": "All test commands are practical and validate critical success metrics. Commands assume 03-01 implementation creates the test files."
+        },
+        "coverage_target_validation": {
+          "target": "100% line coverage for modules/domain/",
+          "justification": "TDD rigor - every production line in domain must be tested",
+          "measurement_approach": "pytest --cov=modules/domain --cov-report=term-missing",
+          "status": "PASS",
+          "note": "Coverage target is appropriate for TDD-driven feature. 'term-missing' report shows uncovered lines if any."
+        },
+        "performance_target_validation": {
+          "target": "< 5 seconds total test execution",
+          "justification": "Fast feedback loop essential for TDD",
+          "measurement": "pytest tests/ --durations=10 shows slowest 10 tests",
+          "status": "PASS",
+          "note": "5-second target is realistic for domain-focused test suite with in-memory infrastructure"
+        },
+        "acceptance_criteria_completeness": {
+          "count": 4,
+          "all_testable": true,
+          "criteria_coverage": [
+            "AC #1: All 9 E2E scenarios PASS - testable via pytest tests/e2e/ -v",
+            "AC #2: All unit tests PASS (20-25 tests) - testable via pytest tests/unit/ -v",
+            "AC #3: 100% domain coverage - testable via pytest --cov=modules/domain",
+            "AC #4: Execution time < 5 seconds - testable via pytest --durations=10"
+          ],
+          "status": "PASS",
+          "note": "All acceptance criteria are concrete, measurable, and have explicit test commands"
+        },
+        "detailed_instructions_quality": {
+          "step_count": 10,
+          "clarity": "EXCELLENT - Clear sequential steps from test execution through coverage review",
+          "resource_generation": "Generates htmlcov/index.html coverage report",
+          "validation_completeness": "Covers all test execution and coverage analysis",
+          "status": "PASS",
+          "note": "Instructions are detailed enough for straightforward validation execution"
+        },
+        "quality_gates_validation": {
+          "gates": [
+            "9/9 E2E scenarios PASS",
+            "20-25 unit tests PASS",
+            "100% domain coverage",
+            "Test time < 5s"
+          ],
+          "test_pass_rate": "100%",
+          "blocker_on_failure": true,
+          "status": "PASS",
+          "note": "Quality gates are clearly defined. All four gates must pass before commit."
+        },
+        "wow_moment_validation": {
+          "trigger": "100% Coverage report",
+          "demonstration": "Run coverage report with HTML output, show 100% domain coverage",
+          "audience_value": "TDD rigor confirmed - every line tested",
+          "status": "PASS",
+          "note": "Powerful validation moment. Coverage report proves Outside-In TDD discipline - domain implementation driven entirely by tests."
+        },
+        "test_expectations_realism": {
+          "e2e_scenario_count": 9,
+          "unit_test_count": "20-25",
+          "context": "Based on 03-01 implementation, these numbers are reasonable for complete combat system",
+          "unit_test_breakdown_estimated": [
+            "CombatResult (2-3 tests): Immutability, field coverage",
+            "CombatSimulator (3-4 tests): Initiative once, round loop, victory condition, complete result",
+            "Character (2-3 tests): Properties, immutability, state updates",
+            "InitiativeResolver (3-4 tests): Attacker determination, tie-breaking",
+            "CombatRound (3-4 tests): Attacker advantage, defender counter-attack, round result",
+            "AttackResolver (2-3 tests): Damage calculation, hit/miss logic",
+            "Edge cases and integration (3-5 tests): Dead character, damage ranges, etc."
+          ],
+          "total_estimated": "18-26 tests",
+          "status": "PASS",
+          "note": "Estimate of 20-25 unit tests is realistic for complete feature implementation with all business rules covered"
+        },
+        "test_isolation_assumptions": {
+          "assumption": "Each test isolated, no shared mutable state",
+          "validation": "Proper assertion in 03-01 step - tests must use fresh objects per test",
+          "status": "PASS",
+          "note": "Validation step correctly assumes 03-01 implementation follows TDD best practices"
+        },
+        "architecture_compliance_validation": {
+          "step_04_02_depends_on": "04-01 test execution PASSING",
+          "sequence": "04-01 (test execution) → 04-02 (architecture validation)",
+          "dependency_correctness": "CORRECT - Can only validate architecture after implementation is tested and proven",
+          "status": "PASS",
+          "note": "Proper sequencing: test suite validation before architecture compliance check"
+        },
+        "phase_4_role_validation": {
+          "phase_4_purpose": "Validation and Quality Gates",
+          "step_04_01_role": "Quality gate execution (test suite validation)",
+          "step_04_02_role": "Architecture compliance validation",
+          "complete_validation": "Tests + Architecture coverage ensures implementation complete and correct",
+          "status": "PASS",
+          "note": "Phase 4 provides comprehensive validation: code works (04-01) and is well-structured (04-02)"
+        },
+        "blocking_dependencies": {
+          "blocks": ["04-02 Architecture Compliance Validation"],
+          "status": "PASS",
+          "note": "Correctly positioned as prerequisite for architecture validation"
+        },
+        "estimated_effort_analysis": {
+          "hours": 0.08,
+          "effort_breakdown": "5 minutes to run test suite, 5 minutes to analyze coverage report",
+          "no_implementation_required": true,
+          "pure_validation": true,
+          "assessment": "REASONABLE - Estimate is realistic for straightforward test execution and reporting"
+        },
+        "yagni_compliance": {
+          "over_engineering_detected": false,
+          "speculative_generality_detected": false,
+          "unnecessary_complexity_detected": false,
+          "status": "PASS",
+          "note": "Step scope matches acceptance criteria exactly. Validates, does not implement."
+        }
+      }
+    },
+    "quality_assessment": {
+      "dependency_management": {
+        "rating": "EXCELLENT",
+        "note": "Correctly depends on 03-01 (final implementation step). No hidden dependencies."
+      },
+      "acceptance_criteria_clarity": {
+        "rating": "EXCELLENT",
+        "note": "Four clear criteria with specific pytest commands. All measurable and concrete."
+      },
+      "self_contained_context": {
+        "rating": "EXCELLENT",
+        "note": "Developer has all needed information. Context explains purpose and targets."
+      },
+      "test_command_practicality": {
+        "rating": "EXCELLENT",
+        "note": "All pytest commands are standard, practical, and validate critical success metrics."
+      },
+      "phase_positioning": {
+        "rating": "EXCELLENT",
+        "note": "Correctly positioned as Phase 4 validation. Properly blocks 04-02."
+      },
+      "wow_moment_value": {
+        "rating": "EXCELLENT",
+        "note": "100% coverage report is powerful proof of TDD rigor. Outside-In TDD discipline demonstrated."
+      }
+    },
+    "recommendations": [],
+    "sign_off": {
+      "reviewer": "software-crafter-reviewer",
+      "review_date": "2026-01-13",
+      "approval_decision": "APPROVED",
+      "critical_success_metrics": [
+        "All 9 E2E scenarios PASS (pytest tests/e2e/ -v)",
+        "20-25 unit tests PASS (pytest tests/unit/ -v)",
+        "100% line coverage for modules/domain/ (pytest --cov=modules/domain)",
+        "Test execution time < 5 seconds (pytest tests/ --durations=10)"
+      ],
+      "approval_criteria_met": [
+        "No dependency on deleted step 01-00",
+        "Correctly depends on 03-01 (final implementation step)",
+        "Step is self-contained with complete validation context",
+        "All acceptance criteria testable with explicit pytest commands",
+        "Coverage target (100% domain) appropriate for TDD rigor",
+        "Performance target (<5s) achievable with in-memory infrastructure",
+        "Quality gates clearly defined with 100% test pass rate requirement",
+        "Wow moment provided by 100% coverage report",
+        "Phase 4 positioning correct (validation after implementation)",
+        "Properly blocks 04-02 Architecture Compliance Validation"
+      ],
+      "blocking_issues": "NONE",
+      "ready_for_execution": true,
+      "execution_note": "This step validates implementation completeness from 03-01. After successful execution, architectural compliance can be verified in 04-02. Test execution time and coverage report will demonstrate TDD rigor."
+    }
+  },
+  "quality_gates": {
+    "required_before_commit": ["9/9 E2E scenarios PASS", "20-25 unit tests PASS", "100% domain coverage", "Test time < 5s"],
+    "test_pass_rate": "100%"
+  },
+  "wow_moment": {
+    "trigger": "100% Coverage report",
+    "demonstration": "Run coverage report with HTML output, show 100% domain coverage",
+    "audience_value": "TDD rigor confirmed - every line tested"
+  }
+}

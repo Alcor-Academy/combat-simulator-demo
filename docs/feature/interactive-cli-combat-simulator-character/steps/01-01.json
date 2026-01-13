@@ -1,0 +1,395 @@
+{
+  "task_id": "01-01",
+  "project_id": "interactive-cli-combat-simulator-character",
+  "phase": 1,
+  "phase_name": "Domain Model Foundation",
+  "step_name": "Implement Character Value Object",
+  "execution_agent": "software-crafter",
+  "is_walking_skeleton": true,
+
+  "self_contained_context": {
+    "background": "Character is the core domain entity in this turn-based combat simulator. Two characters fight until one reaches 0 HP. Character must be immutable (frozen dataclass) to prevent state mutation bugs and demonstrate functional programming paradigm in the live demo.",
+
+    "business_rules": {
+      "immutability": "Character is a value object - any state change returns a NEW Character instance. Original instance remains unchanged. This prevents action-at-a-distance bugs.",
+      "derived_agility": "Agility = HP + Attack Power. This is COMPUTED (property), not stored. Demonstrates derived properties that automatically update when base values change.",
+      "validation": "Name cannot be empty, HP cannot be negative, Attack Power must be positive. Business invariants enforced in __post_init__.",
+      "hp_flooring": "HP never goes negative. When receiving damage, HP floors at 0 (character dead).",
+      "liveness": "Character is alive if HP > 0, dead if HP = 0."
+    },
+
+    "architecture_context": {
+      "layer": "Domain Model (src/domain/model/character.py)",
+      "pattern": "Immutable Value Object using @dataclass(frozen=True)",
+      "dependencies": "ZERO external dependencies - pure Python dataclass",
+      "testability": "100% testable in isolation, no mocking required"
+    },
+
+    "e2e_scenarios_enabled": [
+      {
+        "id": "Scenario 5",
+        "name": "Character immutability during combat",
+        "acceptance_criterion": "Character.receive_damage() returns new instance, original unchanged"
+      },
+      {
+        "id": "Scenario 6",
+        "name": "Derived agility reflects current health",
+        "acceptance_criterion": "Character.agility property changes when HP decreases"
+      },
+      {
+        "id": "Scenario 7",
+        "name": "Character creation fails with empty name",
+        "acceptance_criterion": "ValueError raised when name is empty string"
+      }
+    ],
+
+    "prerequisites": [
+      "Step 01-00 DELETED: This step now creates folder structure as first step",
+      "Create src/ root folder if not exists",
+      "Create src/domain/ package with __init__.py",
+      "Create src/domain/model/ package with __init__.py",
+      "Read docs/architecture/architecture-design.md Section: Component Boundaries > Layer 1: Domain Layer",
+      "Review tests/e2e/test_combat_simulation.py scenarios 5, 6, 7 (lines 52-90 in feature file)"
+    ],
+
+    "related_documentation": {
+      "architecture": "docs/architecture/architecture-design.md - Character as frozen dataclass with agility property",
+      "requirements": "docs/requirements/user-stories.md - Story 1: Character Creation (AC-1.2 through AC-1.6)",
+      "handoff": "docs/distill/handoff-to-develop.md - Phase 1: Character implementation guidance"
+    },
+
+    "domain_concepts": {
+      "character_attributes": {
+        "name": "String identifier for the character (non-empty)",
+        "hp": "Current hit points (>= 0). Character dies when HP reaches 0.",
+        "attack_power": "Base damage dealt per attack (> 0). Added to dice roll for total damage.",
+        "agility": "DERIVED PROPERTY (not stored). Calculated as hp + attack_power. Used for initiative rolls."
+      },
+      "immutability_pattern": "receive_damage(amount) creates and returns NEW Character with reduced HP. Original Character instance remains unchanged. This is the 'wow moment' demonstrating functional approach."
+    },
+
+    "test_double_interfaces": {
+      "note": "Character has NO port dependencies, so NO test doubles needed. Character is pure domain logic tested with real instances."
+    }
+  },
+
+  "task_specification": {
+    "name": "Implement Character Value Object",
+    "description": "Create Character class as immutable value object using @dataclass(frozen=True) with derived agility property and validation. This is the foundation of the domain model.",
+
+    "motivation": "Character is the core domain entity. Implementing it first: (1) Validates immutability pattern immediately, (2) Demonstrates derived properties (agility = hp + attack_power), (3) Proves state changes return new instances (functional approach), (4) Enables all combat mechanics to build on solid foundation.",
+
+    "detailed_instructions": [
+      "CREATE FOLDER STRUCTURE (Step 01-00 deleted - now done here):",
+      "  1. Create src/ directory",
+      "  2. Create src/__init__.py (empty Python package marker)",
+      "  3. Create src/domain/ directory",
+      "  4. Create src/domain/__init__.py (empty Python package marker)",
+      "  5. Create src/domain/model/ directory",
+      "  6. Create src/domain/model/__init__.py (empty Python package marker)",
+      "",
+      "IMPLEMENT CHARACTER VALUE OBJECT:",
+      "  7. Create src/domain/model/character.py",
+      "  8. Import dataclass decorator from Python standard library",
+      "  9. Define Character class with @dataclass(frozen=True)",
+      "  10. Add fields: name (str), hp (int), attack_power (int)",
+      "  11. Implement __post_init__ validation: name non-empty, hp >= 0, attack_power > 0",
+      "  12. Implement agility @property: return self.hp + self.attack_power",
+      "  13. Implement is_alive @property: return self.hp > 0",
+      "  14. Implement receive_damage(amount: int) method: return NEW Character with reduced HP, floored at 0",
+      "",
+      "CREATE UNIT TESTS:",
+      "  15. Create tests/unit/domain/model/ directory if not exists",
+      "  16. Create tests/unit/domain/model/__init__.py if not exists",
+      "  17. Create tests/unit/domain/model/test_character.py using pytest-describe",
+      "  18. Write unit tests: creation validation, agility property, is_alive states, receive_damage immutability",
+      "",
+      "VALIDATE IMPLEMENTATION:",
+      "  19. Run pytest to verify all unit tests PASS",
+      "  20. Run E2E tests to verify scenarios 5, 6, 7 now PASS"
+    ],
+
+    "acceptance_criteria": [
+      {
+        "criterion": "Character class exists in src/domain/model/character.py",
+        "verification": "File exists and imports successfully",
+        "test_command": "python -c 'from src.domain.model.character import Character; print(\"Character imported successfully\")'"
+      },
+      {
+        "criterion": "Character uses @dataclass(frozen=True)",
+        "verification": "Attempting to mutate raises FrozenInstanceError",
+        "test_command": "pytest tests/unit/domain/model/test_character.py::test_character_immutability -v"
+      },
+      {
+        "criterion": "agility property returns hp + attack_power",
+        "verification": "Character(name='Test', hp=20, attack_power=5).agility == 25",
+        "test_command": "python -c 'from src.domain.model.character import Character; c = Character(name=\"Test\", hp=20, attack_power=5); assert c.agility == 25, f\"Expected 25, got {c.agility}\"'"
+      },
+      {
+        "criterion": "is_alive returns True for HP > 0, False for HP = 0",
+        "verification": "Unit test validates both states",
+        "test_command": "pytest tests/unit/domain/model/test_character.py::test_is_alive_property -v"
+      },
+      {
+        "criterion": "receive_damage(amount) returns new Character instance",
+        "verification": "Original unchanged, new instance has reduced HP",
+        "test_command": "pytest tests/unit/domain/model/test_character.py::test_receive_damage_returns_new_instance -v"
+      },
+      {
+        "criterion": "receive_damage floors HP at 0 (never negative)",
+        "verification": "Character(hp=5).receive_damage(10).hp == 0",
+        "test_command": "python -c 'from src.domain.model.character import Character; c = Character(name=\"Test\", hp=5, attack_power=3); damaged = c.receive_damage(10); assert damaged.hp == 0, f\"Expected HP=0, got {damaged.hp}\"'"
+      },
+      {
+        "criterion": "Validation rejects empty name, negative HP, non-positive attack",
+        "verification": "ValueError raised in __post_init__ for invalid inputs",
+        "test_command": "pytest tests/unit/domain/model/test_character.py::test_validation_errors -v"
+      },
+      {
+        "criterion": "E2E Scenario 5 passes (immutability during combat)",
+        "verification": "pytest tests/e2e/test_combat_simulation.py::test_character_immutability_during_combat -v",
+        "test_command": "pytest tests/e2e/test_combat_simulation.py::test_character_immutability_during_combat -v"
+      },
+      {
+        "criterion": "E2E Scenario 6 passes (derived agility reflects health)",
+        "verification": "pytest tests/e2e/test_combat_simulation.py::test_derived_agility_reflects_current_health -v",
+        "test_command": "pytest tests/e2e/test_combat_simulation.py::test_derived_agility_reflects_current_health -v"
+      },
+      {
+        "criterion": "E2E Scenario 7 passes (validation with empty name)",
+        "verification": "pytest tests/e2e/test_combat_simulation.py::test_character_creation_fails_with_empty_name -v",
+        "test_command": "pytest tests/e2e/test_combat_simulation.py::test_character_creation_fails_with_empty_name -v"
+      }
+    ],
+
+    "implementation_pattern": "from dataclasses import dataclass\n\n@dataclass(frozen=True)\nclass Character:\n    name: str\n    hp: int\n    attack_power: int\n\n    def __post_init__(self) -> None:\n        if not self.name:\n            raise ValueError(\"Character name cannot be empty\")\n        if self.hp < 0:\n            raise ValueError(\"HP cannot be negative\")\n        if self.attack_power <= 0:\n            raise ValueError(\"Attack power must be positive\")\n\n    @property\n    def agility(self) -> int:\n        return self.hp + self.attack_power\n\n    @property\n    def is_alive(self) -> bool:\n        return self.hp > 0\n\n    def receive_damage(self, amount: int) -> \"Character\":\n        new_hp = max(0, self.hp - amount)\n        return Character(name=self.name, hp=new_hp, attack_power=self.attack_power)",
+
+    "unit_test_approach": "Create tests/unit/domain/model/test_character.py using pytest-describe:\n- describe_creation(): Test valid creation, validation errors\n- describe_agility(): Test derived property updates with HP changes\n- describe_is_alive(): Test alive (HP > 0) and dead (HP = 0) states\n- describe_receive_damage(): Test immutability, HP flooring, new instance\n\nExpected test count: 5-6 unit tests",
+
+    "estimated_hours": 0.33
+  },
+
+  "dependencies": {
+    "requires": [],
+    "blocking": ["01-02", "02-01", "02-02"],
+    "parallel_with": []
+  },
+
+  "deliverables": [
+    {
+      "type": "source_file",
+      "path": "src/domain/model/character.py",
+      "description": "Character frozen dataclass with agility property"
+    },
+    {
+      "type": "test_file",
+      "path": "tests/unit/domain/model/test_character.py",
+      "description": "Unit tests for Character (5-6 tests)"
+    }
+  ],
+
+  "state": {
+    "status": "TODO",
+    "assigned_to": null,
+    "started_at": null,
+    "completed_at": null,
+    "tdd_phase": "NOT_STARTED"
+  },
+
+  "tdd_cycle": {
+    "current_phase": "NOT_STARTED",
+    "phase_sequence": ["PREPARE", "RED_ACCEPTANCE", "RED_UNIT", "GREEN_UNIT", "CHECK", "GREEN_ACCEPTANCE", "REVIEW", "REFACTOR", "POST_REFACTOR_REVIEW", "FINAL_VALIDATE", "COMMIT"],
+
+    "acceptance_test_scenario": "Scenario 5, 6, 7: Character immutability, derived agility, validation",
+
+    "unit_test_strategy": "Classical TDD with real Character instances. NO mocking (Character is pure domain logic with zero dependencies). Test creation, properties, immutability, validation.",
+
+    "mock_boundaries": [],
+
+    "phase_execution_log": []
+  },
+
+  "quality_gates": {
+    "required_before_commit": [
+      "All unit tests PASS (5-6 tests in test_character.py)",
+      "E2E Scenarios 5, 6, 7 PASS",
+      "Character class uses @dataclass(frozen=True)",
+      "agility is @property (not stored field)",
+      "receive_damage returns new instance (original unchanged)",
+      "Validation enforced in __post_init__"
+    ],
+    "test_pass_rate": "100%",
+    "architecture_compliance": "Character is pure domain logic with zero external dependencies"
+  },
+
+  "wow_moment": {
+    "trigger": "Character.agility property implementation",
+    "demonstration": "Show that agility CHANGES as HP decreases (derived, not stored). When Character takes damage and HP drops from 25 to 10, agility automatically updates from 30 to 15 without reassignment.",
+    "audience_value": "Proves immutability + derived properties prevent inconsistent state. Functional paradigm value visible immediately."
+  },
+
+  "notes": [
+    "This is the WALKING SKELETON step - first implementation that makes E2E tests pass",
+    "Character is foundation for all combat mechanics - quality here is critical",
+    "Immutability pattern demonstrated here applies to ALL domain value objects",
+    "Derived property (agility) is a 'wow moment' for audience - automatic update without manual tracking"
+  ],
+
+  "review_metadata": {
+    "review_timestamp": "2026-01-13T14:30:00Z",
+    "reviewer": "software-crafter-reviewer",
+    "review_type": "STEP_FILE_BATCH_REVIEW",
+    "batch_position": "1/8",
+    "overall_status": "NEEDS_REVISION",
+
+    "findings": {
+      "critical_issues": [
+        {
+          "id": "DEP-001",
+          "severity": "HIGH",
+          "title": "Invalid Dependency Reference to Deleted Step 01-00",
+          "description": "Step 01-01 lists 'dependencies.requires': ['01-00'], but step 01-00 has been DELETED from the workflow. File listing confirms only 01-01.json and 01-02.json exist in steps/ directory.",
+          "location": "Line 154 in original file",
+          "impact": "BLOCKING - Dependency resolution will fail. Step cannot execute if prerequisite is missing.",
+          "resolution": "FIXED - Removed '01-00' from dependencies.requires and updated prerequisites to document folder structure creation within this step.",
+          "status": "RESOLVED"
+        }
+      ],
+
+      "high_priority_issues": [
+        {
+          "id": "SETUP-001",
+          "severity": "HIGH",
+          "title": "Missing Folder Structure Setup Instructions",
+          "description": "Step 01-00 (deleted) was responsible for creating src/domain/model/ folder structure. This step now must create all necessary Python packages and __init__.py files.",
+          "location": "detailed_instructions section",
+          "impact": "Python imports will fail without proper __init__.py files in package hierarchy",
+          "resolution": "FIXED - Added comprehensive folder structure creation instructions (steps 1-6) and updated prerequisites to document required directories.",
+          "status": "RESOLVED"
+        }
+      ],
+
+      "medium_priority_issues": [],
+
+      "validation_checks": {
+        "walking_skeleton_designation": {
+          "required": true,
+          "actual": true,
+          "status": "PASS",
+          "note": "Correctly marked as is_walking_skeleton: true"
+        },
+
+        "dependency_reference_to_01_00": {
+          "required": false,
+          "actual": false,
+          "status": "PASS",
+          "note": "Dependencies.requires has been corrected to empty array []"
+        },
+
+        "scenario_mapping": {
+          "status": "PASS",
+          "e2e_scenarios_enabled": [
+            {
+              "id": "Scenario 5",
+              "name": "Character immutability during combat",
+              "feature_file_location": "Line 52-58 in test_combat_simulation.feature",
+              "step_reference": "e2e_scenarios_enabled[0]",
+              "verification": "PASS - Correctly referenced"
+            },
+            {
+              "id": "Scenario 6",
+              "name": "Derived agility reflects current health",
+              "feature_file_location": "Line 60-65 in test_combat_simulation.feature",
+              "step_reference": "e2e_scenarios_enabled[1]",
+              "verification": "PASS - Correctly referenced"
+            },
+            {
+              "id": "Scenario 7",
+              "name": "Character creation fails with empty name",
+              "feature_file_location": "Line 71-73 in test_combat_simulation.feature",
+              "step_reference": "e2e_scenarios_enabled[2]",
+              "verification": "PASS - Correctly referenced"
+            }
+          ]
+        },
+
+        "acceptance_criteria_completeness": {
+          "count": 10,
+          "status": "PASS",
+          "note": "All acceptance criteria well-defined and testable with explicit test commands"
+        },
+
+        "implementation_pattern": {
+          "status": "PASS",
+          "note": "Clear, complete code example provided with all required methods"
+        },
+
+        "unit_test_approach": {
+          "status": "PASS",
+          "note": "pytest-describe structure documented with expected test count"
+        },
+
+        "mock_boundaries": {
+          "status": "PASS",
+          "note": "Correctly identifies Character as pure domain logic with zero dependencies - NO mocking required"
+        },
+
+        "self_contained_context": {
+          "status": "PASS",
+          "note": "Background, business rules, architecture context all comprehensive"
+        }
+      }
+    },
+
+    "quality_assessment": {
+      "test_coverage": {
+        "rating": "EXCELLENT",
+        "note": "All business rules (immutability, validation, derived properties) have explicit test coverage"
+      },
+      "architecture_compliance": {
+        "rating": "EXCELLENT",
+        "note": "Pure domain layer with zero external dependencies - textbook hexagonal architecture"
+      },
+      "acceptance_criteria_clarity": {
+        "rating": "EXCELLENT",
+        "note": "Each criterion has concrete verification method and test command"
+      },
+      "business_value": {
+        "rating": "EXCELLENT",
+        "note": "Walking skeleton step that immediately demonstrates core architectural patterns"
+      }
+    },
+
+    "recommendations": [
+      {
+        "priority": "MEDIUM",
+        "title": "Clarify pytest-describe import in test file",
+        "description": "Unit test approach mentions pytest-describe but this is not shown in the provided implementation pattern. Verify that tests use the correct describe/it pattern.",
+        "suggested_action": "Add example pytest-describe test structure to unit_test_approach section"
+      },
+      {
+        "priority": "LOW",
+        "title": "Document estimated hours update",
+        "description": "Original estimate was 0.33 hours (about 20 minutes). This may be optimistic given folder structure creation is now included.",
+        "suggested_action": "Consider updating estimated_hours to 0.5-0.75 hours to account for folder setup and testing"
+      }
+    ],
+
+    "sign_off": {
+      "reviewer": "software-crafter-reviewer",
+      "review_date": "2026-01-13",
+      "approval_decision": "APPROVED_WITH_REVISIONS_APPLIED",
+      "approval_criteria_met": [
+        "Step 01-00 dependency reference has been removed (was blocking)",
+        "Folder structure creation instructions are comprehensive (01-00 responsibility now handled)",
+        "Walking skeleton status verified: is_walking_skeleton = true",
+        "E2E scenario references verified against feature file",
+        "All acceptance criteria are testable and specific",
+        "Mock boundaries are correct (zero mocks for pure domain logic)",
+        "Architecture compliance verified against hexagonal architecture design"
+      ],
+      "blocking_issues_resolved": "All HIGH severity issues have been resolved",
+      "ready_for_execution": true
+    }
+  }
+}

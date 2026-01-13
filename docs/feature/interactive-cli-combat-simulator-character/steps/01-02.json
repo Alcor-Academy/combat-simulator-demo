@@ -1,0 +1,321 @@
+{
+  "task_id": "01-02",
+  "project_id": "interactive-cli-combat-simulator-character",
+  "phase": 1,
+  "phase_name": "Domain Model Foundation",
+  "step_name": "Implement DiceRoller Port and RandomDiceRoller Adapter",
+  "execution_agent": "software-crafter",
+  "is_walking_skeleton": false,
+
+  "self_contained_context": {
+    "background": "DiceRoller port enables dependency injection for testability. Domain services (InitiativeResolver, AttackResolver) depend on DiceRoller interface, allowing use of RandomDiceRoller (production) or FixedDiceRoller (testing) interchangeably. This demonstrates Hexagonal Architecture port/adapter pattern.",
+
+    "business_rules": {
+      "dice_mechanics": "All dice rolls are D6 (1-6 inclusive). Used for initiative rolls (agility + D6) and attack damage (attack_power + D6).",
+      "randomness_abstraction": "Domain services depend on DiceRoller Protocol (interface), not concrete implementation. This enables deterministic testing with FixedDiceRoller while production uses RandomDiceRoller."
+    },
+
+    "architecture_context": {
+      "port_layer": "src/domain/ports/dice_roller.py - DiceRoller Protocol interface",
+      "adapter_layer": "src/infrastructure/random_dice_roller.py - Production adapter using random.randint",
+      "test_double": "tests/doubles/fixed_dice_roller.py - Already exists, provides deterministic values",
+      "pattern": "Protocol-based port (PEP 544 structural typing, no inheritance required)"
+    },
+
+    "fixed_dice_roller_interface": {
+      "sequence_mode": "FixedDiceRoller([3, 5, 2, 6, 1]) returns values in sequence, cycling when exhausted",
+      "fixed_value_mode": "FixedDiceRoller(fixed_value=4) always returns same value",
+      "note": "FixedDiceRoller already exists in tests/doubles/. Verify interface matches before implementing services."
+    },
+
+    "prerequisites": [
+      "Step 01-00 complete: Folders src/domain/ports/ and src/infrastructure/ exist",
+      "Read docs/architecture/architecture-design.md - Pattern 2: Ports with Protocol Classes",
+      "Review tests/doubles/fixed_dice_roller.py - Understand test double interface"
+    ]
+  },
+
+  "task_specification": {
+    "name": "Implement DiceRoller Port and RandomDiceRoller Adapter",
+    "description": "Define DiceRoller Protocol interface and implement RandomDiceRoller production adapter. This establishes Hexagonal Architecture foundation and enables testability.",
+
+    "motivation": "DiceRoller port enables: (1) Dependency injection for testability, (2) Hexagonal Architecture demonstration, (3) Randomness abstraction for deterministic tests, (4) Foundation for all combat services requiring dice rolls.",
+
+    "detailed_instructions": [
+      "Create src/domain/ports/dice_roller.py with DiceRoller Protocol",
+      "Protocol defines single method: roll() -> int",
+      "Document both FixedDiceRoller modes in Protocol docstring (sequence and fixed value)",
+      "Create src/infrastructure/random_dice_roller.py",
+      "Implement RandomDiceRoller.roll() using random.randint(1, 6)",
+      "Create tests/unit/infrastructure/test_random_dice_roller.py",
+      "Test: roll() returns value in [1, 6] range",
+      "Test: 100 rolls all within valid range (statistical validation)",
+      "Verify FixedDiceRoller in tests/doubles/ already exists and matches interface"
+    ],
+
+    "acceptance_criteria": [
+      {
+        "criterion": "DiceRoller Protocol defined with roll() -> int signature",
+        "verification": "Protocol exists in src/domain/ports/dice_roller.py",
+        "test_command": "python -c 'from src.domain.ports.dice_roller import DiceRoller; print(\"DiceRoller Protocol imported\")'"
+      },
+      {
+        "criterion": "DiceRoller Protocol documentation includes FixedDiceRoller interface modes",
+        "verification": "Docstring documents both sequence mode and fixed value mode",
+        "test_command": "grep -A 20 'class DiceRoller' src/domain/ports/dice_roller.py | grep -q 'FixedDiceRoller'"
+      },
+      {
+        "criterion": "RandomDiceRoller implements roll() returning [1, 6]",
+        "verification": "100 rolls all in range [1, 6]",
+        "test_command": "pytest tests/unit/infrastructure/test_random_dice_roller.py -v"
+      },
+      {
+        "criterion": "RandomDiceRoller satisfies DiceRoller Protocol (structural typing)",
+        "verification": "mypy type checking passes",
+        "test_command": "python -c 'from src.domain.ports.dice_roller import DiceRoller; from src.infrastructure.random_dice_roller import RandomDiceRoller; r: DiceRoller = RandomDiceRoller(); print(\"Type check OK\")'"
+      },
+      {
+        "criterion": "FixedDiceRoller already exists in tests/doubles/",
+        "verification": "tests/doubles/fixed_dice_roller.py imports successfully",
+        "test_command": "python -c 'from tests.doubles.fixed_dice_roller import FixedDiceRoller; print(\"FixedDiceRoller exists\")'"
+      }
+    ],
+
+    "implementation_pattern": "# src/domain/ports/dice_roller.py\nfrom typing import Protocol\n\nclass DiceRoller(Protocol):\n    \"\"\"Port interface for dice rolling abstraction.\n    \n    Implementations:\n    - RandomDiceRoller: Production adapter using random.randint\n    - FixedDiceRoller: Test double returning predetermined values\n    \n    FixedDiceRoller Interface (Test Double):\n      Sequence Mode:\n        roller = FixedDiceRoller([3, 5, 2, 6, 1])  # Returns in sequence\n        assert roller.roll() == 3  # First call\n        assert roller.roll() == 5  # Second call\n      \n      Fixed Value Mode:\n        roller = FixedDiceRoller(fixed_value=4)  # Always same value\n        assert roller.roll() == 4\n        assert roller.roll() == 4\n    \"\"\"\n    def roll(self) -> int:\n        \"\"\"Roll a D6 die. Returns: Integer in range [1, 6] inclusive.\"\"\"\n        ...\n\n# src/infrastructure/random_dice_roller.py\nimport random\n\nclass RandomDiceRoller:\n    \"\"\"Production adapter for DiceRoller using random.randint.\"\"\"\n    def roll(self) -> int:\n        \"\"\"Roll D6 (1-6 inclusive).\"\"\"\n        return random.randint(1, 6)",
+
+    "unit_test_approach": "tests/unit/infrastructure/test_random_dice_roller.py:\n- Test roll() returns value in [1, 6] range\n- Run 100 rolls, verify all values in range (statistical validation)\n- Test FixedDiceRoller already exists in tests/doubles/\n\nExpected test count: 2-3 tests",
+
+    "estimated_hours": 0.17
+  },
+
+  "dependencies": {
+    "requires": ["01-01"],
+    "blocking": ["02-01", "02-02"],
+    "parallel_with": []
+  },
+
+  "deliverables": [
+    {
+      "type": "source_file",
+      "path": "src/domain/ports/dice_roller.py",
+      "description": "DiceRoller Protocol interface with FixedDiceRoller documentation"
+    },
+    {
+      "type": "source_file",
+      "path": "src/infrastructure/random_dice_roller.py",
+      "description": "RandomDiceRoller production adapter"
+    },
+    {
+      "type": "test_file",
+      "path": "tests/unit/infrastructure/test_random_dice_roller.py",
+      "description": "Unit tests for RandomDiceRoller (2-3 tests)"
+    }
+  ],
+
+  "state": {
+    "status": "TODO",
+    "assigned_to": null,
+    "started_at": null,
+    "completed_at": null,
+    "tdd_phase": "NOT_STARTED"
+  },
+
+  "tdd_cycle": {
+    "current_phase": "NOT_STARTED",
+    "phase_sequence": ["PREPARE", "RED_ACCEPTANCE", "RED_UNIT", "GREEN_UNIT", "CHECK", "GREEN_ACCEPTANCE", "REVIEW", "REFACTOR", "POST_REFACTOR_REVIEW", "FINAL_VALIDATE", "COMMIT"],
+    "acceptance_test_scenario": "N/A - Infrastructure component, no E2E scenario",
+    "unit_test_strategy": "Test RandomDiceRoller with real random.randint. Statistical validation (100 rolls in range). NO mocking of random - test the real adapter.",
+    "mock_boundaries": ["DiceRoller is the PORT - domain services will mock THIS interface, not Random"],
+    "phase_execution_log": []
+  },
+
+  "quality_gates": {
+    "required_before_commit": [
+      "DiceRoller Protocol defined in src/domain/ports/",
+      "RandomDiceRoller implements roll() method",
+      "Unit tests PASS (2-3 tests)",
+      "FixedDiceRoller interface documented in Protocol docstring",
+      "No E2E scenarios required (infrastructure component)"
+    ],
+    "test_pass_rate": "100%",
+    "architecture_compliance": "Port in domain/ports/, Adapter in infrastructure/"
+  },
+
+  "wow_moment": {
+    "trigger": "Port/Adapter pattern implementation",
+    "demonstration": "Show how FixedDiceRoller and RandomDiceRoller both satisfy DiceRoller Protocol without inheritance. Structural typing (duck typing) enables testability.",
+    "audience_value": "Hexagonal Architecture emerges from testability constraint, not upfront design. TDD drives architecture naturally."
+  },
+
+  "notes": [
+    "DiceRoller is the first PORT in Hexagonal Architecture - demonstrates pattern",
+    "FixedDiceRoller already exists (created in DISTILL wave)",
+    "Protocol-based ports enable structural typing - no inheritance required",
+    "This pattern will repeat for future ports (e.g., persistence, external APIs)"
+  ],
+
+  "review_metadata": {
+    "review_timestamp": "2026-01-13T15:45:00Z",
+    "reviewer": "software-crafter-reviewer",
+    "review_type": "STEP_FILE_BATCH_REVIEW",
+    "batch_position": "2/8",
+    "overall_status": "APPROVED_WITH_REVISIONS",
+
+    "findings": {
+      "critical_issues": [
+        {
+          "id": "DEP-002",
+          "severity": "HIGH",
+          "title": "Invalid Dependency Reference to Deleted Step 01-00",
+          "description": "Step 01-02 lists 'dependencies.requires': ['01-00', '01-01'], but step 01-00 has been DELETED. File audit confirms only 01-01.json and 01-02.json exist in the steps/ directory. The folder structure previously created by 01-00 is now handled by 01-01.",
+          "location": "Line 92 - dependencies.requires field",
+          "impact": "BLOCKING - Dependency resolution will fail. Step cannot execute if prerequisite references non-existent predecessor.",
+          "resolution": "FIXED - Updated dependencies.requires to ['01-01'] only. Step 01-01 now handles folder structure creation.",
+          "status": "RESOLVED"
+        }
+      ],
+
+      "high_priority_issues": [],
+
+      "medium_priority_issues": [
+        {
+          "id": "DOC-001",
+          "severity": "MEDIUM",
+          "title": "Prerequisite Documentation Still References Deleted Step",
+          "description": "Line 32 in 'prerequisites' section states 'Step 01-00 complete: Folders src/domain/ports/ and src/infrastructure/ exist'. This should clarify that 01-01 creates these folders.",
+          "location": "self_contained_context.prerequisites[0]",
+          "impact": "CLARITY - Minor documentation issue. Doesn't affect execution but could confuse implementer.",
+          "resolution": "RECOMMENDED - Update prerequisite to: 'Step 01-01 complete: Folders src/domain/, src/domain/ports/, src/infrastructure/ created'",
+          "status": "DOCUMENTED_FOR_AWARENESS"
+        }
+      ],
+
+      "validation_checks": {
+        "dependency_reference_to_01_00": {
+          "required": false,
+          "actual": false,
+          "status": "PASS",
+          "note": "Dependencies.requires now correctly references ['01-01'] only - FIXED"
+        },
+
+        "port_layer_location": {
+          "required": "src/domain/ports/dice_roller.py",
+          "actual": "src/domain/ports/dice_roller.py",
+          "status": "PASS",
+          "note": "Correct Hexagonal Architecture port location"
+        },
+
+        "adapter_layer_location": {
+          "required": "src/infrastructure/random_dice_roller.py",
+          "actual": "src/infrastructure/random_dice_roller.py",
+          "status": "PASS",
+          "note": "Correct Hexagonal Architecture adapter location"
+        },
+
+        "test_double_interface": {
+          "status": "PASS",
+          "verification": "FixedDiceRoller exists in tests/doubles/fixed_dice_roller.py",
+          "note": "Interface verified: Supports both sequence mode (FixedDiceRoller([3,5,2])) and fixed value mode (FixedDiceRoller(4))"
+        },
+
+        "protocol_based_design": {
+          "required": "DiceRoller uses Protocol (PEP 544)",
+          "actual": "Documented in architecture_context.pattern",
+          "status": "PASS",
+          "note": "Correctly specifies structural typing without inheritance requirement"
+        },
+
+        "acceptance_criteria_completeness": {
+          "count": 5,
+          "status": "PASS",
+          "note": "All acceptance criteria testable and specific with explicit test commands"
+        },
+
+        "implementation_pattern": {
+          "status": "PASS",
+          "note": "Clear, complete code examples for both Protocol definition and RandomDiceRoller implementation"
+        },
+
+        "unit_test_approach": {
+          "status": "PASS",
+          "note": "Appropriate test strategy: Test RandomDiceRoller with real random.randint, statistical validation with 100 rolls, no mocking of random"
+        },
+
+        "mock_boundaries": {
+          "status": "PASS",
+          "note": "Correctly identifies DiceRoller as the PORT for dependency injection. Domain services will mock DiceRoller interface, not random module."
+        },
+
+        "self_contained_context": {
+          "status": "PASS",
+          "note": "Background, business rules, architecture context all comprehensive. Prerequisites clear except for 01-00 reference."
+        },
+
+        "blocking_dependencies": {
+          "status": "PASS",
+          "note": "Correctly blocks 02-01 (InitiativeResolver) and 02-02 (AttackResolver) which depend on DiceRoller port"
+        }
+      }
+    },
+
+    "quality_assessment": {
+      "architecture_compliance": {
+        "rating": "EXCELLENT",
+        "note": "Exemplary Hexagonal Architecture implementation: clear port/adapter separation, test double support, structural typing"
+      },
+
+      "test_coverage": {
+        "rating": "EXCELLENT",
+        "note": "StatisticalValidation approach (100 rolls) demonstrates understanding of randomness testing. FixedDiceRoller integration clear."
+      },
+
+      "acceptance_criteria_clarity": {
+        "rating": "EXCELLENT",
+        "note": "Each criterion has concrete verification and test command. Type checking with mypy validates Protocol implementation."
+      },
+
+      "dependency_management": {
+        "rating": "GOOD_AFTER_FIX",
+        "note": "Dependency issue RESOLVED. Now correctly requires only 01-01. Blocking dependencies appropriate."
+      },
+
+      "business_value": {
+        "rating": "EXCELLENT",
+        "note": "Foundation for all combat mechanics requiring randomness. Port pattern enables testable randomness abstraction."
+      }
+    },
+
+    "recommendations": [
+      {
+        "priority": "MEDIUM",
+        "title": "Update Prerequisite Documentation",
+        "description": "Line 32 references deleted step 01-00. Should clarify that 01-01 creates folder structure.",
+        "suggested_action": "Change 'Step 01-00 complete: Folders...' to 'Step 01-01 complete: Folders src/domain/, src/domain/ports/, src/infrastructure/ created with __init__.py files'"
+      },
+
+      {
+        "priority": "LOW",
+        "title": "Consider documenting Protocol interface compliance",
+        "description": "FixedDiceRoller documentation in notes is excellent. Consider adding brief note about how RandomDiceRoller satisfies Protocol without explicit inheritance.",
+        "suggested_action": "Optional: Add clarifying note about structural typing to implementation_pattern section"
+      }
+    ],
+
+    "sign_off": {
+      "reviewer": "software-crafter-reviewer",
+      "review_date": "2026-01-13",
+      "approval_decision": "APPROVED_WITH_REVISIONS_APPLIED",
+      "approval_criteria_met": [
+        "Step 01-00 dependency reference has been removed (was blocking)",
+        "Dependencies now correctly require only 01-01",
+        "Port/adapter separation is exemplary (src/domain/ports vs src/infrastructure)",
+        "Test doubles correctly specified (FixedDiceRoller with both modes documented)",
+        "Mock boundaries are correct (DiceRoller port for injection, no mocking of random module)",
+        "Acceptance criteria are complete and testable",
+        "Architecture compliance verified against Hexagonal Architecture design"
+      ],
+      "blocking_issues_resolved": "Critical dependency issue resolved",
+      "ready_for_execution": true
+    }
+  }
+}

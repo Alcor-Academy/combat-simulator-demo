@@ -1,0 +1,97 @@
+# Task Dependency Graph
+# Project: interactive-cli-combat-simulator-character
+# Total: 9 tasks across 4 phases
+
+                    01-00
+                    (Setup Hexagonal Folder Structure)
+                    ├─────┬─────┐
+                    │     │     │
+                    ↓     ↓     ↓
+                  01-01  (parallel start possible)
+                  (Character Value Object)
+                    │     │
+                    │     ↓
+                    │   01-02
+                    │   (DiceRoller Port + RandomDiceRoller)
+                    │     │
+                    └─────┴─────┬─────────┐
+                                │         │
+                    (Phase 2: Domain Services - can parallelize)
+                                │         │
+                          ┌─────┴─────┐   │
+                          ↓           ↓   │
+                        02-01       02-02 │
+                    (InitiativeResolver) (AttackResolver)
+                          │           │   │
+                          │           └───┤
+                          │               ↓
+                          │             02-03
+                          │         (CombatRound)
+                          │               │
+                          └───────┬───────┘
+                                  │
+                    (Phase 3: Application Layer)
+                                  ↓
+                                03-01
+                          (CombatSimulator)
+                          [ALL 9 E2E scenarios PASS]
+                                  │
+                    (Phase 4: Validation & Quality Gates)
+                                  ↓
+                                04-01
+                          (Test Suite + Coverage)
+                                  │
+                                  ↓
+                                04-02
+                        (Architecture Validation)
+
+═══════════════════════════════════════════════════════════════
+
+CRITICAL PATH (longest dependency chain):
+  01-00 → 01-01 → 01-02 → 02-02 → 02-03 → 03-01 → 04-01 → 04-02
+  Total: ~70 minutes
+
+PARALLELIZATION OPPORTUNITIES:
+  • After 01-02 completes:
+    - 02-01 (InitiativeResolver) can start
+    - 02-02 (AttackResolver) can start
+    - These are independent and can run simultaneously
+
+E2E SCENARIO PROGRESSION:
+  01-00: 0/9 scenarios pass (setup)
+  01-01: 3/9 scenarios pass (5, 6, 7)
+  01-02: 3/9 scenarios pass (no new scenarios)
+  02-01: 5/9 scenarios pass (2, 9)
+  02-02: 6/9 scenarios pass (8)
+  02-03: 8/9 scenarios pass (3, 4)
+  03-01: 9/9 scenarios pass (1 + all) ✅
+  04-01: Validation (9/9 maintained)
+  04-02: Final validation (9/9 maintained)
+
+═══════════════════════════════════════════════════════════════
+
+DEPENDENCY DETAILS:
+
+01-00: No dependencies (foundation)
+01-01: Requires [01-00]
+01-02: Requires [01-00, 01-01]
+02-01: Requires [01-01, 01-02]
+02-02: Requires [01-01, 01-02]
+02-03: Requires [02-02]
+03-01: Requires [02-01, 02-03]
+04-01: Requires [03-01]
+04-02: Requires [04-01]
+
+BLOCKING RELATIONSHIPS:
+
+01-00 blocks: [01-01, 01-02]
+01-01 blocks: [01-02, 02-01, 02-02]
+01-02 blocks: [02-01, 02-02]
+02-01 blocks: [03-01]
+02-02 blocks: [02-03]
+02-03 blocks: [03-01]
+03-01 blocks: [04-01]
+04-01 blocks: [04-02]
+04-02 blocks: []
+
+═══════════════════════════════════════════════════════════════

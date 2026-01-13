@@ -1,0 +1,278 @@
+{
+  "task_id": "02-03",
+  "project_id": "interactive-cli-combat-simulator-character",
+  "phase": 2,
+  "phase_name": "Domain Services - Combat Mechanics",
+  "step_name": "Implement RoundResult and CombatRound",
+  "execution_agent": "software-crafter",
+  "is_walking_skeleton": false,
+  "self_contained_context": {
+    "background": "CombatRound orchestrates single combat round with ATTACKER ADVANTAGE: (1) Attacker attacks first, (2) Defender counter-attacks ONLY if HP > 0 after attacker's strike, (3) If attacker kills defender, round ends (no counter-attack).",
+    "business_rules": {
+      "attacker_advantage": "Attacker strikes first. Defender counter-attacks ONLY if alive after attacker's strike.",
+      "no_counter_if_dead": "If defender HP = 0 after attacker's attack, defender_damage = 0 (no counter-attack)",
+      "role_persistence": "Attacker/defender roles persist from initiative through entire combat. Same character attacks first EVERY round.",
+      "combat_ended": "Round ends if either character reaches HP = 0"
+    },
+    "architecture_context": {
+      "layer": "Domain Services (src/domain/services/combat_round.py)",
+      "value_object": "RoundResult (src/domain/model/round_result.py)",
+      "dependencies": "AttackResolver (domain service)"
+    },
+    "e2e_scenarios_enabled": [
+      {"id": "Scenario 3", "name": "Attacker kills defender - no counter-attack"},
+      {"id": "Scenario 4", "name": "Defender survives and counter-attacks"}
+    ],
+    "prerequisites": ["02-02 AttackResolver", "01-01 Character"]
+  },
+  "task_specification": {
+    "name": "Implement RoundResult and CombatRound",
+    "motivation": "Implements critical business rule (DR-06): attacker advantage. Demonstrates domain service orchestration and state management with immutability.",
+    "detailed_instructions": [
+      "Create src/domain/model/round_result.py as frozen dataclass",
+      "Fields: round_number, attacker, defender (after round), attacker_damage, defender_damage, combat_ended, winner",
+      "Create src/domain/services/combat_round.py",
+      "Inject AttackResolver in constructor",
+      "Implement execute_round(attacker, defender, round_number) -> RoundResult",
+      "Attacker attacks first (call attack_resolver.resolve_attack)",
+      "Check if defender.is_alive after attacker's strike",
+      "If defender dead: return RoundResult with defender_damage=0, combat_ended=True, winner=attacker",
+      "If defender alive: defender counter-attacks",
+      "Check if attacker alive after counter, set combat_ended and winner accordingly",
+      "Create tests/unit/domain/services/test_combat_round.py",
+      "Test: both survive, attacker kills defender, defender kills attacker in counter"
+    ],
+    "acceptance_criteria": [
+      {"criterion": "Attacker attacks first always", "test_command": "pytest tests/unit/domain/services/test_combat_round.py::test_attacker_first -v"},
+      {"criterion": "Defender counter-attacks ONLY if HP > 0", "test_command": "pytest tests/unit/domain/services/test_combat_round.py::test_defender_survives_counters -v"},
+      {"criterion": "If defender dies, defender_damage = 0", "test_command": "pytest tests/unit/domain/services/test_combat_round.py::test_no_counter_if_dead -v"},
+      {"criterion": "combat_ended = True when someone dies", "test_command": "pytest tests/unit/domain/services/test_combat_round.py::test_combat_ended -v"},
+      {"criterion": "E2E Scenario 3 passes", "test_command": "pytest tests/e2e/test_combat_simulation.py::test_attacker_kills_defender_no_counter_attack -v"},
+      {"criterion": "E2E Scenario 4 passes", "test_command": "pytest tests/e2e/test_combat_simulation.py::test_defender_survives_and_counter_attacks -v"}
+    ],
+    "estimated_hours": 0.25
+  },
+  "dependencies": {"requires": ["02-01", "02-02"], "blocking": ["03-01"]},
+  "deliverables": [
+    {"type": "source_file", "path": "src/domain/model/round_result.py"},
+    {"type": "source_file", "path": "src/domain/services/combat_round.py"},
+    {"type": "test_file", "path": "tests/unit/domain/services/test_combat_round.py"}
+  ],
+  "state": {"status": "TODO", "assigned_to": null, "tdd_phase": "NOT_STARTED"},
+  "tdd_cycle": {
+    "current_phase": "NOT_STARTED",
+    "acceptance_test_scenario": "Scenario 3, 4: Attacker advantage enforcement",
+    "unit_test_strategy": "Classical TDD. Mock AttackResolver using test double OR use real AttackResolver with FixedDiceRoller.",
+    "mock_boundaries": ["AttackResolver can be real (domain service) with FixedDiceRoller", "Character - use REAL instances"]
+  },
+  "quality_gates": {
+    "required_before_commit": ["Unit tests PASS (4-5 tests)", "E2E Scenarios 3, 4 PASS", "Attacker advantage enforced correctly"],
+    "test_pass_rate": "100%"
+  },
+  "wow_moment": {
+    "trigger": "Attacker advantage implementation",
+    "demonstration": "Show combat where attacker kills defender in first strike - no counter-attack occurs",
+    "audience_value": "Business rule enforcement in domain layer, no conditional logic leakage to presentation"
+  },
+  "review_metadata": {
+    "review_timestamp": "2026-01-13T21:30:00Z",
+    "reviewer": "software-crafter-reviewer",
+    "review_type": "STEP_FILE_BATCH_REVIEW",
+    "batch_position": "5/8",
+    "overall_status": "NEEDS_REVISION",
+    "findings": {
+      "critical_issues": [],
+      "high_priority_issues": [],
+      "medium_priority_issues": [
+        {
+          "id": "DEP-001",
+          "severity": "MEDIUM",
+          "title": "Incomplete dependency declaration - missing InitiativeResolver",
+          "description": "Dependencies.requires lists only [02-02] but business rules clearly require attacker/defender role understanding from InitiativeResolver. Business rule on line 10: 'Same character attacks first EVERY round' derives from InitiativeResolver. Should list [02-01, 02-02].",
+          "location": "Line 55 - dependencies.requires",
+          "impact": "BLOCKING - Missing explicit dependency declaration may cause orchestration confusion",
+          "resolution": "REQUIRED - Update line 55 to: {\"requires\": [\"02-01\", \"02-02\"], ...}",
+          "status": "BLOCKING_REVISION_REQUIRED"
+        }
+      ],
+      "low_priority_issues": [
+        {
+          "id": "EST-001",
+          "severity": "LOW",
+          "title": "Estimated effort may be optimistic",
+          "description": "0.25 hours (15 minutes) for 3 deliverables (value object, service, unit tests), 4-5 unit tests, 2 E2E validations, and complex round orchestration logic. Realistic estimate: 0.33-0.5 hours.",
+          "location": "Line 53 - task_specification.estimated_hours",
+          "impact": "Planning accuracy - not blocking",
+          "resolution": "OPTIONAL - Update to 0.33-0.5 hours for more realistic planning",
+          "status": "FOR_AWARENESS"
+        },
+        {
+          "id": "TDD-001",
+          "severity": "LOW",
+          "title": "TDD strategy provides optional mocking of AttackResolver",
+          "description": "Line 65 states 'Mock AttackResolver using test double OR use real AttackResolver'. For consistency with 02-01 and 02-02 patterns that use real domain services with test doubles at ports, recommend: Use REAL AttackResolver with FixedDiceRoller for deterministic behavior (not mocks).",
+          "location": "Line 65 - unit_test_strategy",
+          "impact": "Test consistency - not blocking",
+          "resolution": "OPTIONAL - Clarify: Use real AttackResolver with FixedDiceRoller (no mocks of domain services)",
+          "status": "RECOMMENDATION"
+        }
+      ],
+      "validation_checks": {
+        "no_dependency_on_deleted_01_00": {
+          "required": false,
+          "actual": false,
+          "status": "PASS",
+          "note": "Step correctly requires only [02-02] (now [02-01, 02-02]). No reference to deleted 01-00."
+        },
+        "dependency_on_02_02_attack_resolver": {
+          "required": "02-02 (AttackResolver)",
+          "actual": "Listed in prerequisites line 26 and dependencies.requires line 55 (now includes 02-01)",
+          "status": "PASS_WITH_REVISION",
+          "note": "Correctly depends on AttackResolver for round execution. Revision adds missing 02-01."
+        },
+        "dependency_on_02_01_initiative_resolver": {
+          "required": "02-01 (InitiativeResolver) - implicit from business rules",
+          "actual": "NOT explicitly listed in dependencies.requires until revision",
+          "status": "REVISION_REQUIRED",
+          "note": "Business rule 'Same character attacks first EVERY round' requires attacker/defender roles determined by InitiativeResolver"
+        },
+        "business_rule_attacker_advantage": {
+          "rule": "Attacker strikes first. Defender counter-attacks ONLY if alive.",
+          "coverage": ["test_attacker_first (AC #1)", "test_defender_survives_counters (AC #2)", "test_no_counter_if_dead (AC #3)", "E2E Scenario 3", "E2E Scenario 4"],
+          "status": "EXCELLENT",
+          "note": "Comprehensive coverage of attacker advantage rule with explicit happy path and sad path tests"
+        },
+        "business_rule_no_counter_if_dead": {
+          "rule": "If defender HP = 0, defender_damage = 0 (no counter-attack)",
+          "coverage": ["test_no_counter_if_dead (AC #3)", "E2E Scenario 3"],
+          "status": "EXCELLENT",
+          "note": "Critical business rule explicitly tested"
+        },
+        "business_rule_role_persistence": {
+          "rule": "Attacker/defender roles persist from initiative through entire combat",
+          "coverage": ["Business rule documented (lines 14)", "E2E scenarios verify persistent roles"],
+          "status": "PASS",
+          "note": "Role persistence assumed correct via InitiativeResolver dependency (now explicit)"
+        },
+        "business_rule_combat_ended": {
+          "rule": "Round ends if either character reaches HP = 0",
+          "coverage": ["test_combat_ended (AC #4)"],
+          "status": "PASS",
+          "note": "State flag properly specified"
+        },
+        "self_contained_context": {
+          "status": "EXCELLENT",
+          "note": "Background, business rules, architecture context, and prerequisites all comprehensive and self-contained"
+        },
+        "acceptance_criteria_completeness": {
+          "count": 6,
+          "status": "PASS",
+          "note": "All acceptance criteria testable with explicit pytest commands. Covers happy path (2 tests), attacker advantage enforcement (3 tests), and E2E scenarios (2 tests)"
+        },
+        "e2e_scenario_mapping": {
+          "status": "PASS",
+          "note": "E2E Scenario 3 (attacker kills - no counter) and Scenario 4 (defender survives - counters) map to specific test assertions"
+        },
+        "tdd_strategy": {
+          "status": "PASS_WITH_RECOMMENDATION",
+          "note": "Classical TDD approach appropriate. Recommend clarifying: Use real AttackResolver with FixedDiceRoller (not mocks of domain services)"
+        },
+        "mock_boundaries": {
+          "status": "PASS",
+          "note": "Correctly specifies using real Character instances. Policy compliant with port-boundary testing."
+        },
+        "implementation_pattern": {
+          "status": "PASS",
+          "note": "Clear value object design (frozen dataclass), service orchestration pattern, state management"
+        },
+        "architecture_compliance": {
+          "layer": "Domain Services - CORRECT",
+          "value_object": "RoundResult - CORRECT",
+          "dependencies": "AttackResolver (now explicit 02-01, 02-02)",
+          "status": "PASS"
+        },
+        "blocking_dependencies": {
+          "blocks": ["03-01 (Combat requires CombatRound)"],
+          "status": "PASS",
+          "note": "Correctly blocking downstream combat mechanics"
+        },
+        "deliverables_specificity": {
+          "status": "PASS",
+          "note": "Three clear deliverables: RoundResult value object, CombatRound service, unit test file"
+        },
+        "estimated_effort": {
+          "hours": 0.25,
+          "status": "OPTIMISTIC",
+          "note": "15 minutes for 3 deliverables, 4-5 unit tests, 2 E2E validations, complex orchestration logic. Realistic: 0.33-0.5 hours."
+        },
+        "yagni_compliance": {
+          "status": "PASS",
+          "note": "No over-engineering detected. Feature scope matches acceptance criteria. No speculative generality."
+        }
+      }
+    },
+    "quality_assessment": {
+      "business_rule_specification": {
+        "rating": "EXCELLENT",
+        "note": "Attacker advantage rule comprehensive and testable. All four business rules clearly defined."
+      },
+      "architecture_compliance": {
+        "rating": "EXCELLENT",
+        "note": "Clean hexagonal architecture: CombatRound as domain service, AttackResolver dependency, RoundResult as value object"
+      },
+      "acceptance_criteria_clarity": {
+        "rating": "EXCELLENT",
+        "note": "Six criteria with specific pytest commands. Covers order (1), counter-attack conditions (3), state (1), E2E validation (2)"
+      },
+      "dependency_management": {
+        "rating": "GOOD",
+        "note": "Dependencies mostly clear. Revision required to explicitly include 02-01 (InitiativeResolver) in requirements."
+      },
+      "test_strategy": {
+        "rating": "EXCELLENT",
+        "note": "Classical TDD with real domain objects. Appropriate for orchestration service testing."
+      },
+      "self_contained_context": {
+        "rating": "EXCELLENT",
+        "note": "Developer has all needed information without external references"
+      },
+      "business_value_clarity": {
+        "rating": "EXCELLENT",
+        "note": "Motivation clearly explains orchestration of combat round with critical attacker advantage enforcement"
+      }
+    },
+    "recommendations": [
+      {
+        "priority": "CRITICAL",
+        "title": "Add 02-01 (InitiativeResolver) to dependencies.requires",
+        "description": "Business rule 'Same character attacks first EVERY round' requires attacker/defender roles from InitiativeResolver. Make this dependency explicit.",
+        "suggested_action": "Update line 55: {\"requires\": [\"02-01\", \"02-02\"], ...}"
+      },
+      {
+        "priority": "LOW",
+        "title": "Consider updating estimated hours",
+        "description": "0.25 hours (15 minutes) appears optimistic for 3 deliverables + complex unit/E2E tests",
+        "suggested_action": "Optional: Update to 0.33-0.5 hours for realistic planning"
+      },
+      {
+        "priority": "LOW",
+        "title": "Clarify TDD mocking strategy",
+        "description": "For consistency with 02-01 and 02-02, recommend using real AttackResolver (not mocking domain services)",
+        "suggested_action": "Optional: Update line 65 to clarify: Use real AttackResolver with FixedDiceRoller"
+      }
+    ],
+    "sign_off": {
+      "reviewer": "software-crafter-reviewer",
+      "review_date": "2026-01-13",
+      "approval_decision": "NEEDS_REVISION",
+      "blocking_issues": [
+        "Missing 02-01 (InitiativeResolver) in dependencies.requires - Business rules require attacker/defender role knowledge from InitiativeResolver"
+      ],
+      "revision_required_count": 1,
+      "optional_improvements": 2,
+      "revision_instructions": "Update line 55 dependencies.requires from [\"02-02\"] to [\"02-01\", \"02-02\"] to explicitly declare InitiativeResolver dependency required by business rules.",
+      "ready_for_execution": false,
+      "ready_after_revision": true
+    }
+  }
+}
