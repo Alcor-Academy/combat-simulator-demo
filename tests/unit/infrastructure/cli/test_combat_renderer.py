@@ -3,6 +3,7 @@
 from unittest.mock import Mock
 
 import pytest
+from rich.style import Style
 
 from modules.domain.model.attack_result import AttackResult
 from modules.domain.model.character import Character
@@ -307,10 +308,10 @@ def test_hp_color_returns_yellow_for_medium_hp(renderer):
     assert color == "yellow"
 
 
-def test_hp_color_returns_orange_for_low_hp(renderer):
-    """Test that HP color is orange when HP is 20-40%."""
+def test_hp_color_returns_dark_orange_for_low_hp(renderer):
+    """Test that HP color is dark_orange when HP is 20-40%."""
     color = renderer._hp_color(current_hp=30, max_hp=100)
-    assert color == "orange"
+    assert color == "dark_orange"
 
 
 def test_hp_color_returns_red_for_critical_hp(renderer):
@@ -325,8 +326,36 @@ def test_hp_color_handles_exact_thresholds(renderer):
     assert renderer._hp_color(70, 100) == "green"
     # Exactly 40% = yellow
     assert renderer._hp_color(40, 100) == "yellow"
-    # Exactly 20% = orange
-    assert renderer._hp_color(20, 100) == "orange"
+    # Exactly 20% = dark_orange
+    assert renderer._hp_color(20, 100) == "dark_orange"
+
+
+def test_hp_color_returns_rich_console_supported_color(renderer):
+    """Test that HP color values are supported by Rich Console.
+
+    This test verifies that the color returned by _hp_color can be
+    successfully parsed by Rich Console Style without raising an error.
+
+    Bug: 'orange' is not a valid Rich Console color name.
+    Fix: Use 'dark_orange', '#FFA500', or other supported color.
+    """
+    # Test all HP ranges to ensure colors are Rich-compatible
+    test_cases = [
+        (90, 100, "green range (70-100%)"),
+        (50, 100, "yellow range (40-70%)"),
+        (30, 100, "low HP range (20-40%) - BUG TRIGGER"),
+        (10, 100, "critical range (<20%)"),
+    ]
+
+    for current_hp, max_hp, description in test_cases:
+        color = renderer._hp_color(current_hp, max_hp)
+
+        # Attempt to create a Rich Style with this color
+        # This will raise StyleSyntaxError if color is invalid
+        try:
+            Style.parse(color)
+        except Exception as e:
+            pytest.fail(f"HP color '{color}' for {description} is not supported by Rich Console: {e}")
 
 
 def test_render_initiative_uses_colored_styles(renderer, mock_console, hero, villain):

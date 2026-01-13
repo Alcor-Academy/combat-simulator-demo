@@ -42,7 +42,7 @@ class CombatRenderer:
             max_hp: Maximum HP value
 
         Returns:
-            Color string for Rich styling (green/yellow/orange/red)
+            Color string for Rich styling (green/yellow/dark_orange/red)
         """
         pct = current_hp / max_hp
         if pct >= 0.7:
@@ -50,7 +50,7 @@ class CombatRenderer:
         if pct >= 0.4:
             return "yellow"
         if pct >= 0.2:
-            return "orange"
+            return "dark_orange"  # Fix: 'orange' is not supported by Rich Console
         return "red"
 
     def _get_tiebreaker_message(self, init_result: InitiativeResult) -> str:
