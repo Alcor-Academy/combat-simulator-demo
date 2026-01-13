@@ -268,7 +268,6 @@ Feature: Interactive CLI Combat Viewer
     And no placeholder characters appear
     And emoji do not break line formatting
 
-  @skip
   Scenario: Color support detection works correctly
     Given terminal supports 256 colors
     When CLI runs

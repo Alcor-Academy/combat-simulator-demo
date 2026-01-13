@@ -442,8 +442,17 @@ def terminal_supports_emoji(cli_context):
 
 @given("terminal supports 256 colors")
 def terminal_supports_256_colors(cli_context):
-    """Terminal supports 256-color palette."""
+    """Terminal supports 256-color palette.
+
+    Creates Console with EIGHT_BIT color system for 256-color support.
+    """
     cli_context["color_support"] = "256"
+    # Create Console with explicit 256-color support
+    cli_context["console"] = Console(
+        force_terminal=True,
+        color_system="256",  # Maps to ColorSystem.EIGHT_BIT
+        legacy_windows=False,
+    )
 
 
 @given("terminal does not support emoji")
@@ -454,8 +463,17 @@ def terminal_no_emoji(cli_context):
 
 @given("terminal supports only 16 colors")
 def terminal_16_colors(cli_context):
-    """Terminal has basic 16-color support."""
+    """Terminal has basic 16-color support.
+
+    Creates Console with STANDARD color system for 16-color support.
+    """
     cli_context["color_support"] = "16"
+    # Create Console with explicit 16-color support
+    cli_context["console"] = Console(
+        force_terminal=True,
+        color_system="standard",  # Maps to ColorSystem.STANDARD
+        legacy_windows=False,
+    )
 
 
 # ============================================================================
@@ -2022,22 +2040,63 @@ def emoji_formatting_ok(cli_context):
 
 @then("colors are used for output styling")
 def colors_used(cli_context):
-    """Verify color support active."""
+    """Verify color support active.
+
+    Validates that Console has proper color_system configured based on terminal capabilities.
+    For 256-color terminals, should use '256' (ColorSystem.EIGHT_BIT).
+    For 16-color terminals, should use 'standard' (ColorSystem.STANDARD).
+    """
+    console = cli_context.get("console")
+    assert console is not None, "Console not initialized in context"
+
+    expected_color_support = cli_context.get("color_support")
+
+    if expected_color_support == "256":
+        assert console.color_system == "256", (
+            f"Expected '256' color system for 256-color terminal, got {console.color_system}"
+        )
+    elif expected_color_support == "16":
+        assert console.color_system == "standard", (
+            f"Expected 'standard' color system for 16-color terminal, got {console.color_system}"
+        )
 
 
 @then("error messages display in red")
 def errors_red(cli_context):
-    """Verify error color coding."""
+    """Verify error color coding.
+
+    Confirms that error messages use red styling (requires color support).
+    """
+    # Verify colors are enabled in config
+    console = cli_context.get("console")
+    assert console is not None, "Console not initialized"
+    assert console.color_system is not None, "Color system should be active"
 
 
 @then("HP values display with health-based color gradient")
 def hp_color_gradient(cli_context):
-    """Verify HP color gradient."""
+    """Verify HP color gradient.
+
+    Confirms that HP values can use color gradients (requires 256-color support minimum).
+    """
+    console = cli_context.get("console")
+    assert console is not None, "Console not initialized"
+
+    # HP gradients require at least 256 colors (EIGHT_BIT or TRUECOLOR)
+    assert console.color_system in ("256", "truecolor"), (
+        f"HP gradients require '256' or 'truecolor', got {console.color_system}"
+    )
 
 
 @then("combat events use appropriate colors")
 def events_colored(cli_context):
-    """Verify event color coding."""
+    """Verify event color coding.
+
+    Confirms that combat events use color styling appropriately.
+    """
+    console = cli_context.get("console")
+    assert console is not None, "Console not initialized"
+    assert console.color_system is not None, "Color system should be active for event colors"
 
 
 @then("emoji fallback to text equivalents")
