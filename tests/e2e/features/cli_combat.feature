@@ -205,7 +205,6 @@ Feature: Interactive CLI Combat Viewer
     Then attack power input is accepted
     And character creation continues
 
-  @skip
   Scenario: User interrupts CLI with CTRL-C during character creation
     Given CLI is prompting for character input
     When I press CTRL-C

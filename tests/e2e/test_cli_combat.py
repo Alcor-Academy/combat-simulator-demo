@@ -21,6 +21,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 from pytest_bdd import given, parsers, scenarios, then, when
+from rich.console import Console
 
 # Application Layer (REAL)
 from modules.application.combat_simulator import CombatSimulator
@@ -169,6 +170,7 @@ def production_services():
     - RandomDiceRoller (seeded for deterministic tests)
     - Domain services (InitiativeResolver, AttackResolver, CombatRound)
     - CombatSimulator (application service)
+    - CharacterCreator (infrastructure service)
 
     NO MOCKS for business logic - only I/O boundaries mocked.
     """
@@ -183,12 +185,20 @@ def production_services():
     # Create REAL application service
     combat_simulator = CombatSimulator(initiative_resolver, combat_round_service)
 
+    # Create REAL infrastructure services
+    mock_console_instance = Console(file=io.StringIO(), force_terminal=True)
+    config = CLIConfig.test_mode()
+    console_output = ConsoleOutput(mock_console_instance, config)
+    character_creator = CharacterCreator(console_output, dice_roller)
+
     return {
         "dice_roller": dice_roller,
         "initiative_resolver": initiative_resolver,
         "attack_resolver": attack_resolver,
         "combat_round": combat_round_service,
         "combat_simulator": combat_simulator,
+        "console_output": console_output,
+        "character_creator": character_creator,
     }
 
 
@@ -392,9 +402,10 @@ def combat_with_rounds(cli_context, rounds):
 
 
 @given("CLI is prompting for character input")
-def cli_prompting_for_input(cli_context):
-    """CLI is prompting for any character input."""
+def cli_prompting_for_input(cli_context, production_services):
+    """CLI is prompting for any character input - simulate interrupt during prompt."""
     cli_context["prompting"] = True
+    cli_context["character_creator"] = production_services["character_creator"]
 
 
 @given("combat is in progress")
@@ -776,10 +787,32 @@ def measure_delays(cli_context, production_services, mock_console):
 
 
 @when("I press CTRL-C")
-def user_presses_ctrl_c(cli_context):
-    """Simulate CTRL-C keyboard interrupt."""
+def user_presses_ctrl_c(cli_context, production_services):
+    """Simulate CTRL-C keyboard interrupt during character creation."""
     cli_context["interrupt"] = True
     cli_context["interrupt_signal"] = "SIGINT"
+
+    # Create a console with captured output
+    output_buffer = io.StringIO()
+    test_console = Console(file=output_buffer, force_terminal=True)
+
+    # Create a new CharacterCreator with captured console
+    console_output = ConsoleOutput(test_console, CLIConfig.test_mode())
+    character_creator = CharacterCreator(console_output, production_services["dice_roller"])
+
+    # Mock Prompt.ask to raise KeyboardInterrupt
+    with patch("modules.infrastructure.cli.character_creator.Prompt.ask", side_effect=KeyboardInterrupt()):
+        try:
+            character_creator.create_character(1)
+            cli_context["exit_code"] = 0  # If no exception, exit code 0
+        except SystemExit as e:
+            cli_context["exit_code"] = e.code
+        except KeyboardInterrupt:
+            # If KeyboardInterrupt not handled, it bubbles up
+            cli_context["exit_code"] = 130
+            cli_context["unhandled_exception"] = True
+
+    cli_context["output"] = output_buffer.getvalue()
 
 
 @when("I press CTRL-C during combat visualization")
@@ -1896,24 +1929,35 @@ def output_identical(cli_context):
 
 @then("program exits gracefully")
 def exits_gracefully(cli_context):
-    """Verify clean exit."""
-    assert cli_context.get("interrupt", False)
+    """Verify clean exit without unhandled exception."""
+    assert cli_context.get("interrupt", False), "Interrupt flag not set"
+    assert not cli_context.get("unhandled_exception", False), "KeyboardInterrupt was not handled - bubbled up"
 
 
 @then("interruption message is displayed")
 def interruption_message(cli_context):
-    """Verify interruption message shown."""
+    """Verify interruption message shown to user."""
+    output = cli_context.get("output", "")
+    # Look for user-friendly cancellation message
+    assert "cancel" in output.lower() or "interrupt" in output.lower(), (
+        f"No interruption message found in output: {output}"
+    )
 
 
 @then("no stack trace is shown")
 def no_stack_trace(cli_context):
-    """Verify clean error handling."""
+    """Verify no Python traceback in output."""
+    output = cli_context.get("output", "")
+    # Check for Python traceback indicators
+    assert "Traceback" not in output, f"Python traceback found in output: {output}"
+    assert "KeyboardInterrupt" not in output, f"Unhandled KeyboardInterrupt in output: {output}"
 
 
 @then(parsers.parse("exit code is {code:d}"))
 def exit_code_correct(cli_context, code):
     """Verify correct exit code."""
-    assert cli_context.get("exit_code", 130) == code or True  # Placeholder
+    actual_exit_code = cli_context.get("exit_code")
+    assert actual_exit_code == code, f"Expected exit code {code}, got {actual_exit_code}"
 
 
 # Cross-Platform Assertions

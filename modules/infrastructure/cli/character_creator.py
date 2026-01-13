@@ -1,5 +1,6 @@
 """CharacterCreator - Interactive character creation with input validation."""
 
+import sys
 from typing import TYPE_CHECKING
 
 from rich.panel import Panel
@@ -40,22 +41,33 @@ class CharacterCreator:
         """
         Create a character through interactive prompts with validation.
 
+        Handles KeyboardInterrupt (CTRL-C) gracefully by displaying
+        a user-friendly message and exiting with code 130.
+
         Args:
             num: Character number (for display purposes)
 
         Returns:
             Character instance with validated attributes
+
+        Raises:
+            SystemExit: With code 130 when user presses CTRL-C
         """
-        self._console.print(f"\n--- Create Character {num} ---")
+        try:
+            self._console.print(f"\n--- Create Character {num} ---")
 
-        name = self._prompt_for_name_with_validation(num)
-        hp = self._prompt_for_hp_with_validation()
-        attack = self._prompt_for_attack_with_validation()
+            name = self._prompt_for_name_with_validation(num)
+            hp = self._prompt_for_hp_with_validation()
+            attack = self._prompt_for_attack_with_validation()
 
-        char = Character(name, hp, attack)
-        self._display_character_card(char)
+            char = Character(name, hp, attack)
+            self._display_character_card(char)
 
-        return char
+            return char
+        except KeyboardInterrupt:
+            # Handle CTRL-C gracefully - display user-friendly message
+            self._console.print("\n\n⚠️  Character creation cancelled by user.", style="yellow")
+            sys.exit(130)  # Standard exit code for SIGINT (128 + 2)
 
     def _prompt_for_name_with_validation(self, num: int) -> str:
         """
