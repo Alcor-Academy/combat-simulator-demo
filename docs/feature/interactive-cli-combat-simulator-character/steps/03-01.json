@@ -3,9 +3,9 @@
   "project_id": "interactive-cli-combat-simulator-character",
   "phase": 3,
   "phase_name": "Application Layer - Combat Orchestration",
-  "step_name": "Implement CombatResult and CombatSimulator",
+  "step_name": "Implement CombatSimulator + CLI Output (Walking Skeleton)",
   "execution_agent": "software-crafter",
-  "is_walking_skeleton": false,
+  "is_walking_skeleton": true,
   "self_contained_context": {
     "background": "CombatSimulator is the main use case orchestrating full combat: (1) Roll initiative ONCE at start, (2) Execute rounds until victory, (3) Return CombatResult with winner, loser, all rounds. This makes E2E walking skeleton test pass.",
     "business_rules": {
@@ -15,8 +15,10 @@
       "immutable_result": "CombatResult.rounds is tuple (immutable), not list"
     },
     "architecture_context": {
-      "layer": "Application Service (src/application/combat_simulator.py)",
-      "value_object": "CombatResult (src/domain/model/combat_result.py)",
+      "layer": "Application Service (modules/application/combat_simulator.py)",
+      "value_object": "CombatResult (modules/domain/model/combat_result.py)",
+      "cli_infrastructure": "CombatRenderer (modules/infrastructure/cli/combat_renderer.py)",
+      "cli_library": "rich.console.Console for formatted terminal output",
       "dependencies": "InitiativeResolver, CombatRound (domain services)"
     },
     "e2e_scenarios_enabled": [
@@ -29,9 +31,9 @@
     "name": "Implement CombatResult and CombatSimulator",
     "motivation": "Main use case. Orchestrates all domain services. Makes E2E walking skeleton test pass. Demonstrates complete Outside-In TDD flow.",
     "detailed_instructions": [
-      "Create src/domain/model/combat_result.py as frozen dataclass",
+      "Create modules/domain/model/combat_result.py as frozen dataclass",
       "Fields: winner, loser (Characters), total_rounds (int), rounds (Tuple[RoundResult, ...])",
-      "Create src/application/combat_simulator.py",
+      "Create modules/application/combat_simulator.py",
       "Inject InitiativeResolver and CombatRound in constructor",
       "Implement run_combat(char1, char2) -> CombatResult",
       "Roll initiative ONCE at start to determine attacker/defender",
@@ -40,9 +42,17 @@
       "Break loop if combat_ended (someone died)",
       "Determine winner/loser based on who's alive",
       "Return CombatResult with tuple(rounds) for immutability",
+      "Create modules/infrastructure/cli/combat_renderer.py",
+      "Import rich.console.Console",
+      "Implement render_combat_result(combat_result: CombatResult) method",
+      "Display each round: round number, attacker name, damage dealt, defender HP after damage",
+      "Display final result: winner name with victory message, loser name with defeat message",
+      "Use rich formatting: green for winner, red for loser, yellow for damage numbers",
       "Create tests/unit/application/test_combat_simulator.py",
       "Test: initiative once, round loop, victory detection, all rounds recorded",
-      "Run E2E tests - ALL 9 scenarios should PASS"
+      "Create tests/unit/infrastructure/test_combat_renderer.py (optional - focuses on display logic)",
+      "Run E2E tests - ALL 9 scenarios should PASS",
+      "Manually test CLI output: Run combat simulation and verify visual output shows all rounds and winner"
     ],
     "acceptance_criteria": [
       {"criterion": "Initiative rolled once at combat start", "test_command": "pytest tests/unit/application/test_combat_simulator.py::test_initiative_once -v"},
@@ -50,6 +60,8 @@
       {"criterion": "Combat ends when HP = 0", "test_command": "pytest tests/unit/application/test_combat_simulator.py::test_victory_condition -v"},
       {"criterion": "CombatResult contains winner, loser, total_rounds, all rounds", "test_command": "pytest tests/unit/application/test_combat_simulator.py::test_combat_result_complete -v"},
       {"criterion": "rounds is immutable tuple", "test_command": "pytest tests/unit/application/test_combat_simulator.py::test_rounds_immutable -v"},
+      {"criterion": "CLI displays all combat rounds with damage and HP updates", "test_command": "python -c \"from modules.infrastructure.cli.combat_renderer import CombatRenderer; print('CombatRenderer.render_combat_result exists')\""},
+      {"criterion": "CLI shows winner/loser with rich formatting (green/red)", "test_command": "Manual: Run combat and verify colored output in terminal"},
       {"criterion": "E2E Scenario 1 passes", "test_command": "pytest tests/e2e/test_combat_simulation.py::test_full_combat_with_attacker_advantage_enforcement -v"},
       {"criterion": "ALL 9 E2E scenarios PASS", "test_command": "pytest tests/e2e/ -v"}
     ],
@@ -57,9 +69,11 @@
   },
   "dependencies": {"requires": ["02-01", "02-03"], "blocking": ["04-01"]},
   "deliverables": [
-    {"type": "source_file", "path": "src/domain/model/combat_result.py"},
-    {"type": "source_file", "path": "src/application/combat_simulator.py"},
-    {"type": "test_file", "path": "tests/unit/application/test_combat_simulator.py"}
+    {"type": "source_file", "path": "modules/domain/model/combat_result.py"},
+    {"type": "source_file", "path": "modules/application/combat_simulator.py"},
+    {"type": "source_file", "path": "modules/infrastructure/cli/combat_renderer.py"},
+    {"type": "test_file", "path": "tests/unit/application/test_combat_simulator.py"},
+    {"type": "test_file", "path": "tests/unit/infrastructure/test_combat_renderer.py"}
   ],
   "state": {"status": "TODO", "assigned_to": null, "tdd_phase": "NOT_STARTED"},
   "review_metadata": {
@@ -110,15 +124,16 @@
           "note": "Step correctly identifies that ALL 9 E2E scenarios (including error paths) should pass after CombatSimulator implementation. This is the walking skeleton completion."
         },
         "walking_skeleton_validation": {
-          "is_walking_skeleton": false,
-          "purpose": "Application layer orchestration (not infrastructure)",
+          "is_walking_skeleton": true,
+          "purpose": "Walking skeleton with complete end-to-end flow: domain + application + CLI infrastructure",
           "e2e_test_activation": "ALL 9 scenarios should be enabled and PASSING after this step",
-          "walking_skeleton_impact": "This step completes Outside-In TDD flow: E2E tests drove all implementation from Scenario 1 through all 9 scenarios",
+          "cli_output": "CombatRenderer displays full combat with rounds and winner using rich formatting",
+          "walking_skeleton_impact": "This step completes Outside-In TDD flow: E2E tests drove all implementation from Scenario 1 through all 9 scenarios, with visible CLI output demonstrating the complete system",
           "status": "PASS",
-          "note": "While not marked is_walking_skeleton=true, this step enables the complete walking skeleton. E2E tests become the success metric."
+          "note": "Marked is_walking_skeleton=true. This step demonstrates the complete vertical slice: domain layer, application layer, and CLI infrastructure working together end-to-end."
         },
         "acceptance_criteria_completeness": {
-          "count": 7,
+          "count": 9,
           "all_testable": true,
           "all_specific": true,
           "criteria_coverage": [
@@ -127,16 +142,18 @@
             "AC #3: Combat ends when HP = 0 - testable",
             "AC #4: CombatResult contains winner, loser, total_rounds, all rounds - testable",
             "AC #5: rounds is immutable tuple - testable",
-            "AC #6: E2E Scenario 1 passes - testable",
-            "AC #7: ALL 9 E2E scenarios PASS - testable (CRITICAL)"
+            "AC #6: CLI displays all combat rounds with damage and HP updates - testable (import check)",
+            "AC #7: CLI shows winner/loser with rich formatting - testable (manual verification)",
+            "AC #8: E2E Scenario 1 passes - testable",
+            "AC #9: ALL 9 E2E scenarios PASS - testable (CRITICAL)"
           ],
           "status": "PASS",
-          "note": "All acceptance criteria are concrete, measurable, and have explicit test commands. AC #7 is the critical success metric."
+          "note": "All acceptance criteria are concrete and measurable. AC #6-7 validate CLI output. AC #9 is the critical success metric for walking skeleton."
         },
         "detailed_instructions_quality": {
-          "step_count": 13,
-          "implementation_clarity": "EXCELLENT - Clear, sequential steps from creation through victory detection",
-          "resource_creation": "PASS - Three files specified: combat_result.py, combat_simulator.py, test file",
+          "step_count": 22,
+          "implementation_clarity": "EXCELLENT - Clear, sequential steps from creation through CLI output with rich formatting",
+          "resource_creation": "PASS - Five files specified: combat_result.py, combat_simulator.py, combat_renderer.py, 2 test files",
           "business_rule_enforcement": [
             "Initiative ONCE at start via InitiativeResolver dependency - specified line 37",
             "Round loop while both alive - specified line 38",
@@ -327,8 +344,9 @@
     "test_pass_rate": "100%"
   },
   "wow_moment": {
-    "trigger": "E2E walking skeleton test turns GREEN",
-    "demonstration": "Run pytest tests/e2e/ -v and show all 9 scenarios PASSING",
-    "audience_value": "Outside-In TDD completes - E2E test driven entire implementation"
+    "trigger": "CLI displays full combat with colored output + all 9 E2E tests GREEN",
+    "demonstration": "Run combat simulation showing rounds with rich formatting, then pytest tests/e2e/ -v showing all 9 scenarios PASSING",
+    "audience_value": "Walking skeleton complete: visible CLI output + E2E test coverage proves entire vertical slice works end-to-end",
+    "cli_example": "Combat rounds display with green winner, red loser, yellow damage numbers - immediately demonstrates working system"
   }
 }
