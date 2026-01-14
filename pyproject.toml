@@ -92,3 +92,11 @@ docstring-code-format = true
 [tool.bandit]
 exclude_dirs = ["tests", "venv", ".venv"]
 skips = ["B101"]  # Skip assert_used - fine in production code with proper error handling
+
+# Mutation testing with mutmut
+[tool.mutmut]
+paths_to_mutate = ["modules/"]
+tests_dir = ["tests/unit/"]
+backup = false
+runner = "python -m pytest tests/unit/ -x -q --no-cov -p no:randomly"
+do_not_mutate = ["**/main.py"]

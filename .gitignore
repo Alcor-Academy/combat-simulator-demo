@@ -166,3 +166,4 @@ requirements.txt*
 
 # chrome web driver
 downloaded_files/
+mutants/
