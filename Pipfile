@@ -5,6 +5,7 @@ verify_ssl = true
 
 [dev-packages]
 # Testing
+mutmut = "*"
 pytest = "*"
 pytest-bdd = "*"
 pytest-describe-it = "*"
@@ -64,3 +65,5 @@ lintFix = "ruff check --fix modules tests"
 security = "bandit -c pyproject.toml -r modules/"
 secretsScan = "detect-secrets scan --baseline .secrets.baseline"  # pragma: allowlist secret
 forceTypingExtensions = "python -m pip install typing-extensions"
+mutationTest = "mutmut run"
+mutationResults = "mutmut results"
