@@ -76,3 +76,67 @@ repos:
     hooks:
       - id: commitizen
         stages: [commit-msg]
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # nWave TDD Hooks - Auto-installed by /nw:develop
+  # Version: 1.2.18
+  # ═══════════════════════════════════════════════════════════════════════════
+  - repo: local
+    hooks:
+      - id: nwave-step-structure-validation
+        name: nWave Step Structure Validation
+        entry: python scripts/hooks/nwave-step-structure-validator.py
+        language: python
+        stages: [pre-commit]
+        files: (^|/)steps/\d+-\d+\.json$
+        description: Validates step files have phase_execution_log structure
+
+      - id: nwave-tdd-phase-validation
+        name: nWave TDD Phase Validation
+        entry: python scripts/hooks/nwave-tdd-validator.py
+        language: python
+        stages: [pre-commit]
+        always_run: true
+        pass_filenames: false
+        description: Validates TDD phase completion before allowing commits
+
+      - id: nwave-bypass-detector
+        name: nWave Bypass Detector
+        entry: python scripts/hooks/nwave-bypass-detector.py
+        language: python
+        stages: [post-commit]
+        always_run: true
+        pass_filenames: false
+        description: Logs any bypass attempts for audit purposes
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # nWave TDD Hooks - Auto-installed by /nw:develop
+  # Version: 1.2.22
+  # ═══════════════════════════════════════════════════════════════════════════
+  - repo: local
+    hooks:
+      - id: nwave-step-structure-validation
+        name: nWave Step Structure Validation
+        entry: python scripts/hooks/nwave-step-structure-validator.py
+        language: python
+        stages: [pre-commit]
+        files: (^|/)steps/\d+-\d+\.json$
+        description: Validates step files have phase_execution_log structure
+
+      - id: nwave-tdd-phase-validation
+        name: nWave TDD Phase Validation
+        entry: python scripts/hooks/nwave-tdd-validator.py
+        language: python
+        stages: [pre-commit]
+        always_run: true
+        pass_filenames: false
+        description: Validates TDD phase completion before allowing commits
+
+      - id: nwave-bypass-detector
+        name: nWave Bypass Detector
+        entry: python scripts/hooks/nwave-bypass-detector.py
+        language: python
+        stages: [post-commit]
+        always_run: true
+        pass_filenames: false
+        description: Logs any bypass attempts for audit purposes

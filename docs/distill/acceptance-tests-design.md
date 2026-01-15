@@ -20,11 +20,12 @@ This document describes the acceptance test suite for the Combat Simulator CLI, 
 5. **Natural Progression**: Tests fail initially, pass when sufficient implementation exists
 
 **Test Coverage**:
-- 6 E2E scenarios covering all 7 user stories
+- 9 E2E scenarios covering all 7 user stories (6 happy path + 3 error path)
 - 26 acceptance criteria validated through Given-When-Then steps
 - Complete business rule validation (10 domain rules)
 - Immutability enforcement validation
 - Attacker advantage rule verification
+- Error path validation (empty name, dead attacker, initiative tie)
 
 ---
 
@@ -61,7 +62,7 @@ This document describes the acceptance test suite for the Combat Simulator CLI, 
 
 ```
         E2E Acceptance Tests (pytest-bdd)
-              6 scenarios
+              9 scenarios (6 happy + 3 error)
        /                              \
       Integration Tests
             0 tests (not needed for demo)
@@ -289,6 +290,103 @@ Scenario: Derived agility decreases as character takes damage
 
 ---
 
+## Error Path Scenarios
+
+### Scenario 7: Character Creation Fails with Empty Name
+
+**Business Value**: Validates input validation and error handling for character creation.
+
+**User Stories Covered**: US-1 (Character Creation - Validation)
+
+**Given-When-Then**:
+```gherkin
+Scenario: Character creation fails with empty name
+  When I attempt to create a character with empty name
+  Then character creation fails with error "Name cannot be empty"
+```
+
+**Business Rules Validated**:
+- AC-1.5: Character name must be non-empty
+- Input validation at construction time
+
+**Production Services Called**:
+1. `Character(name="", hp=20, attack_power=5)` - raises ValueError
+
+**Expected Behavior**:
+- Constructor raises `ValueError` with message "Name cannot be empty"
+- No Character instance is created
+- Error is propagated to caller for handling
+
+---
+
+### Scenario 8: Dead Character Cannot Initiate Attack
+
+**Business Value**: Validates that dead characters (HP = 0) cannot perform actions.
+
+**User Stories Covered**: US-4 (Attack Action - Validation)
+
+**Given-When-Then**:
+```gherkin
+Scenario: Dead character cannot initiate attack
+  Given a character "Ghost" with 0 HP and 5 attack power
+  And a character "Target" with 20 HP and 3 attack power
+  When the dead character attempts to attack
+  Then the attack is rejected
+  And the target remains unharmed
+```
+
+**Business Rules Validated**:
+- AC-4.5: Dead character cannot attack
+- Only living characters (HP > 0) can perform combat actions
+
+**Production Services Called**:
+1. `Character("Ghost", hp=0, attack_power=5)` - creates dead character
+2. `Character("Target", hp=20, attack_power=3)` - creates target
+3. `AttackResolver.resolve_attack(ghost, target)` - raises ValueError
+
+**Expected Behavior**:
+- AttackResolver raises `ValueError` when attacker has 0 HP
+- Target character remains unchanged (no damage received)
+- Attack action is rejected before any dice roll occurs
+
+---
+
+### Scenario 9: Initiative Tie Resolved by First Character Rule
+
+**Business Value**: Validates deterministic tie-breaker for initiative ties.
+
+**User Stories Covered**: US-3 (Initiative Roll - Tie-Breaking)
+
+**Given-When-Then**:
+```gherkin
+Scenario: Initiative tie resolved by first character rule
+  Given a character "Elf" with 15 HP and 10 attack power
+  And a character "Dwarf" with 20 HP and 5 attack power
+  And dice configured to return initiative rolls [5, 5]
+  When initiative is rolled
+  Then "Elf" wins initiative by first character tie-breaker
+  And both characters have initiative total 30
+  And both characters have base agility 25
+  And first character wins when all else is equal
+```
+
+**Business Rules Validated**:
+- AC-3.2: Initiative ties resolved deterministically (first character wins)
+- DR-05: Initiative = Agility + D6
+
+**Production Services Called**:
+1. `Character("Elf", hp=15, attack_power=10)` - agility = 25
+2. `Character("Dwarf", hp=20, attack_power=5)` - agility = 25
+3. `InitiativeResolver.roll_initiative(elf, dwarf)` - tie resolved by position
+
+**Test Calculation**:
+- Elf: Agility = 15 HP + 10 Attack = 25, Initiative = 25 + 5 (dice) = 30
+- Dwarf: Agility = 20 HP + 5 Attack = 25, Initiative = 25 + 5 (dice) = 30
+- Tie (30 = 30), first character (Elf) wins
+- Deterministic resolution ensures consistent behavior
+
+---
+
 ## Production Service Integration Patterns
 
 ### Pattern 1: Constructor Injection in Step Definitions
@@ -478,7 +576,7 @@ Then results are deterministic                # Validates port contract
 
 ### Sequential Test Enablement
 
-**Problem**: Implementing all 6 scenarios simultaneously causes multiple failing tests, blocking commits.
+**Problem**: Implementing all 9 scenarios simultaneously causes multiple failing tests, blocking commits.
 
 **Solution**: Enable one scenario at a time, implement until green, commit, then enable next.
 
@@ -546,8 +644,11 @@ Scenario: Character with higher agility wins initiative
 | US-6 (Game Loop) | AC-6.1: Automated combat | Scenario 1 | CombatSimulator.run_combat() | ✅ Covered |
 | US-6 (Game Loop) | AC-6.3: Immediate end | Scenario 3 | CombatSimulator.run_combat() | ✅ Covered |
 | US-7 (Victory) | AC-7.1: Victory detection | Scenarios 1, 3 | CombatResult.winner | ✅ Covered |
+| US-1 (Character) | AC-1.5: Name validation | Scenario 7 | Character.__post_init__() | ✅ Covered |
+| US-4 (Attack) | AC-4.5: Dead cannot attack | Scenario 8 | AttackResolver.resolve_attack() | ✅ Covered |
+| US-3 (Initiative) | AC-3.2: Tie-breaker | Scenario 9 | InitiativeResolver.roll_initiative() | ✅ Covered |
 
-**Coverage**: 15/15 critical acceptance criteria (100%)
+**Coverage**: 18/18 critical acceptance criteria (100%)
 
 ### Domain Rules Validation Matrix
 
@@ -601,6 +702,9 @@ tests/e2e/test_combat_simulation.py::test_attacker_kills... PASSED
 tests/e2e/test_combat_simulation.py::test_defender_survives... PASSED
 tests/e2e/test_combat_simulation.py::test_immutability... PASSED
 tests/e2e/test_combat_simulation.py::test_derived_agility... PASSED
+tests/e2e/test_combat_simulation.py::test_empty_name_error... PASSED
+tests/e2e/test_combat_simulation.py::test_dead_cannot_attack... PASSED
+tests/e2e/test_combat_simulation.py::test_initiative_tie... PASSED
 ```
 
 ### Test Dependencies
@@ -675,13 +779,14 @@ pipenv install --dev
 ### Quality Gates for Handoff
 
 **Acceptance Test Quality**:
-- ✅ All 6 scenarios use business language (no technical jargon)
+- ✅ All 9 scenarios use business language (no technical jargon)
 - ✅ Step definitions call production services (no mocks except DiceRoller)
 - ✅ Tests respect hexagonal architecture boundaries
 - ✅ FixedDiceRoller provides deterministic test execution
 - ✅ One-at-a-time implementation strategy documented
-- ✅ 100% acceptance criteria coverage (15/15)
+- ✅ 100% acceptance criteria coverage (18/18)
 - ✅ 100% domain rules coverage (10/10)
+- ✅ Error path scenarios validate input validation and business constraints
 
 **Architecture Alignment**:
 - ✅ Tests enter through Application layer (CombatSimulator)
@@ -699,13 +804,13 @@ pipenv install --dev
 
 ## Test Scenarios Summary
 
-**Total Scenarios**: 6
-**Total Steps**: 54 (Given: 18, When: 12, Then: 24)
+**Total Scenarios**: 9 (6 happy path + 3 error path)
+**Total Steps**: 66 (Given: 22, When: 15, Then: 29)
 **User Stories Covered**: 7/7 (100%)
-**Acceptance Criteria Covered**: 15/15 (100%)
+**Acceptance Criteria Covered**: 18/18 (100%)
 **Domain Rules Covered**: 10/10 (100%)
 
-**Scenario Breakdown**:
+**Happy Path Scenarios**:
 1. Full combat with attacker advantage (complete workflow)
 2. Initiative calculation (combat order determination)
 3. Attacker kills defender (attacker advantage enforcement)
@@ -713,9 +818,14 @@ pipenv install --dev
 5. Character immutability (value object pattern)
 6. Derived agility decreases (fatigue mechanic)
 
+**Error Path Scenarios**:
+7. Character creation fails with empty name (AC-1.5 validation)
+8. Dead character cannot initiate attack (AC-4.5 validation)
+9. Initiative tie resolved by first character rule (AC-3.2 tie-breaker)
+
 ---
 
-**Document Version**: 1.0
+**Document Version**: 1.1
 **Status**: Ready for DEVELOP Wave Handoff
 **Next Agent**: software-crafter (test-first-developer)
 **Implementation Approach**: Outside-In TDD (start with failing E2E, drill to units)
