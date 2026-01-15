@@ -72,6 +72,7 @@ max-complexity = 10
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S101", "ARG", "PLR2004", "ANN"]  # Relax type hints in tests
+"scripts/hooks/*" = ["S607", "C901", "PLR0912"]  # Allow partial paths for git commands and complex validation logic
 
 [tool.ruff.lint.isort]
 known-first-party = ["modules"]
