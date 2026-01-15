@@ -1,0 +1,23 @@
+{
+  "project_id": "combat-simulator",
+  "feature_description": "Combat Simulator CLI - implement production code using Outside-In TDD based on DISTILL wave handoff",
+  "started_at": "2026-01-15T13:04:00",
+  "last_updated": "2026-01-15T13:16:00",
+  "completed_phases": [
+    "Phase 1: Baseline Creation",
+    "Phase 2: Review Baseline",
+    "Phase 3: Roadmap Creation",
+    "Phase 4: Review Roadmap"
+  ],
+  "current_phase": "Phase 5: Split into Atomic Steps",
+  "failed_phase": null,
+  "failure_reason": null,
+  "completed_steps": [],
+  "failed_step": null,
+  "skip_flags": {
+    "baseline": false,
+    "roadmap": false,
+    "split": false
+  },
+  "orchestration_complete": false
+}

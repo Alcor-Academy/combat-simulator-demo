@@ -1,0 +1,260 @@
+# =============================================================================
+# BASELINE FILE: Combat Simulator CLI
+# =============================================================================
+# Purpose: Establish quantitative baseline BEFORE roadmap creation
+# Wave: DEVELOP (Outside-In TDD Implementation)
+# Command: /nw:baseline "Combat Simulator CLI - implement production code"
+# =============================================================================
+
+baseline:
+  # ---------------------------------------------------------------------------
+  # METADATA
+  # ---------------------------------------------------------------------------
+  project_id: "combat-simulator"
+  created: "2026-01-15T13:30:00Z"
+  type: "feature_development"
+  author: "researcher"
+
+  # ---------------------------------------------------------------------------
+  # PROBLEM STATEMENT
+  # ---------------------------------------------------------------------------
+  problem_statement:
+    summary: "No production code exists for Combat Simulator CLI - all 9 E2E acceptance tests skip"
+    evidence: |
+      Measured on 2026-01-15:
+      - E2E test execution: 9 scenarios collected, 9 skipped
+      - Production code files: 0 Python files in src/
+      - Import status: All production service imports fail (Character, InitiativeResolver, etc.)
+      - Test framework: pytest-bdd feature file exists at tests/e2e/features/combat_simulation.feature
+    scope:
+      in_scope:
+        - "Implement Character value object (frozen dataclass)"
+        - "Implement DiceRoller port interface (Protocol)"
+        - "Implement InitiativeResolver domain service"
+        - "Implement AttackResolver domain service"
+        - "Implement CombatRound domain service"
+        - "Implement CombatSimulator application service"
+        - "Implement value objects: AttackResult, InitiativeResult, RoundResult, CombatResult"
+        - "Make all 9 E2E acceptance tests pass"
+      out_of_scope:
+        - "CLI presentation layer (Click commands, Rich formatting)"
+        - "RandomDiceRoller infrastructure adapter"
+        - "Integration tests"
+        - "Documentation beyond code comments"
+
+  # ---------------------------------------------------------------------------
+  # CURRENT STATE (GREENFIELD)
+  # ---------------------------------------------------------------------------
+  current_state:
+    description: |
+      Greenfield implementation - DISTILL wave complete, no production code exists.
+      All E2E tests are wired to skip gracefully when production modules cannot be imported.
+    capabilities:
+      - "9 E2E acceptance scenarios defined in Gherkin feature file"
+      - "Step definitions wired to production service interfaces"
+      - "FixedDiceRoller test double implemented for deterministic testing"
+      - "pytest-bdd test infrastructure configured and working"
+      - "Hexagonal architecture design documented and reviewed"
+    limitations:
+      - "0 production code files - all imports fail"
+      - "0 domain model classes implemented"
+      - "0 domain services implemented"
+      - "0 application services implemented"
+      - "All 9 E2E tests skip due to missing imports"
+
+  # ---------------------------------------------------------------------------
+  # REQUIREMENTS SOURCE
+  # ---------------------------------------------------------------------------
+  requirements_source:
+    origin: "DISTILL wave acceptance test design and architecture design document"
+    validation: |
+      Requirements validated through:
+      1. User stories documented in docs/requirements/user-stories.md (7 stories)
+      2. Domain rules documented in docs/requirements/requirements.md (8 rules)
+      3. Architecture reviewed and approved (docs/architecture/architecture-design.md)
+      4. E2E scenarios validated against acceptance criteria
+    requirements:
+      - "DR-01: Character Immutability - value objects, state changes return new instances, no setters"
+      - "DR-02: Combat Mechanics - Damage = Attack Power + Dice Roll, HP floors at 0"
+      - "DR-03: Victory Determination - combat ends at HP=0, no draws"
+      - "DR-04: Turn Order - Initiative rolled once at fight start, D6 + Agility"
+      - "DR-05: Attacker Advantage - sequential resolution, dead defender cannot counter-attack"
+      - "DR-06: Dice Boundaries - all rolls [1,6] inclusive, same DiceRoller port for all"
+      - "DR-07: Derived Agility - Agility = Attack Power + HP, derived at access time"
+      - "DR-08: Testability Requirement - all randomness injectable, deterministic tests"
+
+  # ---------------------------------------------------------------------------
+  # MEASUREMENTS (BASELINE METRICS)
+  # ---------------------------------------------------------------------------
+  measurements:
+    baseline_metric:
+      name: "e2e_test_pass_rate"
+      value: 0
+      unit: "percent"
+      measured_at: "2026-01-15T13:25:00Z"
+      measurement_method: "pipenv run pytest tests/e2e/ -v (9 skipped)"
+
+    breakdown:
+      - category: "e2e_acceptance_tests"
+        value: 0
+        unit: "passing"
+        percentage: 0
+        notes: "0/9 passing (all skip due to ImportError)"
+      - category: "production_code_files"
+        value: 0
+        unit: "files"
+        percentage: 0
+        notes: "find src/ -name '*.py' | wc -l = 0"
+      - category: "unit_test_coverage"
+        value: 0
+        unit: "percent"
+        percentage: 0
+        notes: "No production code to cover"
+      - category: "domain_model_completeness"
+        value: 0
+        unit: "percent"
+        percentage: 0
+        notes: "0/5 value objects implemented"
+      - category: "domain_services_completeness"
+        value: 0
+        unit: "percent"
+        percentage: 0
+        notes: "0/3 domain services implemented"
+
+  # ---------------------------------------------------------------------------
+  # TARGET (SUCCESS CRITERIA)
+  # ---------------------------------------------------------------------------
+  target:
+    metric: "e2e_test_pass_rate"
+    current: 0
+    proposed: 100
+    unit: "percent"
+    improvement_factor: "N/A (greenfield)"
+    evidence_achievable: |
+      Based on DISTILL wave handoff:
+      - All 9 E2E scenarios have complete step definitions
+      - Production service interfaces are fully designed
+      - Implementation order documented (4 phases, 9 implementation steps)
+      - Architecture reviewed and approved
+      - Test double (FixedDiceRoller) already implemented and tested
+
+  # ---------------------------------------------------------------------------
+  # IMPLEMENTATION PHASES (FROM HANDOFF)
+  # ---------------------------------------------------------------------------
+  implementation_phases:
+    - phase: 1
+      name: "Domain Model Foundation"
+      steps:
+        - "Step 1.1: Character value object"
+        - "Step 1.2: DiceRoller port interface"
+        - "Step 1.3: FixedDiceRoller test double (already done)"
+      e2e_scenarios_enabled:
+        - "Scenario 5: Character immutability during combat"
+        - "Scenario 6: Derived agility reflects current health"
+        - "Scenario 7: Character creation fails with empty name"
+
+    - phase: 2
+      name: "Domain Services"
+      steps:
+        - "Step 2.1: Value objects (AttackResult, InitiativeResult, RoundResult, CombatResult)"
+        - "Step 2.2: InitiativeResolver"
+        - "Step 2.3: AttackResolver"
+        - "Step 2.4: CombatRound"
+      e2e_scenarios_enabled:
+        - "Scenario 2: Character with higher agility wins initiative"
+        - "Scenario 9: Initiative tie resolved by first character rule"
+        - "Scenario 4: Defender survives and counter-attacks"
+        - "Scenario 3: Attacker kills defender - no counter-attack occurs"
+        - "Scenario 8: Dead character cannot initiate attack"
+
+    - phase: 3
+      name: "Application Layer"
+      steps:
+        - "Step 3.1: CombatSimulator"
+      e2e_scenarios_enabled:
+        - "Scenario 1: Full combat with attacker advantage enforcement"
+
+    - phase: 4
+      name: "Infrastructure (Optional)"
+      steps:
+        - "Step 4.1: RandomDiceRoller (out of scope for E2E tests)"
+      e2e_scenarios_enabled: []
+
+  # ---------------------------------------------------------------------------
+  # HANDOFF ARTIFACTS VERIFIED
+  # ---------------------------------------------------------------------------
+  handoff_artifacts:
+    - artifact: "Feature file"
+      location: "tests/e2e/features/combat_simulation.feature"
+      status: "verified"
+      details: "9 scenarios (6 happy path + 3 error path)"
+
+    - artifact: "Step definitions"
+      location: "tests/e2e/test_combat_simulation.py"
+      status: "verified"
+      details: "671 lines, all Given/When/Then steps implemented"
+
+    - artifact: "Test double"
+      location: "tests/doubles/fixed_dice_roller.py"
+      status: "verified"
+      details: "FixedDiceRoller implemented and ready for use"
+
+    - artifact: "Architecture design"
+      location: "docs/architecture/architecture-design.md"
+      status: "verified"
+      details: "1596 lines, reviewed and approved"
+
+    - artifact: "Handoff document"
+      location: "docs/distill/handoff-to-develop.md"
+      status: "verified"
+      details: "981 lines, complete implementation guidance"
+
+  # ---------------------------------------------------------------------------
+  # VALIDATION STATUS
+  # ---------------------------------------------------------------------------
+  validation:
+    status: "approved"
+    validated_by: "software-crafter-reviewer"
+    validation_date: "2026-01-15"
+    correction_date: "2026-01-15"
+    approval_date: "2026-01-15"
+    notes: |
+      REVIEW RESULT: APPROVED (Re-review 2/2)
+
+      VERIFIED CLAIMS (Correct):
+      - E2E test count: 9 scenarios (VERIFIED via pytest --collect-only)
+      - E2E test status: All skip (VERIFIED via pytest execution)
+      - Production code files: 0 (VERIFIED via find command)
+      - User stories count: 7 (VERIFIED in user-stories.md)
+      - All handoff artifact files exist and are accessible
+
+      CORRECTIONS APPLIED:
+
+      ISSUE #1 (FIXED): Domain rule count corrected
+      - Updated from 10 rules to 8 rules (DR-01 through DR-08)
+      - Rule descriptions now match docs/requirements/requirements.md exactly
+      - Verified against source document lines 110-154
+
+      ISSUE #2 (FIXED): Line count discrepancies corrected
+      - Step definitions: 671 lines (wc -l verified)
+      - Architecture design: 1596 lines (wc -l verified)
+      - Handoff document: 981 lines (wc -l verified)
+
+      ALL CORRECTIONS VERIFIED VIA:
+      - Domain rules: Read of docs/requirements/requirements.md
+      - Line counts: wc -l command on each artifact file
+
+# =============================================================================
+# QUALITY GATES FOR IMPLEMENTATION
+# =============================================================================
+# From handoff document - validate during implementation:
+#
+# 1. All tests must RUN and PASS (no skips allowed at end)
+# 2. Line coverage >= 95% on src/
+# 3. Branch coverage >= 90% on src/
+# 4. Domain layer coverage = 100%
+# 5. No mocks in E2E tests (except DiceRoller test double)
+# 6. All value objects use @dataclass(frozen=True)
+# 7. Agility is @property (derived), not stored field
+# 8. Dependencies flow inward (CLI -> Application -> Domain)
+# =============================================================================

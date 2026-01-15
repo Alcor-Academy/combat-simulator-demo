@@ -1,0 +1,788 @@
+# =============================================================================
+# ROADMAP: Combat Simulator CLI - Outside-In TDD Implementation
+# =============================================================================
+# Wave: DEVELOP
+# Source: DISTILL wave handoff (docs/distill/handoff-to-develop.md)
+# Architecture: Hexagonal/Ports & Adapters (docs/architecture/architecture-design.md)
+# Baseline: docs/feature/combat-simulator/baseline.yaml (APPROVED)
+# =============================================================================
+
+project:
+  id: "combat-simulator"
+  name: "Combat Simulator CLI - Production Implementation"
+  goal: "Implement production code using Outside-In TDD to make all 9 E2E acceptance tests pass"
+  methodology: "outside-in-tdd"
+  created: "2026-01-15T14:00:00Z"
+  estimated_duration: "4-6 hours"
+
+  # Baseline summary (from approved baseline.yaml)
+  baseline_summary:
+    current_state:
+      e2e_tests_passing: 0
+      e2e_tests_total: 9
+      production_files: 0
+      unit_test_coverage: 0
+    target_state:
+      e2e_tests_passing: 9
+      e2e_tests_total: 9
+      unit_test_coverage_target: "95%+"
+      branch_coverage_target: "90%+"
+    success_criteria:
+      - "All 9 E2E acceptance tests pass (100%)"
+      - "All 8 domain rules validated (DR-01 through DR-08)"
+      - "Unit test coverage >= 95% on src/"
+      - "No mocks in E2E tests (except FixedDiceRoller test double)"
+
+  # Critical business rules from handoff
+  critical_rules:
+    DR-01:
+      name: "Character Immutability"
+      enforcement: "@dataclass(frozen=True), receive_damage() returns NEW instance"
+      validation_scenario: "Scenario 5: Character immutability during combat"
+    DR-06:
+      name: "Attacker Advantage"
+      enforcement: "Dead defender cannot counter-attack (defender_damage=0 when defender dies)"
+      validation_scenario: "Scenario 3: Attacker kills defender - no counter-attack occurs"
+    DR-08:
+      name: "Derived Agility"
+      enforcement: "agility is @property (computed), not stored field"
+      validation_scenario: "Scenario 6: Derived agility reflects current health"
+
+# =============================================================================
+# IMPLEMENTATION PHASES
+# =============================================================================
+
+phases:
+  # ---------------------------------------------------------------------------
+  # PHASE 1: Domain Model Foundation
+  # ---------------------------------------------------------------------------
+  - number: 1
+    name: "Domain Model Foundation"
+    purpose: "Create core value objects and port interface that enable all domain services"
+    estimated_hours: 1.5
+    e2e_scenarios_enabled:
+      - "Scenario 5: Character immutability during combat"
+      - "Scenario 6: Derived agility reflects current health"
+      - "Scenario 7: Character creation fails with empty name"
+
+    steps:
+      # Step 1.1: Character Value Object
+      - number: 1
+        name: "Implement Character Value Object"
+        description: |
+          Create the Character frozen dataclass - the core domain entity representing a combatant.
+
+          File: src/domain/model/character.py
+
+          Implementation requirements:
+          - @dataclass(frozen=True) for immutability (DR-01)
+          - Fields: name (str), hp (int >= 0), attack_power (int > 0)
+          - Property: agility = hp + attack_power (derived, DR-08)
+          - Property: is_alive = hp > 0
+          - Method: receive_damage(amount) -> Character (returns NEW instance)
+          - Validation: __post_init__ rejects empty name, negative hp, non-positive attack
+
+          Test file: tests/unit/domain/model/test_character.py
+        motivation: "Character is the foundation - all domain services operate on Characters"
+        estimated_hours: 0.5
+        dependencies: []
+        step_type: "atdd"
+        suggested_agent: "software-crafter"
+        suggested_scenario:
+          test_file: "tests/e2e/features/combat_simulation.feature"
+          scenario_name: "Character immutability during combat"
+          scenario_index: 4
+          test_format: "feature"
+        acceptance_criteria:
+          - "Character created with valid name, hp, attack_power"
+          - "agility property returns hp + attack_power (computed, not stored)"
+          - "is_alive returns true when hp > 0, false when hp = 0"
+          - "receive_damage returns NEW Character instance with reduced hp"
+          - "Original Character unchanged after receive_damage (immutability)"
+          - "HP floors at 0 (receive_damage(1000) on hp=5 -> hp=0, not negative)"
+          - "ValueError raised for empty name"
+          - "ValueError raised for negative hp"
+          - "ValueError raised for attack_power <= 0"
+          - "E2E Scenario 5 (immutability) passes"
+          - "E2E Scenario 6 (derived agility) passes"
+          - "E2E Scenario 7 (empty name error) passes"
+        unit_tests_required:
+          - "test_creates_character_with_valid_attributes"
+          - "test_computes_agility_as_hp_plus_attack_power"
+          - "test_agility_changes_when_hp_changes"
+          - "test_is_alive_returns_true_when_hp_positive"
+          - "test_is_alive_returns_false_when_hp_zero"
+          - "test_receive_damage_returns_new_instance"
+          - "test_receive_damage_reduces_hp_correctly"
+          - "test_receive_damage_floors_hp_at_zero"
+          - "test_original_unchanged_after_receive_damage"
+          - "test_rejects_empty_name"
+          - "test_rejects_negative_hp"
+          - "test_rejects_non_positive_attack_power"
+
+      # Step 1.2: DiceRoller Port Interface
+      - number: 2
+        name: "Define DiceRoller Port Interface"
+        description: |
+          Create the DiceRoller Protocol - the port interface for randomness injection.
+
+          File: src/domain/ports/dice_roller.py
+
+          Implementation requirements:
+          - Use typing.Protocol (PEP 544) for structural typing
+          - Single method: roll() -> int
+          - Returns value in [1, 6] inclusive (D6 die)
+          - No implementation - just interface definition
+
+          Note: FixedDiceRoller test double already exists at tests/doubles/fixed_dice_roller.py
+        motivation: "DiceRoller port enables dependency injection for testability (DR-08)"
+        estimated_hours: 0.25
+        dependencies: []
+        step_type: "infrastructure"
+        suggested_agent: "software-crafter"
+        acceptance_criteria:
+          - "Protocol class defined with roll() -> int method"
+          - "Protocol properly typed with type hints"
+          - "No implementation (just interface)"
+          - "FixedDiceRoller (existing) implements this protocol via structural typing"
+        unit_tests_required: []  # No tests for pure interface
+
+      # Step 1.3: Package Structure
+      - number: 3
+        name: "Create Package Structure"
+        description: |
+          Ensure proper Python package structure with __init__.py files.
+
+          Files to create/verify:
+          - src/__init__.py
+          - src/domain/__init__.py
+          - src/domain/model/__init__.py
+          - src/domain/ports/__init__.py
+          - src/domain/services/__init__.py
+          - src/application/__init__.py
+          - src/infrastructure/__init__.py
+
+          Each __init__.py should export public symbols for cleaner imports.
+        motivation: "Proper package structure enables clean imports and module organization"
+        estimated_hours: 0.25
+        dependencies: ["1.1", "1.2"]
+        step_type: "infrastructure"
+        suggested_agent: "software-crafter"
+        acceptance_criteria:
+          - "All __init__.py files created"
+          - "Character importable as: from src.domain.model.character import Character"
+          - "DiceRoller importable as: from src.domain.ports.dice_roller import DiceRoller"
+          - "No circular import errors"
+        unit_tests_required: []
+
+  # ---------------------------------------------------------------------------
+  # PHASE 2: Domain Services - Value Objects
+  # ---------------------------------------------------------------------------
+  - number: 2
+    name: "Domain Services - Result Value Objects"
+    purpose: "Create value objects for service results to enable domain service implementation"
+    estimated_hours: 1.0
+
+    steps:
+      # Step 2.1: AttackResult Value Object
+      - number: 1
+        name: "Implement AttackResult Value Object"
+        description: |
+          Create AttackResult frozen dataclass - captures result of a single attack.
+
+          File: src/domain/model/attack_result.py
+
+          Fields (all required):
+          - attacker_name: str
+          - defender_name: str
+          - dice_roll: int (1-6)
+          - attack_power: int
+          - total_damage: int (attack_power + dice_roll)
+          - defender_old_hp: int
+          - defender_new_hp: int
+          - defender_after: Character (new instance after damage)
+        motivation: "AttackResult enables AttackResolver to return complete attack information"
+        estimated_hours: 0.25
+        dependencies: ["1.1"]
+        step_type: "atdd"
+        suggested_agent: "software-crafter"
+        acceptance_criteria:
+          - "Frozen dataclass with all required fields"
+          - "Immutable (frozen=True)"
+          - "Contains defender_after as Character instance"
+        unit_tests_required:
+          - "test_creates_attack_result_with_all_fields"
+          - "test_attack_result_is_immutable"
+
+      # Step 2.2: InitiativeResult Value Object
+      - number: 2
+        name: "Implement InitiativeResult Value Object"
+        description: |
+          Create InitiativeResult frozen dataclass - captures initiative roll outcome.
+
+          File: src/domain/model/initiative_result.py
+
+          Fields:
+          - attacker: Character (winner of initiative)
+          - defender: Character (loser of initiative)
+          - attacker_roll: int (dice roll for attacker)
+          - defender_roll: int (dice roll for defender)
+          - attacker_total: int (attacker.agility + attacker_roll)
+          - defender_total: int (defender.agility + defender_roll)
+        motivation: "InitiativeResult captures who attacks first for entire combat"
+        estimated_hours: 0.25
+        dependencies: ["1.1"]
+        step_type: "atdd"
+        suggested_agent: "software-crafter"
+        acceptance_criteria:
+          - "Frozen dataclass with all required fields"
+          - "Attacker is character with higher initiative total"
+          - "Defender is character with lower initiative total"
+        unit_tests_required:
+          - "test_creates_initiative_result_with_all_fields"
+          - "test_initiative_result_is_immutable"
+
+      # Step 2.3: RoundResult Value Object
+      - number: 3
+        name: "Implement RoundResult Value Object"
+        description: |
+          Create RoundResult frozen dataclass - captures result of one combat round.
+
+          File: src/domain/model/round_result.py
+
+          Fields:
+          - round_number: int
+          - attacker: Character (state after round)
+          - defender: Character (state after round)
+          - attacker_roll: int
+          - defender_roll: int (0 if defender died before counter-attack - CRITICAL)
+          - attacker_damage: int (damage dealt by attacker)
+          - defender_damage: int (0 if defender died - CRITICAL for DR-06)
+          - attacker_hp_after: int
+          - defender_hp_after: int
+          - combat_ended: bool
+          - winner: Optional[Character] (None if combat continues)
+
+          CRITICAL: defender_damage MUST be 0 if defender died from attacker's attack.
+          This enforces the attacker advantage rule (DR-06).
+        motivation: "RoundResult captures complete round state for combat history"
+        estimated_hours: 0.25
+        dependencies: ["1.1"]
+        step_type: "atdd"
+        suggested_agent: "software-crafter"
+        acceptance_criteria:
+          - "Frozen dataclass with all required fields"
+          - "winner is Optional[Character]"
+          - "defender_damage can be 0 (no counter-attack case)"
+        unit_tests_required:
+          - "test_creates_round_result_with_all_fields"
+          - "test_round_result_is_immutable"
+          - "test_round_result_with_no_counter_attack"
+
+      # Step 2.4: CombatResult Value Object
+      - number: 4
+        name: "Implement CombatResult Value Object"
+        description: |
+          Create CombatResult frozen dataclass - captures complete combat outcome.
+
+          File: src/domain/model/combat_result.py
+
+          Fields:
+          - winner: Character
+          - loser: Character
+          - total_rounds: int
+          - rounds: Tuple[RoundResult, ...] (immutable sequence)
+
+          Note: Use Tuple for immutable sequence, not List.
+        motivation: "CombatResult is the final output of CombatSimulator.run_combat()"
+        estimated_hours: 0.25
+        dependencies: ["2.3"]
+        step_type: "atdd"
+        suggested_agent: "software-crafter"
+        acceptance_criteria:
+          - "Frozen dataclass with all required fields"
+          - "rounds is Tuple[RoundResult, ...] not List"
+          - "winner.is_alive is True, loser.hp is 0"
+        unit_tests_required:
+          - "test_creates_combat_result_with_all_fields"
+          - "test_combat_result_is_immutable"
+          - "test_combat_result_rounds_is_tuple"
+
+  # ---------------------------------------------------------------------------
+  # PHASE 3: Domain Services - Business Logic
+  # ---------------------------------------------------------------------------
+  - number: 3
+    name: "Domain Services - Business Logic"
+    purpose: "Implement domain services that enforce combat business rules"
+    estimated_hours: 2.0
+    e2e_scenarios_enabled:
+      - "Scenario 2: Character with higher agility wins initiative"
+      - "Scenario 9: Initiative tie resolved by first character rule"
+      - "Scenario 4: Defender survives and counter-attacks"
+      - "Scenario 3: Attacker kills defender - no counter-attack occurs"
+      - "Scenario 8: Dead character cannot initiate attack"
+
+    steps:
+      # Step 3.1: InitiativeResolver
+      - number: 1
+        name: "Implement InitiativeResolver Domain Service"
+        description: |
+          Create InitiativeResolver - determines combat order via initiative roll.
+
+          File: src/domain/services/initiative_resolver.py
+
+          Implementation:
+          - @dataclass with dice_roller: DiceRoller dependency
+          - Method: roll_initiative(char1, char2) -> InitiativeResult
+          - Initiative = Agility + D6 roll
+          - Higher total wins (attacks first for entire combat)
+          - Tie-breaker: char1 wins (first character advantage)
+
+          Domain rules enforced:
+          - DR-04: Initiative rolled once at fight start
+          - DR-05: Initiative = Agility + D6
+        motivation: "InitiativeResolver determines combat order before any rounds execute"
+        estimated_hours: 0.5
+        dependencies: ["1.2", "2.2"]
+        step_type: "atdd"
+        suggested_agent: "software-crafter"
+        suggested_scenario:
+          test_file: "tests/e2e/features/combat_simulation.feature"
+          scenario_name: "Character with higher agility wins initiative"
+          scenario_index: 1
+          test_format: "feature"
+        acceptance_criteria:
+          - "Higher initiative total wins"
+          - "Uses derived agility (hp + attack_power) in calculation"
+          - "Tie resolved by char1 winning (deterministic)"
+          - "Returns InitiativeResult with attacker/defender assigned"
+          - "E2E Scenario 2 (higher agility wins) passes"
+          - "E2E Scenario 9 (tie-breaker) passes"
+        unit_tests_required:
+          - "test_higher_initiative_total_wins"
+          - "test_tie_resolved_by_first_character"
+          - "test_uses_derived_agility_in_calculation"
+          - "test_returns_initiative_result_with_rolls"
+
+      # Step 3.2: AttackResolver
+      - number: 2
+        name: "Implement AttackResolver Domain Service"
+        description: |
+          Create AttackResolver - resolves single attack with damage calculation.
+
+          File: src/domain/services/attack_resolver.py
+
+          Implementation:
+          - @dataclass with dice_roller: DiceRoller dependency
+          - Method: resolve_attack(attacker, defender) -> AttackResult
+          - Damage = attack_power + dice_roll
+          - Returns NEW defender with reduced HP (immutability)
+          - Raises ValueError if attacker.is_alive is False
+
+          Domain rules enforced:
+          - DR-02: Damage = Attack Power + Dice Roll
+          - DR-03: HP floors at 0 (via Character.receive_damage)
+          - AC-4.5: Dead character cannot attack
+        motivation: "AttackResolver is the atomic unit of combat - resolves one strike"
+        estimated_hours: 0.5
+        dependencies: ["1.1", "1.2", "2.1"]
+        step_type: "atdd"
+        suggested_agent: "software-crafter"
+        suggested_scenario:
+          test_file: "tests/e2e/features/combat_simulation.feature"
+          scenario_name: "Dead character cannot initiate attack"
+          scenario_index: 7
+          test_format: "feature"
+        acceptance_criteria:
+          - "Damage calculated as attack_power + dice_roll"
+          - "Returns new defender with reduced HP"
+          - "HP floors at 0 (no negative HP)"
+          - "Raises ValueError when attacker is dead (hp=0)"
+          - "E2E Scenario 8 (dead cannot attack) passes"
+        unit_tests_required:
+          - "test_calculates_damage_as_attack_power_plus_dice"
+          - "test_returns_new_defender_with_reduced_hp"
+          - "test_hp_floors_at_zero"
+          - "test_raises_error_when_attacker_dead"
+          - "test_returns_attack_result_with_all_fields"
+
+      # Step 3.3: CombatRound (CRITICAL - Attacker Advantage)
+      - number: 3
+        name: "Implement CombatRound Domain Service"
+        description: |
+          Create CombatRound - orchestrates one combat round with attacker advantage.
+
+          File: src/domain/services/combat_round.py
+
+          CRITICAL BUSINESS RULE (DR-06 - Attacker Advantage):
+          1. Attacker attacks first
+          2. Check if defender survived (defender.is_alive)
+          3. If defender died: round ends IMMEDIATELY, defender_damage = 0
+          4. If defender alive: defender counter-attacks
+
+          Implementation:
+          - @dataclass with attack_resolver: AttackResolver dependency
+          - Method: execute_round(attacker, defender, round_number) -> RoundResult
+
+          The attacker advantage rule is the MOST IMPORTANT business rule.
+          Scenario 3 specifically tests this: "no counter-attack occurs" when defender dies.
+        motivation: "CombatRound enforces attacker advantage - the core game mechanic"
+        estimated_hours: 0.75
+        dependencies: ["3.2", "2.3"]
+        step_type: "atdd"
+        suggested_agent: "software-crafter"
+        suggested_scenario:
+          test_file: "tests/e2e/features/combat_simulation.feature"
+          scenario_name: "Attacker kills defender - no counter-attack occurs"
+          scenario_index: 2
+          test_format: "feature"
+        acceptance_criteria:
+          - "Attacker attacks first in every round"
+          - "Defender counter-attacks ONLY if alive after attacker's attack"
+          - "NO counter-attack when defender dies (defender_damage=0, defender_roll=0)"
+          - "combat_ended=True when someone dies"
+          - "winner set correctly when combat ends"
+          - "E2E Scenario 3 (attacker kills, no counter-attack) passes"
+          - "E2E Scenario 4 (defender survives, counter-attacks) passes"
+        unit_tests_required:
+          - "test_attacker_attacks_first"
+          - "test_defender_counter_attacks_when_alive"
+          - "test_no_counter_attack_when_defender_dies"
+          - "test_defender_damage_is_zero_when_defender_dies"
+          - "test_defender_roll_is_zero_when_defender_dies"
+          - "test_combat_ended_when_character_dies"
+          - "test_winner_set_when_combat_ends"
+          - "test_combat_continues_when_both_alive"
+
+  # ---------------------------------------------------------------------------
+  # PHASE 4: Application Layer
+  # ---------------------------------------------------------------------------
+  - number: 4
+    name: "Application Layer - Combat Simulator"
+    purpose: "Implement the main use case that orchestrates complete combat simulation"
+    estimated_hours: 1.0
+    e2e_scenarios_enabled:
+      - "Scenario 1: Full combat with attacker advantage enforcement"
+
+    steps:
+      # Step 4.1: CombatSimulator
+      - number: 1
+        name: "Implement CombatSimulator Application Service"
+        description: |
+          Create CombatSimulator - the main use case orchestrating complete combat.
+
+          File: src/application/combat_simulator.py
+
+          Implementation:
+          - @dataclass with:
+            - initiative_resolver: InitiativeResolver
+            - combat_round: CombatRound
+          - Method: run_combat(char1, char2) -> CombatResult
+
+          Algorithm:
+          1. Roll initiative (once) -> determines attacker/defender
+          2. Loop: execute rounds until someone dies
+          3. Collect all RoundResult into tuple
+          4. Return CombatResult with winner, loser, rounds
+
+          This is the E2E test entry point - all acceptance tests call this method.
+        motivation: "CombatSimulator is the public API that E2E tests exercise"
+        estimated_hours: 0.75
+        dependencies: ["3.1", "3.3", "2.4"]
+        step_type: "atdd"
+        suggested_agent: "software-crafter"
+        suggested_scenario:
+          test_file: "tests/e2e/features/combat_simulation.feature"
+          scenario_name: "Full combat with attacker advantage enforcement"
+          scenario_index: 0
+          test_format: "feature"
+        acceptance_criteria:
+          - "Rolls initiative once at combat start"
+          - "Executes rounds until one character has 0 HP"
+          - "Returns CombatResult with winner, loser, all rounds"
+          - "Winner is surviving character (is_alive=True)"
+          - "Loser has HP=0"
+          - "Attacker advantage enforced in all rounds"
+          - "E2E Scenario 1 (full combat) passes"
+          - "ALL 9 E2E scenarios pass"
+        unit_tests_required:
+          - "test_rolls_initiative_once_at_start"
+          - "test_runs_rounds_until_victory"
+          - "test_returns_complete_combat_result"
+          - "test_winner_is_surviving_character"
+          - "test_loser_has_zero_hp"
+          - "test_all_rounds_recorded"
+
+      # Step 4.2: Wire E2E Step Definitions
+      - number: 2
+        name: "Wire E2E Step Definitions to Production Services"
+        description: |
+          Update tests/e2e/test_combat_simulation.py to use production services.
+
+          Current state: Step definitions exist but imports fail (no production code).
+          Target state: All step definitions call real production services.
+
+          Pattern (from handoff):
+          - Use FixedDiceRoller as ONLY test double
+          - Wire real production services via constructor injection
+          - NO mocks except DiceRoller
+
+          Wiring example:
+            dice_roller = FixedDiceRoller([...])
+            initiative_resolver = InitiativeResolver(dice_roller=dice_roller)
+            attack_resolver = AttackResolver(dice_roller=dice_roller)
+            combat_round = CombatRound(attack_resolver=attack_resolver)
+            simulator = CombatSimulator(
+                initiative_resolver=initiative_resolver,
+                combat_round=combat_round
+            )
+        motivation: "E2E tests validate complete system behavior through production code"
+        estimated_hours: 0.25
+        dependencies: ["4.1"]
+        step_type: "infrastructure"
+        suggested_agent: "software-crafter"
+        acceptance_criteria:
+          - "All imports resolve (no ModuleNotFoundError)"
+          - "Step definitions use production services"
+          - "Only FixedDiceRoller used as test double"
+          - "All 9 E2E scenarios executable (may still fail if logic bugs)"
+        unit_tests_required: []
+
+  # ---------------------------------------------------------------------------
+  # PHASE 5: Infrastructure Layer (Optional)
+  # ---------------------------------------------------------------------------
+  - number: 5
+    name: "Infrastructure Layer (Optional)"
+    purpose: "Implement production adapters for non-test usage"
+    estimated_hours: 0.5
+    e2e_scenarios_enabled: []
+
+    steps:
+      # Step 5.1: RandomDiceRoller
+      - number: 1
+        name: "Implement RandomDiceRoller Infrastructure Adapter"
+        description: |
+          Create RandomDiceRoller - production adapter for random dice rolls.
+
+          File: src/infrastructure/random_dice_roller.py
+
+          Implementation:
+          - Uses random.randint(1, 6)
+          - Implements DiceRoller protocol via structural typing
+
+          Note: Not required for E2E tests (they use FixedDiceRoller).
+          Required only for CLI usage with real randomness.
+        motivation: "RandomDiceRoller enables production CLI with real dice"
+        estimated_hours: 0.25
+        dependencies: ["1.2"]
+        step_type: "infrastructure"
+        suggested_agent: "software-crafter"
+        acceptance_criteria:
+          - "Returns value in [1, 6] inclusive"
+          - "Uses random.randint(1, 6)"
+          - "Implements DiceRoller protocol"
+        unit_tests_required:
+          - "test_returns_value_in_valid_range"
+          - "test_never_returns_zero"
+          - "test_never_returns_seven"
+
+  # ---------------------------------------------------------------------------
+  # PHASE 6: Quality Validation
+  # ---------------------------------------------------------------------------
+  - number: 6
+    name: "Quality Validation"
+    purpose: "Verify all quality gates pass and implementation is complete"
+    estimated_hours: 0.5
+
+    steps:
+      # Step 6.1: Coverage Validation
+      - number: 1
+        name: "Validate Test Coverage Targets"
+        description: |
+          Run full test suite with coverage reporting and verify targets.
+
+          Commands:
+            pipenv run pytest tests/ --cov=src --cov-report=html --cov-report=term-missing
+
+          Targets (from baseline):
+          - Line coverage >= 95% on src/
+          - Branch coverage >= 90% on src/
+          - Domain layer coverage = 100%
+          - E2E tests: 9/9 passing
+        motivation: "Coverage targets ensure implementation completeness"
+        estimated_hours: 0.25
+        dependencies: ["4.2"]
+        step_type: "infrastructure"
+        suggested_agent: "software-crafter"
+        acceptance_criteria:
+          - "Line coverage >= 95%"
+          - "Branch coverage >= 90%"
+          - "src/domain/ has 100% coverage"
+          - "9/9 E2E tests pass"
+          - "No skipped tests"
+        unit_tests_required: []
+
+      # Step 6.2: Domain Rule Validation
+      - number: 2
+        name: "Validate All Domain Rules"
+        description: |
+          Verify all 8 domain rules (DR-01 through DR-08) are enforced.
+
+          Domain rules checklist:
+          - DR-01: Character immutability -> @dataclass(frozen=True) [Scenario 5]
+          - DR-02: Damage = Attack Power + Dice -> AttackResolver [Scenario 4]
+          - DR-03: HP floors at 0 -> Character.receive_damage [Scenario 3]
+          - DR-04: Initiative rolled once -> CombatSimulator [Scenario 1]
+          - DR-05: Initiative = Agility + D6 -> InitiativeResolver [Scenario 2]
+          - DR-06: Attacker advantage -> CombatRound [Scenario 3, CRITICAL]
+          - DR-07: Combat ends on 0 HP -> CombatRound [Scenario 1]
+          - DR-08: Agility is derived -> Character.agility @property [Scenario 6]
+        motivation: "Domain rules are the business requirements - all must be enforced"
+        estimated_hours: 0.25
+        dependencies: ["6.1"]
+        step_type: "infrastructure"
+        suggested_agent: "software-crafter"
+        acceptance_criteria:
+          - "All 8 domain rules have corresponding test coverage"
+          - "Critical rule DR-06 (attacker advantage) explicitly tested"
+          - "Scenario 3 validates no counter-attack when defender dies"
+          - "No domain rule regressions"
+        unit_tests_required: []
+
+# =============================================================================
+# IMPLEMENTATION SEQUENCE SUMMARY
+# =============================================================================
+
+implementation_sequence:
+  description: "Follow Outside-In TDD: Start with E2E (RED), drill to units, make GREEN"
+
+  one_at_a_time_strategy:
+    description: |
+      Enable E2E scenarios sequentially to avoid multiple failing tests blocking commits.
+      Each scenario maps to specific production code.
+
+    sequence:
+      - step: 1
+        scenario: "Scenario 5: Character immutability"
+        production_code: "Character value object"
+        commit: "feat: implement Character immutable value object"
+
+      - step: 2
+        scenario: "Scenario 6: Derived agility"
+        production_code: "Character.agility @property"
+        commit: "feat: add derived agility computation"
+
+      - step: 3
+        scenario: "Scenario 7: Empty name error"
+        production_code: "Character.__post_init__ validation"
+        commit: "feat: add character name validation"
+
+      - step: 4
+        scenario: "Scenario 2: Initiative (higher agility wins)"
+        production_code: "InitiativeResolver"
+        commit: "feat: implement initiative roll calculation"
+
+      - step: 5
+        scenario: "Scenario 9: Initiative tie"
+        production_code: "InitiativeResolver tie-breaker"
+        commit: "feat: add initiative tie-breaker rule"
+
+      - step: 6
+        scenario: "Scenario 4: Defender survives"
+        production_code: "CombatRound basic flow"
+        commit: "feat: implement combat round execution"
+
+      - step: 7
+        scenario: "Scenario 3: Attacker kills (CRITICAL)"
+        production_code: "CombatRound attacker advantage"
+        commit: "feat: enforce attacker advantage rule"
+
+      - step: 8
+        scenario: "Scenario 8: Dead cannot attack"
+        production_code: "AttackResolver validation"
+        commit: "feat: prevent dead character from attacking"
+
+      - step: 9
+        scenario: "Scenario 1: Full combat"
+        production_code: "CombatSimulator"
+        commit: "feat: implement complete combat simulation"
+
+# =============================================================================
+# DEPENDENCIES AND PARALLEL EXECUTION
+# =============================================================================
+
+dependency_graph:
+  description: "Visual representation of step dependencies"
+
+  parallel_opportunities:
+    - "Steps 2.1-2.3 (value objects) can be implemented in parallel"
+    - "Step 1.2 (DiceRoller port) can parallel with Step 1.1 (Character)"
+
+  critical_path:
+    - "1.1 (Character) -> 2.1-2.4 (Value Objects) -> 3.1-3.3 (Domain Services) -> 4.1 (Simulator)"
+
+  bottleneck:
+    - "Step 3.3 (CombatRound) is critical - implements attacker advantage rule (DR-06)"
+    - "Must be correct before Scenario 3 can pass"
+
+# =============================================================================
+# QUALITY GATES
+# =============================================================================
+
+quality_gates:
+  pre_commit:
+    - "All tests pass (unit + E2E)"
+    - "No skipped tests"
+    - "Pre-commit hooks pass (black, flake8, mypy)"
+
+  phase_completion:
+    - "Coverage >= 95% for phase code"
+    - "All associated E2E scenarios pass"
+    - "Domain rules for phase validated"
+
+  final:
+    - "9/9 E2E scenarios pass"
+    - "Line coverage >= 95%"
+    - "Branch coverage >= 90%"
+    - "All 8 domain rules validated"
+    - "No mocks except FixedDiceRoller"
+
+# =============================================================================
+# HANDOFF READY CRITERIA
+# =============================================================================
+
+handoff_ready:
+  from: "DEVELOP wave"
+  to: "DELIVER wave (optional - CLI integration)"
+
+  deliverables:
+    - "9/9 E2E acceptance tests passing"
+    - "Complete production code in src/"
+    - "Unit tests in tests/unit/"
+    - "Coverage report showing >= 95%"
+    - "All domain rules (DR-01 through DR-08) enforced"
+
+  validation_command: |
+    pipenv run pytest tests/ -v --cov=src --cov-report=term-missing
+
+# =============================================================================
+# ROADMAP VALIDATION
+# =============================================================================
+
+validation:
+  status: "approved"
+  reviewer: "software-crafter-reviewer"
+  review_date: "2026-01-15T14:30:00Z"
+  review_criteria:
+    handoff_alignment: "PASS - Roadmap aligns with docs/distill/handoff-to-develop.md"
+    scenario_coverage: "PASS - All 9 E2E scenarios accounted for in implementation sequence"
+    critical_rules:
+      DR-01_immutability: "PASS - Step 1.1 requires frozen dataclass, receive_damage returns new instance"
+      DR-06_attacker_advantage: "PASS - Step 3.3 marked CRITICAL, explicit tests for no counter-attack"
+      DR-08_derived_agility: "PASS - Step 1.1 requires agility as @property (computed)"
+    one_at_a_time_strategy: "PASS - implementation_sequence section defines 9-step sequential order"
+    dependencies: "PASS - All dependencies correctly identified, critical path documented"
+    step_granularity: "PASS - 14 steps across 6 phases, appropriate for 4-6 hour implementation"
+  notes: |
+    Roadmap is well-structured and complete. All review criteria satisfied.
+    Ready for execution by software-crafter agent.
